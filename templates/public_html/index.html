@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        $.ajax({
+            data : {
+                val : "CIAO",
+                val2:"VALORE2"
+            },
+            type : 'GET',
+            url : 'http://127.0.0.1:5000/ajax/func=prova&oper=prova2'
+        })
+    });
+</script>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AJAX Form Sample</title>
+</head>
+
+<body>
+
+<h1>AJAX Form Sample</h1>
+
+<form id="form">
+    <h2>First Name</h2>
+    <input type="text" id="firstname">
+    <h2>Last Name</h2>
+    <input type="text" id="lastname">
+    <button type="submit" name="button">Submit</button>
+</form>
+
+<div id="output"></div>
+</body>
+</html>
