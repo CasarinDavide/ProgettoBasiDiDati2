@@ -1,0 +1,336 @@
+
+{% include 'public_html/index.html' %}
+
+
+
+<script>
+
+
+    const id_set = "{{ id_set }}";
+
+
+    function getSelectOptionsCounties(id_region = null, targetField = 'counties') {
+    let result = null;
+    let ajaxUrl = ajax_script + '?fun=counties&oper=';
+
+    // Determine operation type based on id_region parameter
+    if (id_region) {
+        ajaxUrl += 'get_selectoptions';
+    } else {
+        ajaxUrl += 'get_all_selectoptions';
+    }
+
+    jQuery.ajax({
+        url: ajaxUrl,
+        type: 'POST',
+        data: {
+            region: id_region
+        },
+        async: false,
+        success: function (data) {
+
+            if ((data = jQuery.trim(data)) == '') return;
+            var parsedResult = checkAjaxResponse(data, false);
+            if (!parsedResult) {
+                result = jQuery.parseJSON(data);
+
+                // Determine which fields to update
+                const targetAdd = `#add-suppliers-${targetField}`;
+                const targetEdit = `#edit-suppliers-${targetField}`;
+
+                jQuery(targetAdd).empty();
+                jQuery(targetEdit).empty();
+
+                result.forEach((element) => {
+                    jQuery(targetAdd).append(`<option value="${element.id_county}">${element.name}</option>`);
+                    jQuery(targetEdit).append(`<option value="${element.id_county}">${element.name}</option>`);
+                });
+
+                jQuery(targetAdd).trigger('change');
+                jQuery(targetEdit).trigger('change');
+            }
+        }
+    });
+
+    return result;
+}
+
+
+
+    let PASupplierPeople = function () {
+    // Define shared variables (not accessible outside this block)
+    let datatable;
+    let table;
+    let reloadButton;
+    let add_button;
+    let timeoutSearchTyping;
+    let initialSearchValue = "";
+     let card_container;
+
+    // Private functions
+    var initDatatable = function () {
+        // Init datatable --- more info on datatables: https://datatables.net/manual/
+        datatable = $(table).DataTable({
+            ajax: {
+                "url": ajax_req + "ajax/func=cards&oper=getAllDatatable", // Flask route to get data
+                type: "POST",
+                data: function (data) {
+                    data.id_card_set = id_set;
+                }
+            },
+            "oSearch": {"sSearch": initialSearchValue},
+            pageLength: 25,
+            "info": false,
+            'order': [1, "ASC"],
+            serverSide: true,
+            'columns': [
+                    /*0*/{ data: "id_card", "visible": false },
+                    /*1*/{ data: "card_name" },
+                    /*2*/{ data: "number" },
+            ],
+            'columnDefs': [
+                {
+                    "targets": [0],
+                    "visible": false
+                },
+                {
+                    /*
+                    "targets": [9],
+                    "createdCell": function (td, cellData, rowData, row, col) {
+
+                        switch (parseInt(cellData))
+                        {
+                            case 0:
+                                $(td, td).html(`Installatore/Manutentore`);
+                                break;
+
+                            case 1:
+                                $(td, td).html(`Generico`);
+                                break;
+
+                        }
+
+                    }
+
+                     */
+                },
+            ],
+            "drawCallback": function (settings) {
+                PASupplierPeople.onReloadDone();
+            },
+        });
+
+        // Re-init functions on every table re-draw -- more info: https://datatables.net/reference/event/draw
+        datatable.on('draw', function () {
+            const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+        });
+
+    }
+
+    // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
+    var handleSearchDatatable = () => {
+        const filterSearch = document.querySelector('#table_cards-search_filter');
+        filterSearch.value = initialSearchValue;
+        filterSearch.addEventListener('keyup', function (e) {
+            if(timeoutSearchTyping) clearTimeout(timeoutSearchTyping);
+            timeoutSearchTyping = setTimeout(function() { datatable.search(e.target.value).draw() }, 500);
+        });
+    }
+
+    // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
+    var handleReloadTable = () => {
+        const reloadButton = document.querySelector('#table_cards-reload_button');
+        reloadButton.addEventListener('click', function (e) {
+            datatable.ajax.reload();
+        });
+    }
+
+
+
+    // Public methods
+    return {
+        reloadTable: function () {
+            datatable.ajax.reload();
+        },
+        onReloadDone: function () {
+            reloadButton.blur();
+        },
+        init: function () {
+            table = document.querySelector('#table_cards');
+            reloadButton = document.querySelector('#table_cards-reload_button');
+            add_button = document.querySelector('#table_cards-add_button');
+            card_container = $('#card-container');
+            if (!table) {
+                return;
+            }
+
+            initDatatable();
+            handleSearchDatatable();
+            handleReloadTable();
+        },
+        add: function() {
+            jQuery.ajax({
+                url: ajax_script + '?fun=supplier_people&oper=add',
+                type: 'POST',
+                data: {
+                    company_name: $('#add-suppliers_people-company_name').val(),
+                    vat_number: $('#add-suppliers_people-vat_number').val(),
+                    address: $('#add-suppliers_people-address').val(),
+                    postcode: $('#add-suppliers_people-postcode').val(),
+                    city: $('#add-suppliers_people-city').val(),
+                    county: $('#add-suppliers_people-counties').val(),
+                    region: $('#add-suppliers_people-regions').val(),
+                    telephone: $('#add-suppliers_people-telephone').val(),
+                    email: $('#add-suppliers_people-email').val(),
+                    areas_of_expertise: JSON.stringify($('#add-suppliers_people-areas-of-expertise').val()),
+                    enable: 1,
+                    type: $('#add-suppliers_people-type').val(),
+                },
+                async: true,
+                success: function (data) {
+                    errorModal.hide();
+                    if ((data = jQuery.trim(data)) == '') return;
+                    var parsedResult = checkAjaxResponse(data, false);
+                    if (!parsedResult) {
+                        var result = jQuery.parseJSON(data);
+                        PASupplierPeople.reloadTable();
+                        PASupplierPeopleAddModal.hideModal();
+                        showToast('Fornitore Aggiunto con successo.');
+                    } else {
+
+                        if (parsedResult == return_values.db_error) {
+                            setTimeout(function () {
+                                showError('Errore', 'Attenzione, si è verificato un errore interno al server. Riprovare più tardi.', '<button class="btn btn-light" data-bs-dismiss="modal" type="button">Chiudi</button>', true);
+                            }, 500);
+                        } else if (parsedResult == return_values.no_permission) {
+                            setTimeout(function () {
+                                showError('Errore', 'Attenzione, non si dispone dei permessi necessari a compiere l\'azione. Verrete rediretti alla Dashboard.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="window.location.replace(\'/plantlist.php\');" type="button">Chiudi</button>', true);
+                            }, 500);
+                        } else if (parsedResult == return_values.session_error) {
+                            setTimeout(function () {
+                                showError('Errore', 'Attenzione, la sessione è scaduta. Verrete rediretti alla pagina di login.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="window.location.replace(\'/index.php\');" type="button">Chiudi</button>', true);
+                            }, 500);
+                        }
+                    }
+                },
+            });
+        },
+        showDeleteModal: function (id) {
+            showDialog('Attenzione!', 'Eliminare il fornitore selezionato?', `<button class="btn btn-light" data-bs-dismiss="modal" type="button">Annulla</button><button class="btn btn-primary" onclick="PASupplierPeople.delete(${id})" data-bs-dismiss="modal" type="button">Conferma</button>`);
+        },
+        delete: function(id_supplier_people) {
+            jQuery.ajax({
+                url: ajax_script + '?fun=supplier_people&oper=delete',
+                type: 'POST',
+                data: {
+                    id_supplier_people: id_supplier_people
+                },
+                async: true,
+                success: function (data) {
+                    if ((data = jQuery.trim(data)) == '') return;
+                    var parsedResult = checkAjaxResponse(data, false);
+                    if (!parsedResult) {
+                        var result = jQuery.parseJSON(data);
+                        PASupplierPeople.reloadTable();
+                        showToast('Fornitore rimosso con successo.');
+                    } else {
+
+                        if (parsedResult == return_values.db_error) {
+                            setTimeout(function () {
+                                showError('Errore', 'Attenzione, si è verificato un errore interno al server. Riprovare più tardi.', '<button class="btn btn-light" data-bs-dismiss="modal" type="button">Chiudi</button>', true);
+                            }, 500);
+                        } else if (parsedResult == return_values.no_permission) {
+                            setTimeout(function () {
+                                showError('Errore', 'Attenzione, non si dispone dei permessi necessari a compiere l\'azione. Verrete rediretti alla Dashboard.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="window.location.replace(\'/plantlist.php\');" type="button">Chiudi</button>', true);
+                            }, 500);
+                        } else if (parsedResult == return_values.session_error) {
+                            setTimeout(function () {
+                                showError('Errore', 'Attenzione, la sessione è scaduta. Verrete rediretti alla pagina di login.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="window.location.replace(\'/index.php\');" type="button">Chiudi</button>', true);
+                            }, 500);
+                        }
+                    }
+                },
+            });
+        },
+    };
+}();
+
+
+
+
+
+    $(document).ready(function () {
+        PASupplierPeople.init();
+
+    });
+
+</script>
+
+
+
+<div class="card">
+   <!--begin::Card header-->
+   <div class="card-header border-0 pt-6">
+      <!--begin::Card title-->
+      <div class="card-title">
+         <div class="input-group w-250px ms-3 me-3">
+            <input type="text" id="table_cards-search_filter"
+               class="form-control form-control-solid rounded rounded-end-0 w-300px" placeholder="Cerca Seriale..."/>
+         </div>
+      </div>
+      <!--begin::Card title-->
+      <!--begin::Card toolbar-->
+      <div class="card-toolbar">
+         <!--begin::Toolbar-->
+         <div class="d-flex justify-content-end" data-kt-table-toolbar="base">
+            <!--end::Filter-->
+            <button id="table_cards-reload_button" type="button"
+               class="btn btn-secondary me-3 ps-3 pe-3" data-kt-table-filter="reload">
+            <i class="ki-duotone ki-arrows-circle fs-1 pe-0">
+            <span class="path1"></span>
+            <span class="path2"></span>
+            </i>
+            </button>
+            <button id="table_cards-add_button" type="button" class="btn btn-primary me-3 ps-3 pe-3">
+            <i class="fa fa-plus fs-1 pe-0"></i>
+            </button>
+         </div>
+         <!--end::Toolbar-->
+      </div>
+      <!--end::Card toolbar-->
+   </div>
+   <!--end::Card header-->
+   <!--begin::Card body-->
+   <div class="card-body pt-0">
+      <!--begin::Table-->
+      <div id="table" class="d-none">
+        <table class="table compact align-middle table-row-dashed fs-6 gy-1" id="table_cards">
+         <thead>
+            <tr class="text-start text-gray-400 fw-bold fs-7 text-uppercase gs-0">
+               <th>ID</th>
+               <th>Nome</th>
+               <th>Numero</th>
+            </tr>
+         </thead>
+         <tbody class="fw-semibold text-gray-600">
+         </tbody>
+         <!--end::Table body-->
+      </table>
+      </div>
+      <div id="card-container" class="w-90 d-flex flex-wrap gap-5">
+
+      </div>
+      <!--end::Table-->
+   </div>
+   <!--end::Card body-->
+</div>
+
+ <div id="pagination" class="row g-0 flex-nowrap d-flex align-items-center mt-3">
+
+ </div>
+
+
+
+
+{% include 'html_include/footer.html' %}
