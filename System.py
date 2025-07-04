@@ -1,24 +1,10 @@
-from sqlalchemy import create_engine, text, inspect
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+from sqlalchemy.orm import DeclarativeBase
 
-user = "root"
-password = ""
-port = 3306
-hostname = "localhost"
-database_name = "e-commerce"
+def engine():
+    url_connection = "postgresql://neondb_owner:npg_abcnWBkzpu43@ep-summer-firefly-a8kuk7p7-pooler.eastus2.azure.neon.tech/neondb?sslmode=require&channel_binding=require"
+    # Create SQLAlchemy engine globally
+    return create_engine(url_connection)
 
-# Create SQLAlchemy engine globally
-engine = create_engine(f'mysql+mysqlconnector://{user}:{password}@{hostname}:{port}/{database_name}')
-Session = sessionmaker(bind=engine)
-session = Session()
-
-
-def hasTable(table_name):
-    return inspect(engine).has_table(table_name)
-
-
-
-
-
-
-
+class Base(DeclarativeBase):
+    pass
