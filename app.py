@@ -1,69 +1,72 @@
-import datetime
+import datetime, os
 from flask import Flask, render_template, request, jsonify, url_for, redirect, flash
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
 
 from core.UsersClass import UsersClass
+from core.AddressClass import AddressClass
+from dotenv import load_dotenv
+from werkzeug.security import generate_password_hash
 
-app = Flask(__name__, static_folder='static')
-app.secret_key = '112233'
+
+load_dotenv()
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.getenv('FLASK-LOGIN-KEY')
+
 login_manager = LoginManager(app)
-login_manager.login_view = 'login'  # Redirect to login page if not logged in
+login_manager.init_app(app)
+
+# CALLBACK OBBLIGATORIO
+@login_manager.user_loader
+def load_user(email):
+    return UsersClass.get_by_email(email)
 
 
-def getParam(param: str):
-    if request.method == 'POST':
-        # Accessing POST data
-        data = request.form.get(param)
-    elif request.method == 'GET':
-        # Accessing GET data
-        data = request.args.get(param)
-    return data
-
-
+# Home Page
 @app.route('/')
-@login_required
-def hello_world():
-    # Redirect the user to /shop
-    return redirect(url_for('shop'))
+def home():
+    return 'ziocan'
 
 
-@app.route('/shop')
-@login_required
-def shop():
-    return render_template('public_html/shop.html')
-
-
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    userController = UsersClass.UsersClass()
+@app.route('/user_login', methods=['GET', 'POST'])
+def user_login():
     if request.method == 'POST':
-        username = request.form['username']
+        email = request.form['email']
         password = request.form['password']
-        user = userController.get_by_username(username)
-        if user and user.password == password:
+        
+        if UsersClass.validate_password(email, password):
+            user = UsersClass.get_by_email(email)
             login_user(user)
-            return redirect(url_for('shop'))
+            return redirect(url_for(''))
         else:
             flash('Login Unsuccessful. Please check username and password.', 'danger')
     return render_template('public_html/login.html')
 
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    userController = UsersClass.UsersClass()
+@app.route('/user_registration', methods=['GET', 'POST'])
+def user_registration():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
         email = request.form['email']
-        id_user_group = request.form['id_user_group']
-        sha1 = "some_sha1_value"
+        password = request.form['password']
+        tel = request.form['telefono']
+        civico = request.form['civico']
+        via = request.form['via']
+        citta = request.form['citta']
+        cod_postale = int(request.form['codice_postale'])
+        paese = request.form['paese']
 
-        if userController.get_by_username(username):
-            flash('Username already exists. Please choose another.', 'danger')
+        # Controlla che l'indirizzo esista, evita la ridondanza per persone che abitano assieme
+        addr = AddressClass.get_address(civico, via, citta, cod_postale, paese)
+        if addr:
+            id_addr = addr.id
         else:
-            userController.add(username, generate_password_hash(password), email, id_user_group, sha1)
+            addr = AddressClass.add(civico, via, citta, cod_postale, paese)
+            id_addr = addr.id
+
+        if UsersClass.get_by_email(email):
+            flash('A user with this mail already exists.', 'danger')
+        else:
+            UsersClass.add(email, generate_password_hash(password), tel, id_addr)
             flash('Your account has been created! You can now log in.', 'success')
             return redirect(url_for('login'))
     return render_template('public_html/register.html')

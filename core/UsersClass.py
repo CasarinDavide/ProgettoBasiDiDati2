@@ -1,14 +1,14 @@
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
 from sqlalchemy import ForeignKey
-from hashlib import sha256
+from werkzeug.security import generate_password_hash, check_password_hash
 from System import engine, Base
+from flask_login import UserMixin
 
-class UsersClass(Base):
+class UsersClass(UserMixin, Base):
     __tablename__ = 'users'
 
     # Attributi della tabella Users
-    id_user: Mapped[int] = mapped_column(primary_key=True)
-    email: Mapped[str] = mapped_column(unique=True, nullable=False)
+    email: Mapped[str] = mapped_column(primary_key=True)
     password: Mapped[str] = mapped_column(nullable=False)
     tel: Mapped[str] = mapped_column(unique=True, nullable=False)
     #ForeignKey -> Address
@@ -23,7 +23,6 @@ class UsersClass(Base):
 
     def to_dict(self):
         return {
-            'id_user': self.id_utente,
             'email': self.email,
             'password': self.password,
             'tel': self.tel,
@@ -31,37 +30,35 @@ class UsersClass(Base):
         }
 
     @classmethod
-    def add(cls, _id_user, _email, _password, _tel, _address):
-        with session(engine) as session:
+    def add(cls, _email, _password, _tel, _address):
+        with Session(engine) as session:
             record = cls(
-                id_user = _id_user,
                 email = _email,
-                password = sha256(_password).hexdigest(),
+                password = _password,
                 tel = _tel,
                 addr = _address
             )
             session.add(record)
+            session.commit()
+            return record
 
     @classmethod
     def get_all(cls):
-        with session(engine) as session:
+        with Session(engine()) as session:
             records = session.query(cls).all()
             return [record.to_dict() for record in records]
 
     @classmethod
     def get_by_email(cls, _email):
-        with session(engine) as session:
+        with Session(engine()) as session:
             return session.query(cls).filter_by(email=_email).first()
-
-    @classmethod
-    def get(cls, _id_utente):
-        with session(engine) as session:
-            return session.query(cls).filter_by(id_utente=_id_utente).first()
-
 
     @classmethod
     def validate_password(cls, email, password):
         user = cls.get_by_email(email)
-        if user and user.password == sha256(password).hexdigest():
+        if user and check_password_hash(user.password, password):
             return True  # Password is correct
         return False  # Password is incorrect
+    
+    def get_id(self):
+        return self.id
