@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session, Mapped, mapped_column, relationship
 from System import engine, Base
 
-class AddressClass(Base):
-    __tablename__ = 'address'
+class AddressesClass(Base):
+    __tablename__ = 'addresses'
 
     # Attributi della tabella Address
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -13,7 +13,7 @@ class AddressClass(Base):
     paese: Mapped[str] = mapped_column(nullable=False)
 
     # Lista di Users a cui è associato l'indirizzo
-    users = relationship('UsersClass', back_populates="address")
+    users_rel = relationship('UsersClass', back_populates="address_rel")
 
     @classmethod
     def add(cls, _civico, _via, _citta, _cod_postale, _paese):

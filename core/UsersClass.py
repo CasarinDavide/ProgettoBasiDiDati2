@@ -12,11 +12,11 @@ class UsersClass(UserMixin, Base):
     password: Mapped[str] = mapped_column(nullable=False)
     tel: Mapped[str] = mapped_column(unique=True, nullable=False)
     #ForeignKey -> Address
-    addr: Mapped[int] = mapped_column(ForeignKey('address.id_address'), nullable=False)
+    address_id: Mapped[int] = mapped_column(ForeignKey('addresses.id'), nullable=False)
 
     # Address associato all'utente
     # la stringa in 'back_populates' corrisponde al nome dell'attributo presente nell'altra classe (non al nome della classe)   
-    address = relationship('AddressClass', back_populates='users')
+    address_rel = relationship('AddressesClass', back_populates='users_rel')
 
     #alternativa: relationship(Address, backref='users')
     #questo metodo permette di togliere l'attributo users da Address perché lo crea da solo, ma mi pareva più chiaro usare 'back_populates' normale
@@ -26,20 +26,21 @@ class UsersClass(UserMixin, Base):
             'email': self.email,
             'password': self.password,
             'tel': self.tel,
-            'address': self.addr
+            'address': self.address
         }
 
     @classmethod
     def add(cls, _email, _password, _tel, _address):
-        with Session(engine) as session:
+        with Session(engine()) as session:
             record = cls(
                 email = _email,
                 password = _password,
                 tel = _tel,
-                addr = _address
+                address_id = _address
             )
             session.add(record)
             session.commit()
+            session.flush(record)
             return record
 
     @classmethod

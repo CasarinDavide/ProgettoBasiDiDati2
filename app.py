@@ -3,7 +3,7 @@ from flask import Flask, render_template, request, jsonify, url_for, redirect, f
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
 from core.UsersClass import UsersClass
-from core.AddressClass import AddressClass
+from core.AddressesClass import AddressesClass
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash
 
@@ -40,7 +40,7 @@ def user_login():
             return redirect(url_for(''))
         else:
             flash('Login Unsuccessful. Please check username and password.', 'danger')
-    return render_template('public_html/login.html')
+    return render_template('public_html/user_login.html')
 
 
 @app.route('/user_registration', methods=['GET', 'POST'])
@@ -48,19 +48,19 @@ def user_registration():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        tel = request.form['telefono']
+        tel = request.form['tel']
         civico = request.form['civico']
         via = request.form['via']
         citta = request.form['citta']
-        cod_postale = int(request.form['codice_postale'])
+        cod_postale = int(request.form['cod_postale'])
         paese = request.form['paese']
 
         # Controlla che l'indirizzo esista, evita la ridondanza per persone che abitano assieme
-        addr = AddressClass.get_address(civico, via, citta, cod_postale, paese)
+        addr = AddressesClass.get_address(civico, via, citta, cod_postale, paese)
         if addr:
             id_addr = addr.id
         else:
-            addr = AddressClass.add(civico, via, citta, cod_postale, paese)
+            addr = AddressesClass.add(civico, via, citta, cod_postale, paese)
             id_addr = addr.id
 
         if UsersClass.get_by_email(email):
