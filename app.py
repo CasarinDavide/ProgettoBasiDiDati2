@@ -18,18 +18,23 @@ login_manager.init_app(app)
 
 # CALLBACK OBBLIGATORIO
 @login_manager.user_loader
-def load_user(email):
-    return UsersClass.get_by_email(email)
-
+def load_user(user_id):
+    return UsersClass.get_by_id(user_id)
 
 # Home Page
 @app.route('/')
 def home():
-    return 'ziocan'
+    if current_user.is_authenticated:
+        return render_template('./public_html/home.html', user = current_user.get_id())
+    
+    return render_template('./public_html/home.html')
 
 
 @app.route('/user_login', methods=['GET', 'POST'])
 def user_login():
+    if current_user.is_authenticated:
+        return 'You are already authenticated'
+
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
@@ -37,11 +42,12 @@ def user_login():
         if UsersClass.validate_password(email, password):
             user = UsersClass.get_by_email(email)
             login_user(user)
-            return redirect(url_for(''))
+            return redirect('/')
         else:
-            flash('Login Unsuccessful. Please check username and password.', 'danger')
-    return render_template('public_html/user_login.html')
-
+            flash('Login Unsuccessful. Please check email and password.', 'danger')
+            return redirect('/user_login')
+        
+    return render_template('public_html/login.html')
 
 @app.route('/user_registration', methods=['GET', 'POST'])
 def user_registration():
@@ -76,7 +82,7 @@ def user_registration():
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('login'))
+    return redirect(url_for('user_login'))
 
 
 @app.route("/ajax/<path:params>", methods=["GET", "POST"])

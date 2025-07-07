@@ -1,16 +1,18 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
 from sqlalchemy import ForeignKey
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import check_password_hash
 from System import engine, Base
 from flask_login import UserMixin
 
+#UserMixin è la classe da ereditare per Flask-Login
 class UsersClass(UserMixin, Base):
     __tablename__ = 'users'
 
     # Attributi della tabella Users
-    email: Mapped[str] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(nullable=False)
     password: Mapped[str] = mapped_column(nullable=False)
-    tel: Mapped[str] = mapped_column(unique=True, nullable=False)
+    tel: Mapped[str] = mapped_column(nullable=False)
     #ForeignKey -> Address
     address_id: Mapped[int] = mapped_column(ForeignKey('addresses.id'), nullable=False)
 
@@ -30,17 +32,17 @@ class UsersClass(UserMixin, Base):
         }
 
     @classmethod
-    def add(cls, _email, _password, _tel, _address):
+    def add(cls, email, password, tel, address):
         with Session(engine()) as session:
             record = cls(
-                email = _email,
-                password = _password,
-                tel = _tel,
-                address_id = _address
+                email = email,
+                password = password,
+                tel = tel,
+                address_id = address
             )
             session.add(record)
             session.commit()
-            session.flush(record)
+            session.refresh(record)
             return record
 
     @classmethod
@@ -53,6 +55,11 @@ class UsersClass(UserMixin, Base):
     def get_by_email(cls, _email):
         with Session(engine()) as session:
             return session.query(cls).filter_by(email=_email).first()
+    
+    @classmethod
+    def get_by_id(cls, user_id):
+        with Session(engine()) as session:
+            return session.query(cls).filter_by(id=user_id).first()
 
     @classmethod
     def validate_password(cls, email, password):
@@ -62,4 +69,4 @@ class UsersClass(UserMixin, Base):
         return False  # Password is incorrect
     
     def get_id(self):
-        return self.id
+        return str(self.id)

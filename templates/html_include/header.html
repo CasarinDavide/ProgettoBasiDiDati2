@@ -1,61 +1,57 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<script>
-    var ajax_req = 'http://127.0.0.1:5000/';
-</script>
-<header>
-    <div class="px-3 py-2 bg-dark border-bottom">
-        <div class="container-fluid">
-            <div class="d-flex flex-wrap justify-content-lg-start">
-                <a href="/" class="d-flex my-2 my-lg-0 me-lg-auto text-white text-decoration-none">
-                    <svg class="bi me-2" width="40" height="32" role="img" aria-label="Bootstrap"><use xlink:href="#bootstrap"></use></svg>
+<header class="bg-primary text-white py-3">
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center">
+            <!-- Brand -->
+            <a href="/" class="text-white text-decoration-none">
+                <i class="fas fa-plane me-2"></i>
+                <span class="h4 mb-0">Tri-Voli</span>
+            </a>
+            
+            <!-- Navigation -->
+            <nav class="d-flex gap-4">
+                <a href="#" class="text-white text-decoration-none">
+                    <i class="fas fa-user me-1"></i>
+                    Profilo
                 </a>
-
-                <ul class="nav col-12 col-lg-auto my-2 my-md-0 text-small">
-
-                    <li>
-                        <a href="#" class="nav-link text-secondary">
-                            <svg class="bi d-block mx-auto mb-1" width="24" height="24"></svg>
-                            Profilo
-                        </a>
-                    </li>
-
-                    <li>
-                        <a href="#" class="nav-link text-secondary">
-                            <svg class="bi d-block mx-auto mb-1" width="24" height="24"></svg>
-                            Ordini Effettuati
-                        </a>
-                    </li>
-                    <li>
-                        <svg class="bi d-block mx-auto mb-1" width="24" height="24"></svg>
-                        <a href="#" class="nav-link text-white">
-                            Carrello
-                        </a>
-                    </li>
-
-                </ul>
-            </div>
+                <a href="#" class="text-white text-decoration-none">
+                    <i class="fas fa-ticket-alt me-1"></i>
+                    I Miei Biglietti
+                </a>
+                {% if not user %}
+                <a href="/user_login" class="text-white text-decoration-none">
+                    <i class="fas fa-sign-in-alt me-1"></i>
+                    Login
+                </a>
+                {% else %}
+                <a href="/logout" class="text-white text-decoration-none">
+                    <i class="fas fa-sign-out-alt me-1"></i>
+                    Logout
+                </a>
+                {% endif %}
+            </nav>
         </div>
     </div>
-    <div class="px-3 py-2 border-bottom mb-3">
-        <div class="container-fluid d-flex flex-wrap justify-content-center">
-            <form class="col-8 col-lg-4 mb-2 mb-lg-0 me-lg-auto" role="search">
-                <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1">
-                        <i class="bi bi-search" id="search-icon"></i>
-                    </span>
-                    <input type="text" class="form-control rounded" placeholder="Cerca..." aria-label="search-input" aria-describedby="basic-addon1">
-                </div>
-            </form>
-            <div class="text-end">
-                <button type="button" class="btn btn-light text-dark me-2">Login</button>
-                <button type="button" class="btn btn-primary">Sign-up</button>
-            </div>
-        </div>
-
-    </div>
-
 </header>
 
-</html>
+<!-- Font Awesome CDN -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+<style>
+/* Stili minimi per migliorare l'aspetto */
+header a:hover {
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    header nav {
+        flex-direction: column;
+        gap: 1rem !important;
+    }
+    
+    header .d-flex {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
+</style>
