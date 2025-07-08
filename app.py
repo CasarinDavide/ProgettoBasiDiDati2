@@ -1,5 +1,5 @@
 import datetime, os
-from flask import Flask, render_template, request, jsonify, url_for, redirect, flash
+from flask import Flask, render_template, request, url_for, redirect, flash, session
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 
 from core.UsersClass import UsersClass
@@ -25,7 +25,8 @@ def load_user(user_id):
 @app.route('/')
 def home():
     if current_user.is_authenticated:
-        return render_template('./public_html/home.html', user = current_user.get_id())
+        mail = UsersClass.get_by_id(current_user.get_id()).email
+        return render_template('./public_html/home.html', user = mail)
     
     return render_template('./public_html/home.html')
 
@@ -38,10 +39,11 @@ def user_login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
+        remind = request.form.get('remind_me') != None
         
         if UsersClass.validate_password(email, password):
             user = UsersClass.get_by_email(email)
-            login_user(user)
+            login_user(user, remember = remind )
             return redirect('/')
         else:
             flash('Login Unsuccessful. Please check email and password.', 'danger')
@@ -74,7 +76,7 @@ def user_registration():
         else:
             UsersClass.add(email, generate_password_hash(password), tel, id_addr)
             flash('Your account has been created! You can now log in.', 'success')
-            return redirect(url_for('login'))
+            return redirect(url_for('user_login'))
     return render_template('public_html/register.html')
 
 
@@ -83,17 +85,6 @@ def user_registration():
 def logout():
     logout_user()
     return redirect(url_for('user_login'))
-
-
-@app.route("/ajax/<path:params>", methods=["GET", "POST"])
-def ajax(params):
-    # Extracting func and oper from the params string
-    func, oper = params.split('&')
-    func = func.split('=')[1]  # Extracting value of func
-    oper = oper.split('=')[1]  # Extracting value of oper
-
-    return jsonify({'error': 'Invalid operation'}), 400
-
 
 if __name__ == '__main__':
     app.run(debug=True)

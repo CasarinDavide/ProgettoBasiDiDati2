@@ -1,17 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block title %} Login - TriViaggi {% endblock title %}
+
+{% block main_content %}
+
 <h2>Login</h2>
 <form method="POST">
     <input type="email" name="email" placeholder="E-mail" required>
     <input type="password" name="password" placeholder="Password" required>
+    <input type="checkbox" name="remind_me"> Remind Me
     <button type="submit">Login</button>
 </form>
 <p>Don't have an account? <a href="{{ url_for('user_registration') }}">Register</a></p>
-</body>
-</html>
+
+{% endblock main_content %}
