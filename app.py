@@ -56,6 +56,9 @@ def user_registration():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
+        nome = request.form['nome']
+        cognome = request.form['cognome']
+        prefisso = request.form['prefisso']
         tel = request.form['tel']
         civico = request.form['civico']
         via = request.form['via']
@@ -74,7 +77,7 @@ def user_registration():
         if UsersClass.get_by_email(email):
             flash('A user with this mail already exists.', 'danger')
         else:
-            UsersClass.add(email, generate_password_hash(password), tel, id_addr)
+            UsersClass.add(email, generate_password_hash(password), nome, cognome, prefisso+tel, id_addr)
             flash('Your account has been created! You can now log in.', 'success')
             return redirect(url_for('user_login'))
     return render_template('public_html/register.html')

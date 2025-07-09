@@ -12,6 +12,8 @@ class UsersClass(UserMixin, Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(nullable=False)
     password: Mapped[str] = mapped_column(nullable=False)
+    nome: Mapped[str] = mapped_column(nullable=False)
+    cognome: Mapped[str] = mapped_column(nullable=False)
     tel: Mapped[str] = mapped_column(nullable=False)
     #ForeignKey -> Address
     address_id: Mapped[int] = mapped_column(ForeignKey('addresses.id'), nullable=False)
@@ -25,18 +27,23 @@ class UsersClass(UserMixin, Base):
 
     def to_dict(self):
         return {
+            'id': self.id,
             'email': self.email,
             'password': self.password,
+            'nome': self.nome,
+            'cognome': self.cognome,
             'tel': self.tel,
             'address': self.address
         }
 
     @classmethod
-    def add(cls, email, password, tel, address):
+    def add(cls, email, password, nome, cognome, tel, address):
         with Session(engine()) as session:
             record = cls(
                 email = email,
                 password = password,
+                nome = nome,
+                cognome = cognome,
                 tel = tel,
                 address_id = address
             )
