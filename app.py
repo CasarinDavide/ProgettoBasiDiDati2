@@ -1,11 +1,21 @@
-import datetime, os
+import os
 from flask import Flask, render_template, request, url_for, redirect, flash, session
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-
-from core.UsersClass import UsersClass
-from core.AddressesClass import AddressesClass
-from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash
+
+from core.IndirizziClass import IndirizziClass
+from core.PasseggeriClass import PasseggeriClass
+from core.CompagnieClass import CompagnieClass
+from core.DipendentiClass import DipendentiClass
+from core.ViaggiClass import ViaggiClass
+from core.AereiClass import AereiClass
+from core.AereoportiClass import AereoportiClass
+from core.DataPartenzeClass import DataPartenzeClass
+from core.EffettuanoClass import EffettuanoClass
+from core.BigliettiClass import BigliettiClass
+from core.VoliClass import VoliClass
+
+from dotenv import load_dotenv
 
 
 load_dotenv()
@@ -19,13 +29,13 @@ login_manager.init_app(app)
 # CALLBACK OBBLIGATORIO
 @login_manager.user_loader
 def load_user(user_id):
-    return UsersClass.get_by_id(user_id)
+    return PasseggeriClass.get_by_id(user_id)
 
 # Home Page
 @app.route('/')
 def home():
     if current_user.is_authenticated:
-        mail = UsersClass.get_by_id(current_user.get_id()).email
+        mail = PasseggeriClass.get_by_id(current_user.get_id()).email
         return render_template('./public_html/home.html', user = mail)
     
     return render_template('./public_html/home.html')
@@ -41,8 +51,8 @@ def user_login():
         password = request.form['password']
         remind = request.form.get('remind_me') != None
         
-        if UsersClass.validate_password(email, password):
-            user = UsersClass.get_by_email(email)
+        if PasseggeriClass.validate_password(email, password):
+            user = PasseggeriClass.get_by_email(email)
             login_user(user, remember = remind )
             return redirect('/')
         else:
@@ -54,12 +64,17 @@ def user_login():
 @app.route('/user_registration', methods=['GET', 'POST'])
 def user_registration():
     if request.method == 'POST':
+        #Informazioni principali passeggero
         email = request.form['email']
         password = request.form['password']
         nome = request.form['nome']
         cognome = request.form['cognome']
         prefisso = request.form['prefisso']
         tel = request.form['tel']
+        nascita = request.form['nascita']
+        saldo = 0.0
+
+        #Indirizzo passeggero
         civico = request.form['civico']
         via = request.form['via']
         citta = request.form['citta']
@@ -67,17 +82,17 @@ def user_registration():
         paese = request.form['paese']
 
         # Controlla che l'indirizzo esista, evita la ridondanza per persone che abitano assieme
-        addr = AddressesClass.get_address(civico, via, citta, cod_postale, paese)
+        addr = IndirizziClass.get_address(civico, via, citta, cod_postale, paese)
         if addr:
             id_addr = addr.id
         else:
-            addr = AddressesClass.add(civico, via, citta, cod_postale, paese)
+            addr = IndirizziClass.add(civico, via, citta, cod_postale, paese)
             id_addr = addr.id
 
-        if UsersClass.get_by_email(email):
+        if PasseggeriClass.get_by_email(email):
             flash('A user with this mail already exists.', 'danger')
         else:
-            UsersClass.add(email, generate_password_hash(password), nome, cognome, prefisso+tel, id_addr)
+            PasseggeriClass.add(email, generate_password_hash(password), nome, cognome, prefisso+tel, nascita, saldo, id_addr)
             flash('Your account has been created! You can now log in.', 'success')
             return redirect(url_for('user_login'))
     return render_template('public_html/register.html')
