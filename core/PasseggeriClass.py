@@ -4,14 +4,26 @@ from datetime import datetime
 from werkzeug.security import check_password_hash
 from System import engine, Base
 from flask_login import UserMixin
-
+"""
+CREATE TABLE dev.Passeggeri (
+                                id_passeggero SERIAL PRIMARY KEY,
+                                email VARCHAR(200) UNIQUE NOT NULL,
+                                password VARCHAR(255) NOT NULL,
+                                nome VARCHAR(200) NOT NULL,
+                                cognome VARCHAR(200) NOT NULL,
+                                tel VARCHAR(20) NOT NULL,
+                                nascita DATE NOT NULL,
+                                address_id INTEGER REFERENCES dev.Indirizzi(address_id) ON DELETE SET NULL,
+                                saldo REAL NOT NULL
+);
+"""
 #UserMixin è la classe da ereditare per Flask-Login
 class PasseggeriClass(UserMixin, Base):
     __tablename__ = 'Passeggeri'
     __table_args__ = { 'schema': 'dev' }
 
     # Attributi della tabella Users
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id_passeggero: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(nullable=False, unique=True)
     password: Mapped[str] = mapped_column(nullable=False)
     nome: Mapped[str] = mapped_column(nullable=False)
@@ -21,7 +33,7 @@ class PasseggeriClass(UserMixin, Base):
     saldo: Mapped[float] = mapped_column(nullable=False)
     
     #ForeignKey -> Address
-    address_id: Mapped[int] = mapped_column(ForeignKey('dev.Indirizzi.id'), nullable=False)
+    address_id: Mapped[int] = mapped_column(ForeignKey('dev.Indirizzi.address_id'), nullable=False)
 
     # Address associato all'utente
     # la stringa in 'back_populates' corrisponde al nome dell'attributo presente nell'altra classe (non al nome della classe)   
@@ -35,7 +47,7 @@ class PasseggeriClass(UserMixin, Base):
 
     def to_dict(self):
         return {
-            'id': self.id,
+            'id': self.id_passeggero,
             'email': self.email,
             'password': self.password,
             'nome': self.nome,
@@ -43,7 +55,7 @@ class PasseggeriClass(UserMixin, Base):
             'tel': self.tel,
             'nascita': self.nascita,
             'saldo': self.saldo,
-            'address': self.address
+            'address': self.address_id
         }
 
     @classmethod
@@ -88,4 +100,4 @@ class PasseggeriClass(UserMixin, Base):
         return False  # Password is incorrect
     
     def get_id(self):
-        return str(self.id)
+        return str(self.id_passeggero)

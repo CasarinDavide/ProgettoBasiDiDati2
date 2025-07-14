@@ -16,7 +16,8 @@ from core.BigliettiClass import BigliettiClass
 from core.VoliClass import VoliClass
 
 from dotenv import load_dotenv
-
+from System import getParam
+from services import Compagnie_service
 
 load_dotenv()
 
@@ -39,6 +40,19 @@ def home():
         return render_template('./public_html/home.html', user = mail)
     
     return render_template('./public_html/home.html')
+
+
+@app.route('/admin_settings', methods=['GET', 'POST'])
+def admin_settings():
+    print(request.method)
+    option = getParam("oper")
+    print(request.args)
+    print(option)
+    if option is None:
+        return render_template('./public_html/admin_settings.html')
+    else:
+        function_actions()
+    return None
 
 
 @app.route('/user_login', methods=['GET', 'POST'])
@@ -104,5 +118,31 @@ def logout():
     logout_user()
     return redirect(url_for('user_login'))
 
+
+def function_actions():
+    target = getParam("fun")
+    action = getParam("oper")
+
+    # datatable standard
+    draw = int(request.args.get('draw', 1))
+    start = int(request.args.get('start', 0))  # offset
+    length = int(request.args.get('length', 10))  # page size
+    search_value = request.args.get('search[value]', '')
+    ####
+
+    if target == "compagnia_aerea":
+        if action == "add":
+            return Compagnie_service.add_compagnie(getParam("email"),getParam("password"),getParam("tel"), getParam("nome"),getParam("address_id"))
+        elif action == "getAllDatatable":
+            return Compagnie_service.get_compagnie_datatable(draw,start,length,search_value)
+
+        return None
+
+    return None
+
+
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+

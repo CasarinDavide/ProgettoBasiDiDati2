@@ -1,3 +1,4 @@
+from flask import request
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase
 from dotenv import load_dotenv
@@ -10,3 +11,7 @@ def engine():
 
 class Base(DeclarativeBase):
     pass
+
+def getParam(param: str):
+    merged_params = request.args.to_dict() | request.form.to_dict()
+    return merged_params.get(param)

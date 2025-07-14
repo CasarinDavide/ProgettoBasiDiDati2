@@ -1,57 +1,169 @@
-<header class="bg-primary text-white py-3">
-    <div class="container-fluid">
-        <div class="d-flex justify-content-between align-items-center">
-            <!-- Brand -->
-            <a href="/" class="text-white text-decoration-none">
-                <i class="fas fa-plane me-2"></i>
-                <span class="h4 mb-0">Tri-Voli</span>
-            </a>
-            
-            <!-- Navigation -->
-            <nav class="d-flex gap-4">
-                <a href="#" class="text-white text-decoration-none">
-                    <i class="fas fa-user me-1"></i>
-                    Profilo
-                </a>
-                <a href="#" class="text-white text-decoration-none">
-                    <i class="fas fa-ticket-alt me-1"></i>
-                    I Miei Biglietti
-                </a>
-                {% if not user %}
-                <a href='/user_login' class="text-white text-decoration-none">
-                    <i class="fas fa-sign-in-alt me-1"></i>
-                    Login
-                </a>
-                {% else %}
-                <a href="/logout" class="text-white text-decoration-none">
-                    <i class="fas fa-sign-out-alt me-1"></i>
-                    Logout
-                </a>
+<body  id="kt_app_body" data-kt-app-layout="light-header" data-kt-app-header-fixed="true" data-kt-app-toolbar-enabled="true"   class="app-default" >
+<!--layout-partial:partials/theme-mode/_init.html-->
+<!--begin::Theme mode setup on page load-->
+<script>
+    var defaultThemeMode = "light";
+    var themeMode;
+    if ( document.documentElement ) {
+        if ( document.documentElement.hasAttribute("data-bs-theme-mode")) {
+            themeMode = document.documentElement.getAttribute("data-bs-theme-mode");
+        } else {
+            if ( localStorage.getItem("data-bs-theme") !== null ) {
+                themeMode = localStorage.getItem("data-bs-theme");
+            } else {
+                themeMode = defaultThemeMode;
+            }
+        }
+        if (themeMode === "system") {
+            themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        document.documentElement.setAttribute("data-bs-theme", themeMode);
+    }
+</script>
+
+
+<!--end::Vendors Javascript-->
+<script type="text/javascript">
+
+    // Gestione modale di errore generico
+    let errorModal;
+    let toastMessage;
+
+    function showError(title, body, footer, islocking) {
+        if (islocking === undefined) {
+            islocking = false;
+        }
+        $('#error-title').html(title);
+        $('#error-body').html(body);
+
+        if(footer !== "") {
+            $('#error-footer').html(footer);
+        }
+
+        errorModal.show();
+    }
+
+    function hideError() {
+        errorModal.hide();
+    }
+
+    function showToast(body='') {
+        $('#toast-body').html(body);
+        toastMessage.show();
+    }
+
+    // On document ready
+    KTUtil.onDOMContentLoaded(function () {
+        errorModal = new bootstrap.Modal(document.querySelector('#error-modal'));
+        toastMessage = bootstrap.Toast.getOrCreateInstance(document.querySelector('#toast-container'));
+    });
+
+
+</script>
+<!--end::Theme mode setup on page load--><!--layout-partial:layout/_default.html-->
+<!--begin::App-->
+<div class="d-flex flex-column flex-root app-root" id="kt_app_root">
+
+    <style>
+        .table thead tr {
+            background-color:#0143A3; color:white!important;
+        }
+        .table thead tr th:first-child{
+            padding-left: 5px!important;
+        }
+        .menu-item .menu-link .menu-icon {
+            width: 3rem;
+        }
+        .menu-item {
+            min-width: 8rem;
+        }
+
+        .app-header {
+            border-bottom: 1px solid #eaeaea;
+            background-color: #fff;
+            z-index: 1000;
+        }
+
+        .app-header a:hover {
+            color: #007bff;
+        }
+
+        .bg-ryanair-blue {
+            background-color: #0143A3;
+        }
+
+        .btn-warning {
+            background-color: #FFCC00;
+            border: none;
+        }
+
+        .btn-warning:hover {
+            background-color: #e6b800;
+        }
+
+    </style>
+
+    <!--begin::Page-->
+    <div class="app-page  flex-column flex-column-fluid " id="kt_app_page">
+        <!--begin::Header-->
+        <header class="app-header bg-ryanair-blue text-white py-3 px-4 d-flex justify-content-between align-items-center shadow-sm">
+            <!-- Left: Logo & Navigation -->
+            <div class="d-flex align-items-center gap-4">
+                <!-- Logo -->
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="h-300px cursor-pointer" onclick="location.href='./index.php';" />
+
+                {% if request.path != '/user_login' %}
+                <!-- Navigation -->
+                <nav class="d-flex gap-10 fs-3 fw-semibold">
+                    <a href="#" class="text-white text-decoration-none d-flex align-items-center">
+                        <i class="fas fa-plane fa-lg me-2"></i> Pianifica
+                    </a>
+                    <a href="#" class="text-white text-decoration-none d-flex align-items-center">
+                        <i class="fas fa-ticket-alt fa-lg me-2"></i> I Miei Biglietti
+                    </a>
+                </nav>
                 {% endif %}
-            </nav>
-        </div>
-    </div>
-</header>
+            </div>
 
-<!-- Font Awesome CDN -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+            {% if request.path != '/user_login' %}
 
-<style>
-/* Stili minimi per migliorare l'aspetto */
-header a:hover {
-    opacity: 0.8;
-    transition: opacity 0.3s ease;
-}
+            <!-- Right: User Menu & Auth -->
+            <div class="d-flex align-items-center gap-10 fs-3">
+                {% if not user %}
+                    <a href="/user_login" class="text-white text-decoration-none">
+                        <i class="fas fa-sign-in fa-2x me-2"></i>
+                        Accedi</a>
+                {% else %}
+                    <a href="user-detail.php" class="text-white text-decoration-none">Ciao, Davide</a>
+                    <a href="/logout" class="text-white text-decoration-none d-flex align-items-center">
+                        <i class="fas fa-sign-out fa-2x me-2"></i>Logout
+                    </a>
+                {% endif %}
 
-@media (max-width: 768px) {
-    header nav {
-        flex-direction: column;
-        gap: 1rem !important;
-    }
-    
-    header .d-flex {
-        flex-direction: column;
-        gap: 1rem;
-    }
-}
-</style>
+                <a href="#" class="btn btn-primary fw-semibold rounded-pill px-3 text-dark">
+                    Portale Autorizzati
+                </a>
+            </div>
+            {% endif %}
+
+        </header>
+
+
+
+        <!--end::Header-->
+        <!--begin::Wrapper-->
+        <div class="app-wrapper  flex-column flex-row-fluid " id="kt_app_wrapper">
+            <!--layout-partial:layout/partials/_sidebar.html-->
+
+            <!--begin::Main-->
+            <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
+                <!--begin::Content wrapper-->
+                <div class="d-flex flex-column flex-column-fluid">
+
+                    <!--begin::Content-->
+                    <div id="kt_app_content" class="app-content  flex-column-fluid pt-0">
+                        <!--begin::Content container-->
+                        <div id="kt_app_content_container" class="app-container  container-fluid ">
+                            <div class="flex-column flex-lg-row-auto w-100  mb-10 mb-lg-0 mt-5">
+
+

@@ -1,0 +1,17 @@
+var return_values = {};
+return_values.ok = 0;
+return_values.db_error = 1;
+return_values.session_error = 13;
+return_values.no_permission = 12;
+return_values.empty_param_not_allowed = 16;
+return_values.param_1_occupied = 17;
+return_values.param_2_occupied = 18;
+return_values.param_3_occupied = 19;
+return_values.param_4_occupied = 20;
+return_values.param_5_occupied = 21;
+return_values.error_param_1 = 22;
+return_values.error_param_2 = 23;
+return_values.error_param_3 = 24;
+return_values.error_param_4 = 25;
+return_values.error_param_5 = 26;
+return_values.insert_query_ok = 100;

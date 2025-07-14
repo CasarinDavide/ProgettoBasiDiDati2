@@ -1,13 +1,24 @@
 from sqlalchemy.orm import Session, Mapped, mapped_column, relationship
 from System import engine, Base
 
+"""
+CREATE TABLE dev.Indirizzi (
+    address_id SERIAL PRIMARY KEY,
+civico VARCHAR(200) NOT NULL,
+via VARCHAR(200) NOT NULL,
+citta VARCHAR(100) NOT NULL,
+cod_postale INTEGER NOT NULL,
+paese VARCHAR(100) NOT NULL
+);
+"""
+
 class IndirizziClass(Base):
     __tablename__ = 'Indirizzi'
     __table_args__ = { 'schema': 'dev' }
 
 
     # Attributi della tabella Address
-    id: Mapped[int] = mapped_column(primary_key=True)
+    address_id: Mapped[int] = mapped_column(primary_key=True)
     civico: Mapped[str] = mapped_column(nullable=False)
     via: Mapped[str] = mapped_column(nullable=False)
     citta: Mapped[str] = mapped_column(nullable=False)
