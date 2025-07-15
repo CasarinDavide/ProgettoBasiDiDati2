@@ -13,7 +13,7 @@ class EffettuanoClass(Base):
     __table_args__ = { 'schema': 'dev' }
     
     # FK -> Compagnie
-    id_compagnia: Mapped[int] = mapped_column(ForeignKey('dev.Compagnie.id_compagnie'), primary_key=True)
+    id_compagnia: Mapped[int] = mapped_column(ForeignKey('dev.Compagnie.id_compagnia'), primary_key=True)
     compagnia_rel = relationship('CompagnieClass', back_populates='effettuano_rel')
     
     # FK -> Viaggi

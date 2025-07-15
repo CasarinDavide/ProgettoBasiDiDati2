@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
 from flask_login import UserMixin
 """
 CREATE TABLE dev.Compagnie (
-                               id_compagnie SERIAL PRIMARY KEY,
+                               id_compagnia SERIAL PRIMARY KEY,
                                email VARCHAR(200) UNIQUE NOT NULL,
                                password VARCHAR(255) NOT NULL,
                                tel VARCHAR(20) NOT NULL,
@@ -25,7 +25,7 @@ class CompagnieClass(UserMixin, Base):
     __table_args__ = { 'schema': 'dev' }
 
 
-    id_compagnie: Mapped[int] = mapped_column(primary_key=True)
+    id_compagnia: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(unique=True, nullable=False)
     password: Mapped[str] = mapped_column(nullable=False)
     tel: Mapped[str] = mapped_column(nullable=False)
@@ -46,5 +46,5 @@ class CompagnieClass(UserMixin, Base):
     effettuano_rel = relationship('EffettuanoClass', back_populates='compagnia_rel')
 
 
-
-
+    def get_id(self):
+        return str(self.id_compagnia)

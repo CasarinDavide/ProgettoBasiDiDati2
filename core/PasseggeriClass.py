@@ -90,7 +90,7 @@ class PasseggeriClass(UserMixin, Base):
     @classmethod
     def get_by_id(cls, user_id):
         with Session(engine()) as session:
-            return session.query(cls).filter_by(id=user_id).first()
+            return session.query(cls).filter_by(id_passeggero=user_id).first()
 
     @classmethod
     def validate_password(cls, email, password):

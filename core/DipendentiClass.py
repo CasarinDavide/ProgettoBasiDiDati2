@@ -5,7 +5,7 @@ from flask_login import UserMixin
 
 """
 CREATE TABLE dev.Dipendenti (
-                                id_dipendenti SERIAL PRIMARY KEY,
+                                id_dipendente SERIAL PRIMARY KEY,
                                 email VARCHAR(200) UNIQUE NOT NULL,
                                 password VARCHAR(255) NOT NULL,
                                 tel VARCHAR(20) NOT NULL,
@@ -20,7 +20,7 @@ class DipendentiClass(UserMixin, Base):
     __table_args__ = { 'schema': 'dev' }
 
 
-    id_dipendenti: Mapped[int] = mapped_column(primary_key=True)
+    id_dipendente: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(unique=True, nullable=False)
     password: Mapped[str] = mapped_column(nullable=False)
     tel: Mapped[str] = mapped_column(nullable=False)
@@ -28,5 +28,8 @@ class DipendentiClass(UserMixin, Base):
     cognome: Mapped[str] = mapped_column(nullable=False)
     ruolo: Mapped[str] = mapped_column(nullable=False)
     # FK -> Compagnie
-    id_compagnia: Mapped[int] = mapped_column(ForeignKey('dev.Compagnie.id_compagnie'), nullable=False)
+    id_compagnia: Mapped[int] = mapped_column(ForeignKey('dev.Compagnie.id_compagnia'), nullable=False)
     compagnia_rel = relationship('CompagnieClass', back_populates='dipendenti_rel')
+
+    def get_id(self):
+        return str(self.id_dipendente)
