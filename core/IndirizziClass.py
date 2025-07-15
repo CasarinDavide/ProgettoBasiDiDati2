@@ -3,12 +3,12 @@ from System import engine, Base
 
 """
 CREATE TABLE dev.Indirizzi (
-    address_id SERIAL PRIMARY KEY,
-civico VARCHAR(200) NOT NULL,
-via VARCHAR(200) NOT NULL,
-citta VARCHAR(100) NOT NULL,
-cod_postale INTEGER NOT NULL,
-paese VARCHAR(100) NOT NULL
+                                address_id SERIAL PRIMARY KEY,
+                                civico VARCHAR(200) NOT NULL,
+                                via VARCHAR(200) NOT NULL,
+                                citta VARCHAR(100) NOT NULL,
+                                cod_postale INTEGER NOT NULL,
+                                paese VARCHAR(100) NOT NULL
 );
 """
 

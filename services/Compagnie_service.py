@@ -15,7 +15,7 @@ from core.CompagnieClass import CompagnieClass
 def add_compagnie(email: str, password: str, tel: str, nome: str, address_id: int) -> Optional["CompagnieClass"]:
     """Create a new Compagnie record."""
     print("QUI")
-    # MUST ASSUME RIGHT IMPUTE VALUE
+    # MUST ASSUME RIGHT INPUT VALUE
 
     with Session(engine()) as session:
         record = CompagnieClass(
