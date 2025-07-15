@@ -4,7 +4,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 """
 CREATE TABLE dev.Aerei (
-                           id_aerei SERIAL PRIMARY KEY,
+                           id_aereo SERIAL PRIMARY KEY,
                            capacita INT NOT NULL,
                            modello VARCHAR(200) NOT NULL,
                            consumoMedio REAL NOT NULL,
@@ -16,13 +16,13 @@ class AereiClass(Base):
     __tablename__ = 'Aerei'
     __table_args__ = { 'schema': 'dev' }
 
-    id_aerei: Mapped[int] = mapped_column(primary_key=True)
+    id_aereo: Mapped[int] = mapped_column(primary_key=True)
     capacita: Mapped[int] = mapped_column(nullable=False)
     modello: Mapped[str] = mapped_column(nullable=False)
     consumoMedio: Mapped[float] = mapped_column(nullable=False)
     dimensione: Mapped[str] = mapped_column(nullable=False)
     # FK -> Compagnie
-    id_compagnia: Mapped[int] = mapped_column(ForeignKey('dev.Compagnie.id_compagnie'), nullable=False)
+    id_compagnia: Mapped[int] = mapped_column(ForeignKey('dev.Compagnie.id_compagnia'), nullable=False)
     compagnia_rel = relationship('CompagnieClass', back_populates='aerei_rel')
 
     # Voli effettuati dall'aereo

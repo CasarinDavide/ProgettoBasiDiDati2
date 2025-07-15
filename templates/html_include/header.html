@@ -106,11 +106,11 @@
     <!--begin::Page-->
     <div class="app-page  flex-column flex-column-fluid " id="kt_app_page">
         <!--begin::Header-->
-        <header class="app-header bg-ryanair-blue text-white py-3 px-4 d-flex justify-content-between align-items-center shadow-sm">
+        <header class="app-header bg-ryanair-blue text-white py-1 px-2 d-flex justify-content-between align-items-center shadow-sm" style="height: 100px;">
             <!-- Left: Logo & Navigation -->
-            <div class="d-flex align-items-center gap-4">
+            <div class="d-flex align-items-center gap-4" style="height: 100%;">
                 <!-- Logo -->
-                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="h-300px cursor-pointer" onclick="location.href='./index.php';" />
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="cursor-pointer" style="height: 100%; width: auto; object-fit: contain;" onclick="location.href='/';"/>
 
                 {% if request.path != '/user_login' %}
                 <!-- Navigation -->
@@ -134,7 +134,7 @@
                         <i class="fas fa-sign-in fa-2x me-2"></i>
                         Accedi</a>
                 {% else %}
-                    <a href="user-detail.php" class="text-white text-decoration-none">Ciao, Davide</a>
+                    <a href="user-detail.php" class="text-white text-decoration-none">Ciao, {{ user }}</a>
                     <a href="/logout" class="text-white text-decoration-none d-flex align-items-center">
                         <i class="fas fa-sign-out fa-2x me-2"></i>Logout
                     </a>

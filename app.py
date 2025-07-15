@@ -36,8 +36,8 @@ def load_user(user_id):
 @app.route('/')
 def home():
     if current_user.is_authenticated:
-        mail = PasseggeriClass.get_by_id(current_user.get_id()).email
-        return render_template('./public_html/home.html', user = mail)
+        nome = PasseggeriClass.get_by_id(current_user.get_id()).nome
+        return render_template('./public_html/home.html', user = nome)
     
     return render_template('./public_html/home.html')
 
@@ -98,17 +98,17 @@ def user_registration():
         # Controlla che l'indirizzo esista, evita la ridondanza per persone che abitano assieme
         addr = IndirizziClass.get_address(civico, via, citta, cod_postale, paese)
         if addr:
-            id_addr = addr.id
+            id_addr = addr.address_id
         else:
             addr = IndirizziClass.add(civico, via, citta, cod_postale, paese)
-            id_addr = addr.id
+            id_addr = addr.address_id
 
         if PasseggeriClass.get_by_email(email):
             flash('A user with this mail already exists.', 'danger')
         else:
             PasseggeriClass.add(email, generate_password_hash(password), nome, cognome, prefisso+tel, nascita, saldo, id_addr)
             flash('Your account has been created! You can now log in.', 'success')
-            return redirect(url_for('user_login'))
+            return redirect(url_for('home'))
     return render_template('public_html/register.html')
 
 

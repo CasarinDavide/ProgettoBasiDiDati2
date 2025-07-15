@@ -15,7 +15,7 @@ class VoliClass(Base):
     __tablename__ = 'Voli'
     __table_args__ = { 'schema': 'dev' }
 
-    id_voli: Mapped[int] = mapped_column(primary_key=True)
+    id_volo: Mapped[int] = mapped_column(primary_key=True)
     comandante: Mapped[str] = mapped_column(nullable=False)
     ritardo: Mapped[int] = mapped_column(nullable=False)
 
@@ -24,5 +24,5 @@ class VoliClass(Base):
     viaggio_rel = relationship('ViaggiClass', back_populates='voli_rel')
     
     # FK -> Aerei
-    id_aereo: Mapped[int] = mapped_column(ForeignKey('dev.Aerei.id_aerei'), primary_key=True)
+    id_aereo: Mapped[int] = mapped_column(ForeignKey('dev.Aerei.id_aereo'), primary_key=True)
     aereo_rel = relationship('AereiClass', back_populates='voli_rel')   
