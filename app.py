@@ -17,7 +17,7 @@ from core.VoliClass import VoliClass
 
 from dotenv import load_dotenv
 from System import getParam
-from services import Compagnie_service
+from services.CompagnieRepository import CompagnieRepository
 
 load_dotenv()
 
@@ -131,10 +131,12 @@ def function_actions():
     ####
 
     if target == "compagnia_aerea":
+        compagnie_repo = CompagnieRepository()
+
         if action == "add":
-            return Compagnie_service.add_compagnie(getParam("email"),getParam("password"),getParam("tel"), getParam("nome"),getParam("address_id"))
+            return compagnie_repo.add(getParam("email"),getParam("password"),getParam("tel"), getParam("nome"),getParam("address_id"))
         elif action == "getAllDatatable":
-            return Compagnie_service.get_compagnie_datatable(draw,start,length,search_value)
+            return compagnie_repo.get_datatable(draw,start,length,search_value)
 
         return None
 
