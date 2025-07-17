@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if user %}
+        Home - {{ user }}
+    {% else %}
+        Home
+    {% endif %}
+{% endblock title %}
+
+{% block main_content %}
+
+<div class="container my-5">
+    {% for v in voli %}
+    <div class="d-flex justify-content-between align-items-stretch p-5 shadow-sm rounded" style="margin-bottom: 3%">
+
+        <!-- Informazioni voli -->
+        <div class="flex-grow-1 me-4">
+            {% for a_r in v %}
+            <!-- Andata -->
+            <div class="mb-3">
+                <div class="text-muted fw-semibold small mb-2">
+                    Andata
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="text-start me-3">
+                        <div name="orario_partenza_andata" id="orario_partenza_andata" class="fw-semibold fs-5">
+                            {{ a_r.orario_partenza }}
+                        </div>
+                        <div name="aereoporto_partenza" id="aereoporto_partenza_andata" class="text-muted">
+                            {{ a_r.aereoporto_partenza }}
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 text-center">
+                        <div class="text-muted"> {{ v[0].durata }}</div>
+                        <div><span class="text-primary">✈️</span></div>
+                        <div class="small">
+                            {% if (a_r.numero_voli == 1) %}
+                                Diretto
+                            {% else %}
+                                {{a_r.numero_voli - 1}} scalo
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="ms-3">
+                        <div class="fw-semibold fs-5">
+                            {{ a_r.orario_arrivo }}
+                        </div>
+                        <div class="text-muted">
+                            {{ a_r.aereoporto_arrivo }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Divisore -->
+            <hr class="my-3">
+
+            {% endfor %}
+            
+        <!-- Prezzo e selezione -->
+        <div class="d-flex flex-column justify-content-center text-end">
+            <div name="prezzo" id="prezzo" class="fs-4 fw-semibold mb-2"> Totale {{ v[0].prezzo }}</div>
+            <button class="btn btn-dark btn-sm px-4"> Seleziona <i class="fa-solid fa-arrow-right-long"></i></button>
+        </div>
+    </div>
+    </div>
+    {% endfor %}
+</div>
+
+
+{% endblock main_content %}
