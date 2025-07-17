@@ -1,0 +1,825 @@
+{% extends "base.html" %}
+
+{% block title %} Login - TriViaggi {% endblock title %}
+
+{% block main_content %}
+<script>
+
+
+    let PACompagniaAerea = function () {
+        // Define shared variables (not accessible outside this block)
+        let datatable;
+        let table;
+        let reloadButton;
+        let add_button;
+        let timeoutSearchTyping;
+        let usergroup_filter = "";
+        let initialSearchValue = "";
+        let customer_filters;
+
+        // Private functions
+        var initDatatable = function () {
+            // Init datatable --- more info on datatables: https://datatables.net/manual/
+            datatable = $(table).DataTable({
+                ajax: {
+                    url: ajaxUrl + '?fun=compagnia_aerea&oper=getAllDatatable',
+                    type: "POST",
+                    data: function (data) {
+                        data.columns[1].data = 'surname';
+                        data.customer_filters = customer_filters;
+                    }
+                },
+                "language": {
+                    "url": "js/i18n/DataTable-Italian.json"
+                },
+                "oSearch": {"sSearch": initialSearchValue},
+                pageLength: 25,
+                "info": false,
+                'order': [0, "ASC"],
+                serverSide: true,
+                'columns': [
+                    /*0*/   {data: 'id_user'},
+                    /*1*/   {data: null /*fullname*/},
+                    /*2*/   {data: 'user_email'},
+                    /*3*/   {data: 'user_privileges'},
+                    /*4*/   {data: 'id_customer'},
+                    /*5*/   {data: 'enable'},
+                    /*6*/   {data: null,"width": '50px'},
+
+                ],
+                'columnDefs': [
+                    {
+                        "targets": [0],
+                        "visible": false
+                    },
+                    {
+                        "targets": [1],
+                        "createdCell": function (td, cellData, rowData, row, col) {
+                            $(td, td).html(`${rowData.user_surname} ${rowData.user_name}`);
+                        }
+                    }
+                    ,
+                    {
+                        "targets": [4],
+                        "className": "text-center",
+                        "createdCell": function (td, cellData, rowData, row, col) {
+
+                            if (parseInt(cellData)>0)
+                            {
+                                $(td, td).html(`${rowData.customer_code} ${rowData.customer_name}`);
+                            }
+                            else
+                            {
+                                $(td, td).html(``);
+                            }
+
+                        }
+                    },
+                    {
+                        "targets": [5],
+                        "className": "text-center",
+                        "createdCell": function (td, cellData, rowData, row, col) {
+
+                            if (parseInt(cellData))
+                            {
+                                $(td, td).html(`<i title="Attivo" class="fa fs-3 fa-check" style="color: green"></i>`);
+                            }
+                            else
+                            {
+                                $(td, td).html(`<i title="Disabilitato" class="fa fs-3 fa-xmark" style="color: red"></i>`);
+                            }
+
+                        }
+                    },
+                    {
+                        "targets": [6],
+                        "createdCell": function (td, cellData, rowData, row, col) {
+                            $(td, td).html(`<a class="cursor-pointer" onclick="PACompagniaAereaEditModal.showModal(${rowData.id_user})" ><i title="Modifica Utente" class="fa fs-3 fa-gear"></i></a>`);
+                        }
+                    },
+                    {
+                        "targets": [3],
+                        "createdCell": function (td, cellData, rowData, row, col) {
+
+                            switch (parseInt(cellData))
+                            {
+                                case 10:
+                                {
+                                    $(td, td).html(`Super Admin`);
+                                    break;
+                                }
+
+                                case 8:
+                                {
+                                    $(td, td).html(`Produzione`);
+                                    break;
+                                }
+
+                                case 9:
+                                {
+                                    $(td, td).html(`Ufficio`);
+                                    break;
+                                }
+
+                                case 1:
+                                {
+                                    $(td, td).html(`Cliente`);
+                                    break;
+                                }
+
+                                default:
+                                    $(td, td).html(``);
+                            }
+                        }
+                    },
+
+                ],
+                "drawCallback": function (settings) {
+                    PACompagniaAerea.onReloadDone();
+                }
+            });
+
+            // Re-init functions on every table re-draw -- more info: https://datatables.net/reference/event/draw
+            datatable.on('draw', function () {
+                const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+                const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+            });
+
+        }
+
+
+        // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
+        var handleSearchDatatable = () => {
+            const filterSearch = document.querySelector('#table_compagnie-search_filter');
+            filterSearch.value = initialSearchValue;
+            filterSearch.addEventListener('keyup', function (e) {
+                if(timeoutSearchTyping) clearTimeout(timeoutSearchTyping);
+                timeoutSearchTyping = setTimeout(function() { datatable.search(e.target.value).draw() }, 500);
+            });
+        }
+
+
+        // Handle status filter dropdown
+        var handleCustomerFilter = () => {
+            const filterCustomer = document.querySelector('#table_compagnie-customer_filter');
+            $(filterCustomer).val(customer_filters).trigger('change');
+
+            $(filterCustomer).on('change', e => {
+                customer_filters = $(filterCustomer).val();
+                datatable.draw();
+            });
+        }
+
+        // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
+        var handleReloadTable = () => {
+            const reloadButton = document.querySelector('#table_compagnie-reload_button');
+            reloadButton.addEventListener('click', function (e) {
+                datatable.ajax.reload();
+            });
+        }
+
+        // Public methods
+        return {
+            reloadTable: function () {
+                datatable.ajax.reload();
+            },
+            onReloadDone: function () {
+                reloadButton.blur();
+            },
+            init: function () {
+                table = document.querySelector('#table_compagnie');
+                reloadButton = document.querySelector('#table_compagnie-reload_button');
+                add_button = document.querySelector('#table_compagnie-add_button');
+                if (!table) {
+                    return;
+                }
+
+                initDatatable();
+                handleSearchDatatable();
+                handleReloadTable();
+                handleCustomerFilter();
+            },
+            add: function() {
+                jQuery.ajax({
+                    url: ajaxUrl + '?fun=compagnia_aerea&oper=add',
+                    type: 'POST',
+                    data: {
+                        email: PACompagniaAereaAddModal.getFields().email_input.val(),
+                        password:PACompagniaAereaAddModal.getFields().password_input.val(),
+                        tel: PACompagniaAereaAddModal.getFields().tel_input.val(),
+                        nome: PACompagniaAereaAddModal.getFields().user_name_input.val(),
+                        address_id : PACompagniaAereaAddModal.getFields().user_address_select.val(),
+                    },
+                    async: true,
+                    success: function (data) {
+                        errorModal.hide();
+                        if ((data = jQuery.trim(data)) == '') return;
+                        var parsedResult = checkAjaxResponse(data, false);
+                        if (!parsedResult) {
+                            var result = jQuery.parseJSON(data);
+                            PACompagniaAerea.reloadTable();
+                            PACompagniaAereaAddModal.hideModal();
+                            showToast('Utente Aggiunta con successo.');
+
+                        } else {
+                            if (parsedResult == return_values.db_error) {
+                                setTimeout(function () {
+                                    showError('Errore', 'Attenzione, si è verificato un errore interno al server. Riprovare più tardi.', '<button class="btn btn-light" data-bs-dismiss="modal" type="button">Chiudi</button>', true);
+                                }, 500);
+                            } else if (parsedResult == return_values.no_permission) {
+                                setTimeout(function () {
+                                    showError('Errore', 'Attenzione, non si dispone dei permessi necessari a compiere l\'azione. Verrete rediretti alla Dashboard.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="window.location.replace(\'/plantlist.php\');" type="button">Chiudi</button>', true);
+                                }, 500);
+                            } else if (parsedResult == return_values.session_error) {
+                                setTimeout(function () {
+                                    showError('Errore', 'Attenzione, la sessione è scaduta. Verrete rediretti alla pagina di login.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="window.location.replace(\'/index.php\');" type="button">Chiudi</button>', true);
+                                }, 500);
+                            } else if (parsedResult == 30) {
+                                setTimeout(function () {
+                                    showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                }, 500);
+                            }
+                            else if (parsedResult == 36) {
+                                setTimeout(function () {
+                                    showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                }, 500);
+                            }
+                            else if (parsedResult == 31) {
+                                setTimeout(function () {
+                                    showError('Errore', 'Attenzione, la mail è già in uso.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                }, 500);
+                            }
+                            else if (parsedResult == 38) {
+                                setTimeout(function () {
+                                    showError('Errore', 'Attenzione, la mail non è valida.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                }, 500);
+                            }
+                        }
+                    }
+                });
+            },
+            edit: function(id) {
+                jQuery.ajax({
+                    url: ajaxUrl + '?fun=compagnia_aerea&oper=edit',
+                    type: 'POST',
+                    data: {
+                        id_user : id,
+                        user_name: PACompagniaAereaEditModal.getFields().edit_compagnia_aerea_user_name.val(),
+                        user_surname : PACompagniaAereaEditModal.getFields().edit_compagnia_aerea_user_surname.val(),
+                        user_email : PACompagniaAereaEditModal.getFields().edit_compagnia_aerea_user_email.val(),
+                        user_privilege : PACompagniaAereaEditModal.getFields().edit_compagnia_aerea_user_privilege.val(),
+                        id_customer : PACompagniaAereaEditModal.getFields().edit_compagnia_aerea_id_customer.val(),
+                        enable : PACompagniaAereaEditModal.getFields().edit_compagnia_aerea_enable.is(':checked')?1:0
+                    },
+                    async: true,
+                    success: function (data) {
+                        errorModal.hide();
+                        if ((data = jQuery.trim(data)) == '') return;
+                        var parsedResult = checkAjaxResponse(data, false);
+                        if (!parsedResult) {
+                            var result = jQuery.parseJSON(data);
+                            PACompagniaAerea.reloadTable();
+                            PACompagniaAereaEditModal.hideModal();
+                            showToast('Utente Modificata con successo.');
+
+                        } else {
+                            if (parsedResult == return_values.db_error) {
+                                setTimeout(function () {
+                                    showError('Errore', 'Attenzione, si è verificato un errore interno al server. Riprovare più tardi.', '<button class="btn btn-light" data-bs-dismiss="modal" type="button">Chiudi</button>', true);
+                                }, 500);
+                            } else if (parsedResult == return_values.no_permission) {
+                                setTimeout(function () {
+                                    showError('Errore', 'Attenzione, non si dispone dei permessi necessari a compiere l\'azione. Verrete rediretti alla Dashboard.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="window.location.replace(\'/plantlist.php\');" type="button">Chiudi</button>', true);
+                                }, 500);
+                            } else if (parsedResult == return_values.session_error) {
+                                setTimeout(function () {
+                                    showError('Errore', 'Attenzione, la sessione è scaduta. Verrete rediretti alla pagina di login.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="window.location.replace(\'/index.php\');" type="button">Chiudi</button>', true);
+                                }, 500);
+                            } else if (parsedResult == 30) {
+                                setTimeout(function () {
+                                    showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaEditModal.errorModal();" type="button">Chiudi</button>', true);
+                                }, 500);
+                            }
+                        }
+                    }
+                });
+            },
+            getById : function (id) {
+                let result = null;
+                jQuery.ajax({
+                    url: ajaxUrl + '?fun=compagnia_aerea&oper=getById',
+                    type: 'POST',
+                    data: {
+                        id_user: id
+                    },
+                    async: false,
+                    success: function (data) {
+                        errorModal.hide();
+                        if ((data = jQuery.trim(data)) == '') return;
+                        var parsedResult = checkAjaxResponse(data, false);
+                        if (!parsedResult) {
+                            result = jQuery.parseJSON(data);
+                        }
+                    }
+                });
+
+                return result;
+            }
+        }
+    }();
+    let PACompagniaAereaAddModal = function () {
+        let modal;
+        let confirm_button;
+        let show_button;
+        let form;
+        let title;
+        let paese_input;
+        let cod_postale_input;
+        let citta_input;
+        let via_input;
+        let civico_input;
+        let user_address_select;
+        let user_name_input;
+        let tel_input;
+        let password_input;
+        let email_input;
+
+        return {
+            init: function () {
+                modal = new bootstrap.Modal(document.querySelector('#add-compagnia_aerea-modal'));
+                confirm_button = $('#add-compagnia_aerea-submit');
+                show_button = $('#table_compagnie-add_button');
+                title = $('#add-compagnia_aerea-title');
+
+                title.text("Crea Nuova Comagnia" );
+
+                paese_input = $('#add-address-paese');
+                cod_postale_input = $('#add-address-cod_postale');
+                citta_input  = $('#add-address-citta');
+                via_input= $('#add-address-via');
+                civico_input= $('#add-address-civico');
+                user_address_select= $('#add-compagnia_aerea-user_address');
+                user_name_input= $('#add-compagnia_aerea-user_name');
+                tel_input= $('#add-compagnia_aerea-user_tel');
+                password_input= $('#add-compagnia_aerea-user_password');
+                email_input= $('#add-compagnia_aerea-user_email');
+
+                show_button.on('click',function ()
+                {
+                    PACompagniaAereaAddModal.showModal();
+                });
+
+
+                form = document.getElementById("add-compagnia_aerea-form");
+
+            },
+            showModal: function () {
+                form.reset();
+                confirm_button.off('click');
+                confirm_button.attr('data-kt-indicator', 'off');
+                confirm_button.attr('disabled', false);
+
+                confirm_button.on('click', function () {
+                    confirm_button.attr('data-kt-indicator', 'on');
+                    confirm_button.attr('disabled', true);
+                    PACompagniaAerea.add();
+                });
+
+                modal.show();
+            },
+            hideModal: function () {
+                modal.hide();
+            },
+            errorModal:function ()
+            {
+                confirm_button.attr('data-kt-indicator', 'off');
+                confirm_button.attr('disabled', false);
+            },
+            getFields:function ()
+            {
+                return {
+                    paese_input:paese_input,
+                    cod_postale_input:cod_postale_input,
+                    citta_input:citta_input,
+                    via_input:via_input,
+                    civico_input:civico_input,
+                    user_address_select:user_address_select,
+                    user_name_input:user_name_input,
+                    tel_input:tel_input,
+                    password_input:password_input,
+                    email_input:email_input,
+                }
+            }
+        }
+    }();
+    let PACompagniaAereaEditModal = function () {
+        let modal;
+        let confirm_button;
+        let form;
+        let data;
+        let title;
+
+        let edit_compagnia_aerea_user_name
+        let edit_compagnia_aerea_user_surname
+        let edit_compagnia_aerea_user_privilege;
+        let edit_compagnia_aerea_user_email;
+        let edit_compagnia_aerea_id_customer;
+        let edit_compagnia_aerea_enable;
+        let edit_compagnia_aerea_id_customer_div;
+
+        return {
+            init: function () {
+                modal = new bootstrap.Modal(document.querySelector('#edit-compagnia_aerea-modal'));
+                confirm_button = $('#edit-compagnia_aerea-submit');
+                form = document.getElementById("edit-compagnia_aerea-form");
+                title = $('#edit-compagnia_aerea-title');
+                title.text('Modifica Utente');
+
+                $('#edit-compagnia_aerea-user_privilege').select2({
+                    dropdownParent: $('#edit-compagnia_aerea-body')
+                });
+
+                edit_compagnia_aerea_user_name = $('#edit-compagnia_aerea-user_name')
+                edit_compagnia_aerea_user_surname=  $('#edit-compagnia_aerea-user_surname')
+                edit_compagnia_aerea_user_privilege =  $('#edit-compagnia_aerea-user_privilege').trigger('change');
+                edit_compagnia_aerea_user_email =  $('#edit-compagnia_aerea-user_email');
+                edit_compagnia_aerea_id_customer = $( '#edit-compagnia_aerea-id_customer');
+                edit_compagnia_aerea_enable = $('#edit-compagnia_aerea-enable')
+                edit_compagnia_aerea_id_customer_div = $('#edit-compagnia_aerea-id_customer_div');
+
+
+                edit_compagnia_aerea_user_privilege.on('change',function ()
+                {
+                    let val = parseInt(edit_compagnia_aerea_user_privilege.val());
+                    switch (val)
+                    {
+                        case 9:
+                        case 8:
+                        case 10:
+                        {
+
+                            edit_compagnia_aerea_id_customer_div.addClass('d-none');
+                            edit_compagnia_aerea_id_customer.val('');
+                            break;
+                        }
+
+                        case 1:
+                        {
+                            if (parseInt('1'))
+                            {
+                                getSelectOptionsCustomer();
+                                edit_compagnia_aerea_id_customer_div.removeClass('d-none');
+                            }
+
+                            break;
+                        }
+
+                    }
+                });
+
+
+            },
+            showModal: function (id) {
+                data = PACompagniaAerea.getById(id);
+                form.reset();
+                confirm_button.off('click');
+                confirm_button.attr('data-kt-indicator', 'off');
+                confirm_button.attr('disabled', false);
+
+                confirm_button.on('click', function () {
+                    confirm_button.attr('data-kt-indicator', 'on');
+                    confirm_button.attr('disabled', true);
+                    PACompagniaAerea.edit(data.id_user);
+                });
+
+
+
+                /*** FILL FORM **/
+
+                edit_compagnia_aerea_user_name.val(data.user_name);
+                edit_compagnia_aerea_user_surname.val(data.user_surname);
+                edit_compagnia_aerea_user_privilege.val(data.user_privileges).trigger('change');
+                edit_compagnia_aerea_user_email.val(data.user_email);
+                edit_compagnia_aerea_id_customer.val(data.id_customer);
+                edit_compagnia_aerea_enable.prop('checked',parseInt(data.enable))
+
+                /*** END ***/
+
+                modal.show();
+            },
+            hideModal: function () {
+                modal.hide();
+            },
+            errorModal:function ()
+            {
+                confirm_button.attr('data-kt-indicator', 'off');
+                confirm_button.attr('disabled', false);
+            },
+            getFields:function ()
+            {
+                return {
+                    edit_compagnia_aerea_user_name:edit_compagnia_aerea_user_name,
+                    edit_compagnia_aerea_user_surname:edit_compagnia_aerea_user_surname,
+                    edit_compagnia_aerea_user_privilege:edit_compagnia_aerea_user_privilege,
+                    edit_compagnia_aerea_user_email:edit_compagnia_aerea_user_email,
+                    edit_compagnia_aerea_id_customer:edit_compagnia_aerea_id_customer,
+                    edit_compagnia_aerea_enable:edit_compagnia_aerea_enable,
+                }
+            }
+        }
+    }();
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        PACompagniaAereaAddModal.init();
+        PACompagniaAerea.init();
+        PACompagniaAereaEditModal.init();
+    });
+
+
+
+</script>
+
+    <div class="modal fade" id="add-compagnia_aerea-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered mw-650px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <!--begin::Modal title-->
+                    <h2 id="add-compagnia_aerea-title" class="fw-bold">-------</h2>
+                    <!--end::Modal title-->
+                    <!--begin::Close-->
+                    <div data-bs-dismiss="modal" class="btn btn-icon btn-sm btn-active-icon-primary">
+                        <i class="ki-duotone ki-cross fs-1">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                        </i>
+                    </div>
+                    <!--end::Close-->
+                </div>
+                <div id="add-compagnia_aerea-body" class="modal-body py-10 px-lg-17">
+
+                    <form id="add-compagnia_aerea-form">
+
+                        <div class="scroll-y me-n7 pe-7" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto"  data-kt-scroll-offset="300px">
+
+
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Email</label>
+                                <input id="add-compagnia_aerea-user_email" name="add-compagnia_aerea-user_email" type="text" class="form-control form-control-solid" placeholder="email@example.com"/>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Password</label>
+                                <input id="add-compagnia_aerea-user_password" name="add-compagnia_aerea-user_password" type="password" class="form-control form-control-solid" placeholder="email@example.com"/>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Telefono</label>
+                                <input id="add-compagnia_aerea-user_tel" name="add-compagnia_aerea-user_tel" type="text" class="form-control form-control-solid" placeholder="email@example.com"/>
+                            </div>
+
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Nome</label>
+                                <input id="add-compagnia_aerea-user_name" name="add-compagnia_aerea-user_name" type="text" class="form-control form-control-solid" placeholder="email@example.com"/>
+                            </div>
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Indirizzo</label>
+                                <select id="add-compagnia_aerea-user_address" name="add-compagnia_aerea-user_address" type="text" class="form-control form-control-solid" placeholder="email@example.com">
+                                </select>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Civico</label>
+                                <input id="add-address-civico" name="add-address-civico" type="text" class="form-control form-control-solid" placeholder="email@example.com"/>
+                            </div>
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Via</label>
+                                <input id="add-address-via" name="add-address-via" type="text" class="form-control form-control-solid" placeholder="email@example.com"/>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Città</label>
+                                <input id="add-address-citta" name="add-address-citta" type="text" class="form-control form-control-solid" placeholder="email@example.com"/>
+                            </div>
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Codice Postale</label>
+                                <input id="add-address-cod_postale" name="add-address-cod_postale" type="text" class="form-control form-control-solid" placeholder="email@example.com"/>
+                            </div>
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Paese</label>
+                                <input id="add-address-paese" name="add-address-paese" type="text" class="form-control form-control-solid" placeholder="email@example.com"/>
+                            </div>
+                            
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+
+                <div class="modal-footer flex-center">
+                    <!--begin::Button-->
+                    <button type="reset" data-bs-dismiss="modal" class="btn btn-light me-3">Annulla</button>
+                    <!--end::Button-->
+                    <!--begin::Button-->
+                    <button type="submit" id="add-compagnia_aerea-submit" class="btn btn-primary">
+                        <span class="indicator-label">Crea</span>
+                        <span class="indicator-progress">Attendi...
+                            <span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
+                    </button>
+                    <!--end::Button-->
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="edit-compagnia_aerea-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered mw-650px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <!--begin::Modal title-->
+                    <h2 id="edit-compagnia_aerea-title" class="fw-bold">-----</h2>
+                    <!--end::Modal title-->
+                    <!--begin::Close-->
+                    <div data-bs-dismiss="modal" class="btn btn-icon btn-sm btn-active-icon-primary">
+                        <i class="ki-duotone ki-cross fs-1">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                        </i>
+                    </div>
+                    <!--end::Close-->
+                </div>
+                <div id="edit-compagnia_aerea-body" class="modal-body py-10 px-lg-17">
+                    <form id="edit-compagnia_aerea-form">
+
+                        <div class="scroll-y me-n7 pe-7" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto"  data-kt-scroll-offset="300px">
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Nome</label>
+                                <input id="edit-compagnia_aerea-user_name" required name="edit-compagnia_aerea-user_name" type="text" class="form-control form-control-solid" placeholder="Nome"/>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Cognome</label>
+                                <input id="edit-compagnia_aerea-user_surname" required name="edit-compagnia_aerea-user_surname" type="text" class="form-control form-control-solid" placeholder="Cognome"/>
+                            </div>
+
+
+                            <div class="fv-row mb-7  " >
+                                <label class="required fs-6 fw-semibold mb-2">Privilegio</label>
+                                <select class="form-select form-select-solid select2-hidden-accessible" data-hide-search="true" data-control="select2" id="edit-compagnia_aerea-user_privilege"
+                                        data-dropdown-parent="#edit-compagnia_aerea-body">
+
+                                    <option value="10">System Admin</option>;
+                                    <option value="8">Produzione</option>;
+                                    <option value="9">Uffici</option>;
+                                    <option value="1">Cliente</option>;
+                                </select>
+                            </div>
+
+                            <div class="fv-row mb-7 d-none" id="edit-compagnia_aerea-id_customer_div">
+                                <label class="fs-6 fw-semibold mb-2">Cliente</label>
+                                <select class="form-select form-select-solid select2-hidden-accessible" data-hide-search="false" data-control="select2" id="edit-compagnia_aerea-id_customer"
+                                        data-dropdown-parent="#edit-compagnia_aerea-body">
+                                </select>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Email</label>
+                                <input id="edit-compagnia_aerea-user_email" name="edit-compagnia_aerea-user_email" type="text" class="form-control form-control-solid" placeholder="email@example.com"/>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="fs-6 fw-semibold mb-2" for="flexSwitchCheckDefault">Abilita</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" role="switch" id="edit-compagnia_aerea-enable">
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+
+                <div class="modal-footer flex-center">
+                    <!--begin::Button-->
+                    <button type="reset" data-bs-dismiss="modal" class="btn btn-light me-3">Annulla</button>
+                    <!--end::Button-->
+                    <!--begin::Button-->
+                    <button type="submit" id="edit-compagnia_aerea-submit" class="btn btn-primary">
+                        <span class="indicator-label">Modifica</span>
+                        <span class="indicator-progress">Attendi...
+															<span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
+                    </button>
+                    <!--end::Button-->
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+            <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="gestisci_compagnie-tab" data-bs-toggle="pill" data-bs-target="#gestisci_compagnie" type="button" role="tab" aria-controls="gestisci_compagnie" aria-selected="true">Compagnie Aeree</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pills-profile-tab" data-bs-toggle="pill" data-bs-target="#pills-profile" type="button" role="tab" aria-controls="pills-profile" aria-selected="false">Profile</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pills-contact-tab" data-bs-toggle="pill" data-bs-target="#pills-contact" type="button" role="tab" aria-controls="pills-contact" aria-selected="false">Contact</button>
+                </li>
+            </ul>
+            <div class="tab-content" id="pills-tabContent">
+                <div class="tab-pane fade show active" id="gestisci_compagnie" role="tabpanel" aria-labelledby="gestisci_compagnie-tab">
+                    <div class="card shadow-sm rounded-4 overflow-hidden">
+                        <!-- Card Header -->
+                        <div class="card-header border-0 pt-4 pb-4 bg-light">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center w-100">
+                                <!-- Left: Search & Filters -->
+                                <div class="d-flex align-items-center gap-3 flex-wrap">
+                                    <!-- Search -->
+                                    <div class="input-group w-auto">
+                                        <input type="text" id="table_compagnie-search_filter"
+                                               class="form-control form-control-solid rounded w-250px"
+                                               placeholder="Cerca..." />
+                                    </div>
+
+                                    <!-- Customer Filter (Hidden by default) -->
+                                    <div class="input-group w-auto d-none">
+                                        <select id="table_compagnie-customer_filter"
+                                                class="form-select form-select-solid"
+                                                data-allow-clear="true"
+                                                data-control="select2"
+                                                data-hide-search="true"
+                                                data-placeholder="Cliente">
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Right: Toolbar Buttons -->
+                                <div class="d-flex align-items-center gap-2">
+                                    <!-- Reload Button -->
+                                    <button id="table_compagnie-reload_button" type="button"
+                                            class="btn btn-light border btn-sm" data-kt-table-filter="reload">
+
+                                        <i class="fa-solid fa-rotate-right fs-2"></i>
+
+                                    </button>
+
+                                    <!-- Add Button -->
+                                    <button id="table_compagnie-add_button" type="button"
+                                            class="btn btn-primary btn-sm px-4">
+                                        <i class="fa fa-plus me-2"></i> Aggiungi
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Body: Table -->
+                        <div class="card-body pt-0">
+                            <div class="table-responsive">
+                                <table class="table table-striped align-middle fs-6 gy-2 dataTable no-footer" id="table_compagnie">
+                                    <thead>
+                                    <tr class="text-start text-white fw-bold text-uppercase bg-ryanair-blue">
+                                        <th class="px-3">ID</th>
+                                        <th>Nome e Cognome</th>
+                                        <th>Email</th>
+                                        <th>Privilegio</th>
+                                        <th>Cliente</th>
+                                        <th>Attivo</th>
+                                        <th class="text-end pe-3"></th>
+                                    </tr>
+                                    </thead>
+                                    <tbody class="fw-semibold text-gray-700">
+                                    <!-- Data will populate dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab">...</div>
+                <div class="tab-pane fade" id="pills-contact" role="tabpanel" aria-labelledby="pills-contact-tab">...</div>
+            </div>
+
+
+
+
+{% endblock main_content %}

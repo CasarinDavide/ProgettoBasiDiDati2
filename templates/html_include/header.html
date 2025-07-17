@@ -1,61 +1,171 @@
-<!DOCTYPE html>
-<html lang="en">
-
+<body  id="kt_app_body" data-kt-app-layout="light-header" data-kt-app-header-fixed="true" data-kt-app-toolbar-enabled="true"   class="app-default" >
+<!--layout-partial:partials/theme-mode/_init.html-->
+<!--begin::Theme mode setup on page load-->
 <script>
-    var ajax_req = 'http://127.0.0.1:5000/';
+    var defaultThemeMode = "light";
+    var themeMode;
+    if ( document.documentElement ) {
+        if ( document.documentElement.hasAttribute("data-bs-theme-mode")) {
+            themeMode = document.documentElement.getAttribute("data-bs-theme-mode");
+        } else {
+            if ( localStorage.getItem("data-bs-theme") !== null ) {
+                themeMode = localStorage.getItem("data-bs-theme");
+            } else {
+                themeMode = defaultThemeMode;
+            }
+        }
+        if (themeMode === "system") {
+            themeMode = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        document.documentElement.setAttribute("data-bs-theme", themeMode);
+    }
 </script>
-<header>
-    <div class="px-3 py-2 bg-dark border-bottom">
-        <div class="container-fluid">
-            <div class="d-flex flex-wrap justify-content-lg-start">
-                <a href="/" class="d-flex my-2 my-lg-0 me-lg-auto text-white text-decoration-none">
-                    <svg class="bi me-2" width="40" height="32" role="img" aria-label="Bootstrap"><use xlink:href="#bootstrap"></use></svg>
+
+
+<!--end::Vendors Javascript-->
+<script type="text/javascript">
+
+    // Gestione modale di errore generico
+    let errorModal;
+    let toastMessage;
+
+    function showError(title, body, footer, islocking) {
+        if (islocking === undefined) {
+            islocking = false;
+        }
+        $('#error-title').html(title);
+        $('#error-body').html(body);
+
+        if(footer !== "") {
+            $('#error-footer').html(footer);
+        }
+
+        errorModal.show();
+    }
+
+    function hideError() {
+        errorModal.hide();
+    }
+
+    function showToast(body='') {
+        $('#toast-body').html(body);
+        toastMessage.show();
+    }
+
+    // On document ready
+    KTUtil.onDOMContentLoaded(function () {
+        errorModal = new bootstrap.Modal(document.querySelector('#error-modal'));
+        toastMessage = bootstrap.Toast.getOrCreateInstance(document.querySelector('#toast-container'));
+    });
+
+
+</script>
+<!--end::Theme mode setup on page load--><!--layout-partial:layout/_default.html-->
+<!--begin::App-->
+<div class="d-flex flex-column flex-root app-root" id="kt_app_root">
+
+    <style>
+        .table thead tr {
+            background-color:#0143A3; color:white!important;
+        }
+        .table thead tr th:first-child{
+            padding-left: 5px!important;
+        }
+        .menu-item .menu-link .menu-icon {
+            width: 3rem;
+        }
+        .menu-item {
+            min-width: 8rem;
+        }
+
+        .app-header {
+            border-bottom: 1px solid #eaeaea;
+            background-color: #fff;
+            z-index: 1000;
+        }
+
+        .app-header a:hover {
+            color: #007bff;
+        }
+
+        .bg-ryanair-blue {
+            background-color: #0143A3;
+        }
+
+        .btn-warning {
+            background-color: #FFCC00;
+            border: none;
+        }
+
+        .btn-warning:hover {
+            background-color: #e6b800;
+        }
+
+    </style>
+
+    <!--begin::Page-->
+    <div class="app-page  flex-column flex-column-fluid " id="kt_app_page">
+        <!--begin::Header-->
+        <header class="app-header bg-ryanair-blue text-white py-1 px-2 d-flex justify-content-between align-items-center shadow-sm" style="height: 100px;">
+            <!-- Left: Logo & Navigation -->
+            <div class="d-flex align-items-center gap-4" style="height: 100%;">
+                <!-- Logo -->
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" class="cursor-pointer" style="height: 100%; width: auto; object-fit: contain;" onclick="location.href='/';"/>
+
+                {% if request.path != '/user_login' %}
+                <!-- Navigation -->
+                <nav class="d-flex gap-10 fs-3 fw-semibold">
+                    <a href="#" class="text-white text-decoration-none d-flex align-items-center">
+                        <i class="fas fa-plane fa-lg me-2"></i> Pianifica
+                    </a>
+                    {% if user %}
+                    <a href="#" class="text-white text-decoration-none d-flex align-items-center">
+                        <i class="fas fa-ticket-alt fa-lg me-2"></i> I Miei Biglietti
+                    </a>
+                    {% endif %}
+                </nav>
+                {% endif %}
+            </div>
+
+            {% if request.path != '/user_login' %}
+
+            <!-- Right: User Menu & Auth -->
+            <div class="d-flex align-items-center gap-10 fs-3">
+                {% if not user %}
+                    <a href="/user_login" class="text-white text-decoration-none">
+                        <i class="fas fa-sign-in fa-2x me-2"></i>
+                        Accedi</a>
+                {% else %}
+                    <a href="user-detail.php" class="text-white text-decoration-none">Ciao, {{ user }}</a>
+                    <a href="/logout" class="text-white text-decoration-none d-flex align-items-center">
+                        <i class="fas fa-sign-out fa-2x me-2"></i>Logout
+                    </a>
+                {% endif %}
+
+                <a href="#" class="btn btn-primary fw-semibold rounded-pill px-3 text-dark">
+                    Portale Autorizzati
                 </a>
-
-                <ul class="nav col-12 col-lg-auto my-2 my-md-0 text-small">
-
-                    <li>
-                        <a href="#" class="nav-link text-secondary">
-                            <svg class="bi d-block mx-auto mb-1" width="24" height="24"></svg>
-                            Profilo
-                        </a>
-                    </li>
-
-                    <li>
-                        <a href="#" class="nav-link text-secondary">
-                            <svg class="bi d-block mx-auto mb-1" width="24" height="24"></svg>
-                            Ordini Effettuati
-                        </a>
-                    </li>
-                    <li>
-                        <svg class="bi d-block mx-auto mb-1" width="24" height="24"></svg>
-                        <a href="#" class="nav-link text-white">
-                            Carrello
-                        </a>
-                    </li>
-
-                </ul>
             </div>
-        </div>
-    </div>
-    <div class="px-3 py-2 border-bottom mb-3">
-        <div class="container-fluid d-flex flex-wrap justify-content-center">
-            <form class="col-8 col-lg-4 mb-2 mb-lg-0 me-lg-auto" role="search">
-                <div class="input-group mb-3">
-                    <span class="input-group-text" id="basic-addon1">
-                        <i class="bi bi-search" id="search-icon"></i>
-                    </span>
-                    <input type="text" class="form-control rounded" placeholder="Cerca..." aria-label="search-input" aria-describedby="basic-addon1">
-                </div>
-            </form>
-            <div class="text-end">
-                <button type="button" class="btn btn-light text-dark me-2">Login</button>
-                <button type="button" class="btn btn-primary">Sign-up</button>
-            </div>
-        </div>
+            {% endif %}
 
-    </div>
+        </header>
 
-</header>
 
-</html>
+
+        <!--end::Header-->
+        <!--begin::Wrapper-->
+        <div class="app-wrapper  flex-column flex-row-fluid " id="kt_app_wrapper">
+            <!--layout-partial:layout/partials/_sidebar.html-->
+
+            <!--begin::Main-->
+            <div class="app-main flex-column flex-row-fluid" id="kt_app_main">
+                <!--begin::Content wrapper-->
+                <div class="d-flex flex-column flex-column-fluid">
+
+                    <!--begin::Content-->
+                    <div id="kt_app_content" class="app-content  flex-column-fluid pt-0">
+                        <!--begin::Content container-->
+                        <div id="kt_app_content_container" class="app-container  container-fluid ">
+                            <div class="flex-column flex-lg-row-auto w-100  mb-10 mb-lg-0 mt-5">
+
+

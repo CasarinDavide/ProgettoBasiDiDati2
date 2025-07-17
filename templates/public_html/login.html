@@ -1,17 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-</head>
-<body>
-<h2>Login</h2>
-<form method="POST">
-    <input type="text" name="username" placeholder="Username" required>
-    <input type="password" name="password" placeholder="Password" required>
-    <button type="submit">Login</button>
-</form>
-<p>Don't have an account? <a href="{{ url_for('register') }}">Register</a></p>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %} Login - TriViaggi {% endblock title %}
+
+{% block main_content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm mt-5">
+                <div class="card-body p-4">
+                    <h2 class="card-title text-center mb-4"> Login </h2>
+
+                    <form method="POST">
+                        <div class="mb-3">
+                            <input class="form-control" type="email" name="email" placeholder="Email" required>
+                        </div>
+                        <div class="mb-3">
+                            <input class="form-control" type="password" name="password" placeholder="Password" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <input class="form-check-input" type="checkbox" name="remind_me"> 
+                            <label class="form-check-label"> Remind Me </label>
+                        </div>
+                        <div class="mb-3">
+                            <button class="btn btn-primary w-100 mb-3" type="submit">Login</button>
+                        </div>
+                    </form>
+                    <p class="text-muted mb-0"> Non hai un accout? <a href="{{ url_for('user_registration') }}" class="text-decoration-none"> Registrati </a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock main_content %}

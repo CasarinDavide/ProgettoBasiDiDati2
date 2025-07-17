@@ -1,24 +1,17 @@
-from sqlalchemy import create_engine, text, inspect
-from sqlalchemy.orm import sessionmaker
+from flask import request
+from sqlalchemy import create_engine
+from sqlalchemy.orm import DeclarativeBase
+from dotenv import load_dotenv
+import os
 
-user = "root"
-password = ""
-port = 3306
-hostname = "localhost"
-database_name = "e-commerce"
+def engine():
+    load_dotenv()
+    # Create SQLAlchemy engine globally
+    return create_engine(os.getenv('URL'))
 
-# Create SQLAlchemy engine globally
-engine = create_engine(f'mysql+mysqlconnector://{user}:{password}@{hostname}:{port}/{database_name}')
-Session = sessionmaker(bind=engine)
-session = Session()
+class Base(DeclarativeBase):
+    pass
 
-
-def hasTable(table_name):
-    return inspect(engine).has_table(table_name)
-
-
-
-
-
-
-
+def getParam(param: str):
+    merged_params = request.args.to_dict() | request.form.to_dict()
+    return merged_params.get(param)

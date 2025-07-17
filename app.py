@@ -1,71 +1,114 @@
-import datetime
-from flask import Flask, render_template, request, jsonify, url_for, redirect, flash
+import os
+from flask import Flask, render_template, request, url_for, redirect, flash, session
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
 
-from core.UsersClass import UsersClass
+from core.IndirizziClass import IndirizziClass
+from core.PasseggeriClass import PasseggeriClass
+from core.CompagnieClass import CompagnieClass
+from core.DipendentiClass import DipendentiClass
+from core.ViaggiClass import ViaggiClass
+from core.AereiClass import AereiClass
+from core.AereoportiClass import AereoportiClass
+from core.DataPartenzeClass import DataPartenzeClass
+from core.EffettuanoClass import EffettuanoClass
+from core.BigliettiClass import BigliettiClass
+from core.VoliClass import VoliClass
 
-app = Flask(__name__, static_folder='static')
-app.secret_key = '112233'
+from dotenv import load_dotenv
+from System import getParam
+from services.CompagnieRepository import CompagnieRepository
+
+load_dotenv()
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.getenv('FLASK-LOGIN-KEY')
+
 login_manager = LoginManager(app)
-login_manager.login_view = 'login'  # Redirect to login page if not logged in
+login_manager.init_app(app)
 
+# CALLBACK OBBLIGATORIO
+@login_manager.user_loader
+def load_user(user_id):
+    return PasseggeriClass.get_by_id(user_id)
 
-def getParam(param: str):
-    if request.method == 'POST':
-        # Accessing POST data
-        data = request.form.get(param)
-    elif request.method == 'GET':
-        # Accessing GET data
-        data = request.args.get(param)
-    return data
-
-
+# Home Page
 @app.route('/')
-@login_required
-def hello_world():
-    # Redirect the user to /shop
-    return redirect(url_for('shop'))
+def home():
+    if current_user.is_authenticated:
+        nome = PasseggeriClass.get_by_id(current_user.get_id()).nome
+        return render_template('./public_html/home.html', user = nome)
+    
+    return render_template('./public_html/home.html')
 
 
-@app.route('/shop')
-@login_required
-def shop():
-    return render_template('public_html/shop.html')
+@app.route('/admin_settings', methods=['GET', 'POST'])
+def admin_settings():
+    print(request.method)
+    option = getParam("oper")
+    print(request.args)
+    print(option)
+    if option is None:
+        return render_template('./public_html/admin_settings.html')
+    else:
+        function_actions()
+    return None
 
 
+@app.route('/user_login', methods=['GET', 'POST'])
+def user_login():
+    if current_user.is_authenticated:
+        return 'You are already authenticated'
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    userController = UsersClass.UsersClass()
     if request.method == 'POST':
-        username = request.form['username']
+        email = request.form['email']
         password = request.form['password']
-        user = userController.get_by_username(username)
-        if user and user.password == password:
-            login_user(user)
-            return redirect(url_for('shop'))
+        remind = request.form.get('remind_me') != None
+        
+        if PasseggeriClass.validate_password(email, password):
+            user = PasseggeriClass.get_by_email(email)
+            login_user(user, remember = remind )
+            return redirect('/')
         else:
-            flash('Login Unsuccessful. Please check username and password.', 'danger')
+            flash('Login Unsuccessful. Please check email and password.', 'danger')
+            return redirect('/user_login')
+        
     return render_template('public_html/login.html')
 
-
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    userController = UsersClass.UsersClass()
+@app.route('/user_registration', methods=['GET', 'POST'])
+def user_registration():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        #Informazioni principali passeggero
         email = request.form['email']
-        id_user_group = request.form['id_user_group']
-        sha1 = "some_sha1_value"
+        password = request.form['password']
+        nome = request.form['nome']
+        cognome = request.form['cognome']
+        prefisso = request.form['prefisso']
+        tel = request.form['tel']
+        nascita = request.form['nascita']
+        saldo = 0.0
 
-        if userController.get_by_username(username):
-            flash('Username already exists. Please choose another.', 'danger')
+        #Indirizzo passeggero
+        civico = request.form['civico']
+        via = request.form['via']
+        citta = request.form['citta']
+        cod_postale = int(request.form['cod_postale'])
+        paese = request.form['paese']
+
+        # Controlla che l'indirizzo esista, evita la ridondanza per persone che abitano assieme
+        addr = IndirizziClass.get_address(civico, via, citta, cod_postale, paese)
+        if addr:
+            id_addr = addr.address_id
         else:
-            userController.add(username, generate_password_hash(password), email, id_user_group, sha1)
+            addr = IndirizziClass.add(civico, via, citta, cod_postale, paese)
+            id_addr = addr.address_id
+
+        if PasseggeriClass.get_by_email(email):
+            flash('A user with this mail already exists.', 'danger')
+        else:
+            PasseggeriClass.add(email, generate_password_hash(password), nome, cognome, prefisso+tel, nascita, saldo, id_addr)
             flash('Your account has been created! You can now log in.', 'success')
-            return redirect(url_for('login'))
+            return redirect(url_for('home'))
     return render_template('public_html/register.html')
 
 
@@ -73,18 +116,35 @@ def register():
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('login'))
+    return redirect(url_for('user_login'))
 
 
-@app.route("/ajax/<path:params>", methods=["GET", "POST"])
-def ajax(params):
-    # Extracting func and oper from the params string
-    func, oper = params.split('&')
-    func = func.split('=')[1]  # Extracting value of func
-    oper = oper.split('=')[1]  # Extracting value of oper
+def function_actions():
+    target = getParam("fun")
+    action = getParam("oper")
 
-    return jsonify({'error': 'Invalid operation'}), 400
+    # datatable standard
+    draw = int(request.args.get('draw', 1))
+    start = int(request.args.get('start', 0))  # offset
+    length = int(request.args.get('length', 10))  # page size
+    search_value = request.args.get('search[value]', '')
+    ####
+
+    if target == "compagnia_aerea":
+        compagnie_repo = CompagnieRepository()
+
+        if action == "add":
+            return compagnie_repo.add(getParam("email"),getParam("password"),getParam("tel"), getParam("nome"),getParam("address_id"))
+        elif action == "getAllDatatable":
+            return compagnie_repo.get_datatable(draw,start,length,search_value)
+
+        return None
+
+    return None
 
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+

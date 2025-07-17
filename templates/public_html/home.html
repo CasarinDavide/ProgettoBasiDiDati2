@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if user %}
+Home - {{ user }}
+{% else %}
+Home
+{% endif %}
+{% endblock title %}
+
+{% block main_content %}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <h1 class="text-center mb-4">
+                        <i class="fas fa-plane text-primary"></i> Prenota Volo
+                    </h1>
+
+                    <form>
+                        <!-- Tipo Viaggio -->
+                        <div class="row mb-3 justify-content-center">
+                            <div class="col-4 mb-3">
+                                <input type="radio" class="btn-check" name="tipo" id="andata-ritorno" checked>
+                                <label class="btn btn-outline-primary w-100" for="andata-ritorno">
+                                    <i class="fas fa-exchange-alt"></i> Andata/Ritorno
+                                </label>
+                            </div>
+                            <div class="col-4 mb-3">
+                                <input type="radio" class="btn-check" name="tipo" id="solo-andata">
+                                <label class="btn btn-outline-primary w-100" for="solo-andata">
+                                    <i class="fas fa-arrow-right"></i> Solo Andata
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Destinazioni -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="fas fa-plane-departure text-muted"></i> Da
+                                </label>
+                                <select class="form-select" required>
+                                    <option value="">Seleziona partenza</option>
+                                    <option value="MXP">Milano Malpensa</option>
+                                    <option value="FCO">Roma Fiumicino</option>
+                                    <option value="VCE">Venezia Marco Polo</option>
+                                    <option value="NAP">Napoli Capodichino</option>
+                                    <option value="BLQ">Bologna Marconi</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="fas fa-plane-arrival text-muted"></i> A
+                                </label>
+                                <select class="form-select" required>
+                                    <option value="">Seleziona destinazione</option>
+                                    <option value="CDG">Parigi CDG</option>
+                                    <option value="LHR">Londra Heathrow</option>
+                                    <option value="MAD">Madrid Barajas</option>
+                                    <option value="BCN">Barcellona El Prat</option>
+                                    <option value="AMS">Amsterdam Schiphol</option>
+                                    <option value="JFK">New York JFK</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Date -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="fas fa-calendar text-muted"></i> Partenza
+                                </label>
+                                <input id="partenza" onchange="exclude()" type="date" class="form-control" required>
+                            </div>
+                            <div class="col-md-6" id="ritorno-container">
+                                <label class="form-label">
+                                    <i class="fas fa-calendar text-muted"></i> Ritorno
+                                </label>
+                                <input id="ritorno" type="date" class="form-control" id="dataRitorno">
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-search"></i> Cerca Voli
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Gestione tipo viaggio
+    const soloAndata = document.getElementById('solo-andata');
+    const ritornContainer = document.getElementById('ritorno-container');
+    const dataRitorno = document.getElementById('dataRitorno');
+
+    document.querySelectorAll('input[name="tipo"]').forEach(radio => {
+        radio.addEventListener('change', function () {
+            if (soloAndata.checked) {
+                ritornContainer.style.display = 'none';
+                dataRitorno.required = false;
+            } else {
+                ritornContainer.style.display = 'block';
+                dataRitorno.required = true;
+            }
+        });
+    });
+
+    // Data minima oggi
+    const today = new Date().toISOString().split('T')[0];
+    document.querySelectorAll('input[type="date"]').forEach(input => {
+        input.min = today;
+    });
+
+    //Data minima di ritorno
+    exclude = function() {
+        let andata = document.getElementById('partenza').value;
+        document.getElementById('ritorno').min = new Date(andata).toISOString().split('T')[0];
+    };
+</script>
+</body>
+
+</html>
+{% endblock main_content %}
