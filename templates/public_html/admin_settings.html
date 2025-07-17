@@ -12,12 +12,13 @@
             url: ajaxUrl + '?fun=indirizzi&oper=get_for_select',
             type: 'POST',
             data: {},
+            dataType: "json",
             async: true,
             success: function (data) {
-                if ((data = jQuery.trim(data)) == '') return;
+               
                 var parsedResult = checkAjaxResponse(data, false);
                 if (!parsedResult) {
-                    var result = jQuery.parseJSON(data);
+                    var result = data
 
                     let string_to_append = "";
 
@@ -114,7 +115,11 @@
                     /*1*/   {data: 'nome'},
                     /*2*/   {data: 'email'},
                     /*3*/   {data: 'tel'},
-                    /*6*/   {data: null,"width": '50px'},
+                    /*4*/   {data: 'paese'},
+                    /*5*/   {data: 'cod_postale'},
+                    /*6*/   {data: 'citta'},
+                    /*7*/   {data: null,"width": '50px'},
+                    /*8*/   {data: null,"width": '50px'},
 
                 ],
                 'columnDefs': [
@@ -122,44 +127,24 @@
                         "targets": [0],
                         "visible": false
                     },
-                    /*
                     {
                         "targets": [4],
                         "className": "text-center",
                         "createdCell": function (td, cellData, rowData, row, col) {
-
-                            if (parseInt(cellData)>0)
-                            {
-                                $(td, td).html(`${rowData.customer_code} ${rowData.customer_name}`);
-                            }
-                            else
-                            {
-                                $(td, td).html(``);
-                            }
-
+                            $(td, td).html(`${rowData.citta} ${rowData.via} ${rowData.civico}`);
                         }
-                        {
-                        "targets": [5],
-                        "className": "text-center",
-                        "createdCell": function (td, cellData, rowData, row, col) {
 
-                            if (parseInt(cellData))
-                            {
-                                $(td, td).html(`<i title="Attivo" class="fa fs-3 fa-check" style="color: green"></i>`);
-                            }
-                            else
-                            {
-                                $(td, td).html(`<i title="Disabilitato" class="fa fs-3 fa-xmark" style="color: red"></i>`);
-                            }
-
-                        }
                     },
-                    },
-                    */
                     {
-                        "targets": [4],
+                        "targets": [7],
                         "createdCell": function (td, cellData, rowData, row, col) {
                             $(td, td).html(`<a class="cursor-pointer" onclick="PACompagniaAereaEditModal.showModal(${rowData.id_compagnia})" ><i title="Modifica Utente" class="fa fs-3 fa-gear"></i></a>`);
+                        }
+                    },
+                    {
+                        "targets": [8],
+                        "createdCell": function (td, cellData, rowData, row, col) {
+                            $(td, td).html(`<a class="cursor-pointer" onclick="PADipendentiDrawer.showModal(${rowData.id_compagnia},'${rowData.nome}')" ><i title="Dettaglio" class="fa fs-3 fa-gear"></i></a>`);
                         }
                     }
                 ],
@@ -238,18 +223,17 @@
                         password:PACompagniaAereaAddModal.getFields().password_input.val(),
                         tel: PACompagniaAereaAddModal.getFields().tel_input.val(),
                         nome: PACompagniaAereaAddModal.getFields().user_name_input.val(),
-                        address_id : PACompagniaAereaAddModal.getFields().user_address_select.val(),
+
                         civico:PACompagniaAereaAddModal.getFields().civico_input.val(),
                         via:PACompagniaAereaAddModal.getFields().via_input.val(),
                         citta:PACompagniaAereaAddModal.getFields().citta_input.val(),
                         cod_postale:PACompagniaAereaAddModal.getFields().cod_postale_input.val(),
                         paese:PACompagniaAereaAddModal.getFields().paese_input.val(),
-                        id_address:PACompagniaAereaAddModal.getFields().user_address_select.val()
                     },
                     async: true,
                     success: function (data) {
                         errorModal.hide();
-                        if ((data = jQuery.trim(data)) == '') return;
+                       
                         var parsedResult = checkAjaxResponse(data, false);
                         if (!parsedResult) {
                             var result = data;
@@ -304,26 +288,27 @@
                 jQuery.ajax({
                     url: ajaxUrl + '?fun=compagnia_aerea&oper=edit',
                     type: 'POST',
+                    dataType: "json",
                     data: {
-                        id_user : id,
-                        user_name: PACompagniaAereaEditModal.getFields().edit_compagnia_aerea_user_name.val(),
-                        user_surname : PACompagniaAereaEditModal.getFields().edit_compagnia_aerea_user_surname.val(),
-                        user_email : PACompagniaAereaEditModal.getFields().edit_compagnia_aerea_user_email.val(),
-                        user_privilege : PACompagniaAereaEditModal.getFields().edit_compagnia_aerea_user_privilege.val(),
-                        id_customer : PACompagniaAereaEditModal.getFields().edit_compagnia_aerea_id_customer.val(),
-                        enable : PACompagniaAereaEditModal.getFields().edit_compagnia_aerea_enable.is(':checked')?1:0
+                        id_compagnia : id,
+                        email: PACompagniaAereaEditModal.getFields().email_input.val(),
+                        tel: PACompagniaAereaEditModal.getFields().tel_input.val(),
+                        nome: PACompagniaAereaEditModal.getFields().user_name_input.val(),
+                        civico:PACompagniaAereaEditModal.getFields().civico_input.val(),
+                        via:PACompagniaAereaEditModal.getFields().via_input.val(),
+                        citta:PACompagniaAereaEditModal.getFields().citta_input.val(),
+                        cod_postale:PACompagniaAereaEditModal.getFields().cod_postale_input.val(),
+                        paese:PACompagniaAereaEditModal.getFields().paese_input.val(),
                     },
                     async: true,
                     success: function (data) {
                         errorModal.hide();
-                        if ((data = jQuery.trim(data)) == '') return;
                         var parsedResult = checkAjaxResponse(data, false);
                         if (!parsedResult) {
-                            var result = jQuery.parseJSON(data);
+                            var result = data
                             PACompagniaAerea.reloadTable();
                             PACompagniaAereaEditModal.hideModal();
                             showToast('Utente Modificata con successo.');
-
                         } else {
                             setTimeout(function () {
                                 showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
@@ -337,16 +322,17 @@
                 jQuery.ajax({
                     url: ajaxUrl + '?fun=compagnia_aerea&oper=getById',
                     type: 'POST',
+                    dataType: "json",
                     data: {
                         id_compagnia: id
                     },
                     async: false,
                     success: function (data) {
                         errorModal.hide();
-                        if ((data = jQuery.trim(data)) == '') return;
+                       
                         var parsedResult = checkAjaxResponse(data, false);
                         if (!parsedResult) {
-                            result = jQuery.parseJSON(data);
+                            result = data
                         }
                     }
                 });
@@ -366,7 +352,6 @@
         let citta_input;
         let via_input;
         let civico_input;
-        let user_address_select;
         let user_name_input;
         let tel_input;
         let password_input;
@@ -386,7 +371,6 @@
                 citta_input  = $('#add-address-citta');
                 via_input= $('#add-address-via');
                 civico_input= $('#add-address-civico');
-                user_address_select= $('#add-compagnia_aerea-user_address');
                 user_name_input= $('#add-compagnia_aerea-user_name');
                 tel_input= $('#add-compagnia_aerea-user_tel');
                 password_input= $('#add-compagnia_aerea-user_password');
@@ -431,7 +415,6 @@
                     citta_input:citta_input,
                     via_input:via_input,
                     civico_input:civico_input,
-                    user_address_select:user_address_select,
                     user_name_input:user_name_input,
                     tel_input:tel_input,
                     password_input:password_input,
@@ -452,12 +435,9 @@
         let citta_input;
         let via_input;
         let civico_input;
-        let user_address_select;
         let user_name_input;
         let tel_input;
-        let password_input;
         let email_input;
-
 
         return {
             init: function () {
@@ -467,17 +447,14 @@
                 title = $('#edit-compagnia_aerea-title');
                 title.text('Modifica Utente');
 
-
-                paese_input = $('#add-address-paese');
-                cod_postale_input = $('#add-address-cod_postale');
-                citta_input  = $('#add-address-citta');
-                via_input= $('#add-address-via');
-                civico_input= $('#add-address-civico');
-                user_address_select= $('#add-compagnia_aerea-user_address');
-                user_name_input= $('#add-compagnia_aerea-user_name');
-                tel_input= $('#add-compagnia_aerea-user_tel');
-                password_input= $('#add-compagnia_aerea-user_password');
-                email_input= $('#add-compagnia_aerea-user_email');
+                paese_input = $('#edit-address-paese');
+                cod_postale_input = $('#edit-address-cod_postale');
+                citta_input  = $('#edit-address-citta');
+                via_input= $('#edit-address-via');
+                civico_input= $('#edit-address-civico');
+                user_name_input= $('#edit-compagnia_aerea-user_name');
+                tel_input= $('#edit-compagnia_aerea-user_tel');
+                email_input= $('#edit-compagnia_aerea-user_email');
             },
             showModal: function (id) {
                 data = PACompagniaAerea.getById(id);
@@ -489,19 +466,20 @@
                 confirm_button.on('click', function () {
                     confirm_button.attr('data-kt-indicator', 'on');
                     confirm_button.attr('disabled', true);
-                    PACompagniaAerea.edit(data.id_user);
+                    PACompagniaAerea.edit(id);
                 });
 
 
 
                 /*** FILL FORM **/
-
-                edit_compagnia_aerea_user_name.val(data.user_name);
-                edit_compagnia_aerea_user_surname.val(data.user_surname);
-                edit_compagnia_aerea_user_privilege.val(data.user_privileges).trigger('change');
-                edit_compagnia_aerea_user_email.val(data.user_email);
-                edit_compagnia_aerea_id_customer.val(data.id_customer);
-                edit_compagnia_aerea_enable.prop('checked',parseInt(data.enable))
+                paese_input.val(data.paese);
+                cod_postale_input.val(data.cod_postale);
+                citta_input.val(data.citta);
+                via_input.val(data.via);
+                civico_input.val(data.civico);
+                user_name_input.val(data.nome);
+                tel_input.val(data.tel);
+                email_input.val(data.email);
 
                 /*** END ***/
 
@@ -518,17 +496,18 @@
             getFields:function ()
             {
                 return {
-                    edit_compagnia_aerea_user_name:edit_compagnia_aerea_user_name,
-                    edit_compagnia_aerea_user_surname:edit_compagnia_aerea_user_surname,
-                    edit_compagnia_aerea_user_privilege:edit_compagnia_aerea_user_privilege,
-                    edit_compagnia_aerea_user_email:edit_compagnia_aerea_user_email,
-                    edit_compagnia_aerea_id_customer:edit_compagnia_aerea_id_customer,
-                    edit_compagnia_aerea_enable:edit_compagnia_aerea_enable,
+                    paese_input:paese_input,
+                    cod_postale_input:cod_postale_input,
+                    citta_input:citta_input,
+                    via_input:via_input,
+                    civico_input:civico_input,
+                    user_name_input:user_name_input,
+                    tel_input:tel_input,
+                    email_input:email_input,
                 }
             }
         }
     }();
-
 
     let PAAerei = function () {
         // Define shared variables (not accessible outside this block)
@@ -575,6 +554,12 @@
                     {
                         "targets": [0],
                         "visible": false
+                    },
+                    {
+                        "targets": [5],
+                        "createdCell": function (td, cellData, rowData, row, col) {
+                            $(td, td).html(`${rowData.compagnia_rel.nome}`);
+                        }
                     },
                     {
                         "targets": [6],
@@ -650,10 +635,10 @@
                     async: true,
                     success: function (data) {
                         errorModal.hide();
-                        if ((data = jQuery.trim(data)) == '') return;
+                       
                         var parsedResult = checkAjaxResponse(data, false);
                         if (!parsedResult) {
-                            var result = jQuery.parseJSON(data);
+                            var result = data
                             PAAerei.reloadTable();
                             PAAereiAddModal.hideModal();
                             showToast('Aereo Aggiunta con successo.');
@@ -672,24 +657,23 @@
                     url: ajaxUrl + '?fun=aerei&oper=edit',
                     type: 'POST',
                     data: {
-                        id_user : id,
-                        user_name: PAAereiEditModal.getFields().edit_aerei_user_name.val(),
-                        user_surname : PAAereiEditModal.getFields().edit_aerei_user_surname.val(),
-                        user_email : PAAereiEditModal.getFields().edit_aerei_user_email.val(),
-                        user_privilege : PAAereiEditModal.getFields().edit_aerei_user_privilege.val(),
-                        id_customer : PAAereiEditModal.getFields().edit_aerei_id_customer.val(),
-                        enable : PAAereiEditModal.getFields().edit_aerei_enable.is(':checked')?1:0
+                        id_aereo : id,
+                        capacita : PAAereiEditModal.getFields().capacita.val(),
+                        modello: PAAereiEditModal.getFields().modello.val(),
+                        consumoMedio: PAAereiEditModal.getFields().consumoMedio.val(),
+                        dimensione: PAAereiEditModal.getFields().dimensione.val(),
+                        id_compagnia: PAAereiEditModal.getFields().id_compagnia.val()
                     },
                     async: true,
                     success: function (data) {
                         errorModal.hide();
-                        if ((data = jQuery.trim(data)) == '') return;
+                       
                         var parsedResult = checkAjaxResponse(data, false);
                         if (!parsedResult) {
-                            var result = jQuery.parseJSON(data);
+                            var result = data
                             PAAerei.reloadTable();
                             PAAereiEditModal.hideModal();
-                            showToast('Utente Modificata con successo.');
+                            showToast('Aereo Modificato con successo.');
 
                         } else {
                             setTimeout(function () {
@@ -710,10 +694,10 @@
                     async: false,
                     success: function (data) {
                         errorModal.hide();
-                        if ((data = jQuery.trim(data)) == '') return;
+                       
                         var parsedResult = checkAjaxResponse(data, false);
                         if (!parsedResult) {
-                            result = jQuery.parseJSON(data);
+                            result = data
                         }
                     }
                 });
@@ -790,16 +774,15 @@
             // Return fields as an object
             getFields: function () {
                 return {
-                    capacita: capacita_input.val(),
-                    modello: modello_input.val(),
-                    consumoMedio: consumoMedio_input.val(),
-                    dimensione: dimensione_input.val(),
-                    id_compagnia: compagnia_select.val(),
+                    capacita: capacita_input,
+                    modello: modello_input,
+                    consumoMedio: consumoMedio_input,
+                    dimensione: dimensione_input,
+                    id_compagnia: compagnia_select,
                 }
             },
         }
     }();
-
     let PAAereiEditModal = function () {
         let modal;
         let confirm_button;
@@ -807,16 +790,11 @@
         let data;
         let title;
 
-        let paese_input;
-        let cod_postale_input;
-        let citta_input;
-        let via_input;
-        let civico_input;
-        let user_address_select;
-        let user_name_input;
-        let tel_input;
-        let password_input;
-        let email_input;
+        let capacita_input;
+        let modello_input;
+        let consumoMedio_input;
+        let dimensione_input;
+        let compagnia_select;
 
 
         return {
@@ -828,16 +806,12 @@
                 title.text('Modifica Utente');
 
 
-                paese_input = $('#add-address-paese');
-                cod_postale_input = $('#add-address-cod_postale');
-                citta_input  = $('#add-address-citta');
-                via_input= $('#add-address-via');
-                civico_input= $('#add-address-civico');
-                user_address_select= $('#add-aerei-user_address');
-                user_name_input= $('#add-aerei-user_name');
-                tel_input= $('#add-aerei-user_tel');
-                password_input= $('#add-aerei-user_password');
-                email_input= $('#add-aerei-user_email');
+                capacita_input = $('#edit-aerei-capacita');
+                modello_input = $('#edit-aerei-modello');
+                consumoMedio_input = $('#edit-aerei-consumoMedio');
+                dimensione_input = $('#edit-aerei-dimensione');
+                compagnia_select = $('#edit-aerei-id_compagnia');
+
             },
             showModal: function (id) {
                 data = PAAerei.getById(id);
@@ -849,19 +823,19 @@
                 confirm_button.on('click', function () {
                     confirm_button.attr('data-kt-indicator', 'on');
                     confirm_button.attr('disabled', true);
-                    PAAerei.edit(data.id_user);
+                    PAAerei.edit(data.id);
                 });
 
 
 
                 /*** FILL FORM **/
 
-                edit_aerei_user_name.val(data.user_name);
-                edit_aerei_user_surname.val(data.user_surname);
-                edit_aerei_user_privilege.val(data.user_privileges).trigger('change');
-                edit_aerei_user_email.val(data.user_email);
-                edit_aerei_id_customer.val(data.id_customer);
-                edit_aerei_enable.prop('checked',parseInt(data.enable))
+                getSelectAllCompagnie([compagnia_select],false)
+                capacita_input.val(data.capacita);
+                modello_input.val(data.modello);
+                consumoMedio_input.val(data.consumoMedio);
+                dimensione_input.val(data.dimensione);
+                compagnia_select.val(data.id_compagnia).trigger('change');
 
                 /*** END ***/
 
@@ -878,17 +852,435 @@
             getFields:function ()
             {
                 return {
-                    edit_aerei_user_name:edit_aerei_user_name,
-                    edit_aerei_user_surname:edit_aerei_user_surname,
-                    edit_aerei_user_privilege:edit_aerei_user_privilege,
-                    edit_aerei_user_email:edit_aerei_user_email,
-                    edit_aerei_id_customer:edit_aerei_id_customer,
-                    edit_aerei_enable:edit_aerei_enable,
+                    capacita: capacita_input,
+                    modello: modello_input,
+                    consumoMedio: consumoMedio_input,
+                    dimensione: dimensione_input,
+                    id_compagnia: compagnia_select,
                 }
             }
         }
     }();
 
+    let PADipendentiDrawer = function () {
+        let drawer;
+        let button_header_add;
+        let modal_title;
+        let id_compangia = 0;
+
+        let PADipendenti = function () {
+            // Define shared variables (not accessible outside this block)
+            let datatable;
+            let table;
+            let reloadButton;
+            let add_button;
+            let timeoutSearchTyping;
+            let usergroup_filter = "";
+            let initialSearchValue = "";
+            let customer_filters;
+
+            // Private functions
+            var initDatatable = function () {
+                // Init datatable --- more info on datatables: https://datatables.net/manual/
+                datatable = $(table).DataTable({
+                    ajax: {
+                        url: ajaxUrl + '?fun=dipendenti&oper=getAllDatatable',
+                        type: "POST",
+                        data: function (data) {
+                            data.id_compagnia = id_compangia;
+                        }
+                    },
+                    "language": {
+                        "url": "js/i18n/DataTable-Italian.json"
+                    },
+                    "oSearch": {"sSearch": initialSearchValue},
+                    pageLength: 25,
+                    "info": false,
+                    'order': [0, "ASC"],
+                    serverSide: true,
+                    'columns': [
+                        /*0*/   {data: 'id'},
+                        /*1*/   {data: 'email'},
+                        /*2*/   {data: 'tel'},
+                        /*3*/   {data: 'nome'},
+                        /*4*/   {data: 'cognome'},
+                        /*5*/   {data: 'ruolo'},
+                        /*6*/   {data: null,"width": '50px'},
+                    ],
+                    'columnDefs': [
+                        {
+                            "targets": [0],
+                            "visible": false
+                        },
+                        {
+                            "targets": [5],
+                            "createdCell": function (td, cellData, rowData, row, col) {
+                                $(td, td).html(`${rowData.compagnia_rel.nome}`);
+                            }
+                        },
+                        {
+                            "targets": [6],
+                            "createdCell": function (td, cellData, rowData, row, col) {
+                                $(td, td).html(`<a class="cursor-pointer" onclick="PAAereiEditModal.showModal(${rowData.id_compagnia})" ><i title="Modifica Utente" class="fa fs-3 fa-gear"></i></a>`);
+                            }
+                        }
+                    ],
+                    "drawCallback": function (settings) {
+                        PAAerei.onReloadDone();
+                    }
+                });
+
+                // Re-init functions on every table re-draw -- more info: https://datatables.net/reference/event/draw
+                datatable.on('draw', function () {
+                    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+                    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+                });
+
+            }
+
+
+            // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
+            var handleSearchDatatable = () => {
+                const filterSearch = document.querySelector('#table_dipendenti-search_filter');
+                filterSearch.value = initialSearchValue;
+                filterSearch.addEventListener('keyup', function (e) {
+                    if(timeoutSearchTyping) clearTimeout(timeoutSearchTyping);
+                    timeoutSearchTyping = setTimeout(function() { datatable.search(e.target.value).draw() }, 500);
+                });
+            }
+
+
+            // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
+            var handleReloadTable = () => {
+                const reloadButton = document.querySelector('#table_dipendenti-reload_button');
+                reloadButton.addEventListener('click', function (e) {
+                    datatable.ajax.reload();
+                });
+            }
+
+            // Public methods
+            return {
+                reloadTable: function () {
+                    datatable.ajax.reload();
+                },
+                onReloadDone: function () {
+                    reloadButton.blur();
+                },
+                init: function () {
+                    table = document.querySelector('#table_dipendenti');
+                    reloadButton = document.querySelector('#table_dipendenti-reload_button');
+                    add_button = document.querySelector('#table_dipendenti-add_button');
+                    if (!table) {
+                        return;
+                    }
+
+                    initDatatable();
+                    handleSearchDatatable();
+                    handleReloadTable();
+                },
+                add: function() {
+                    jQuery.ajax({
+                        url: ajaxUrl + '?fun=dipendenti&oper=add',
+                        type: 'POST',
+                        dataType: "json",
+                        data: {
+                            email: PADipendentiAddModal.getFields().email.val(),
+                            password:PADipendentiAddModal.getFields().password.val(),
+                            tel: PADipendentiAddModal.getFields().tel.val(),
+                            nome: PADipendentiAddModal.getFields().nome.val(),
+                            cognome: PADipendentiAddModal.getFields().cognome.val(),
+                            id_compangia:id_compangia,
+                            ruolo:PADipendentiAddModal.getFields().ruolo.val(),
+                        },
+                        async: true,
+                        success: function (data) {
+                            errorModal.hide();
+
+                            var parsedResult = checkAjaxResponse(data, false);
+                            if (!parsedResult) {
+                                var result = data;
+                                PACompagniaAerea.reloadTable();
+                                PACompagniaAereaAddModal.hideModal();
+                                PADipendentiDrawer.showModal();
+                                showToast('Utente Aggiunta con successo.');
+
+                            } else {
+                                setTimeout(function () {
+                                    showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                }, 500);
+
+
+                                /*
+                                if (parsedResult == return_values.db_error) {
+                                    setTimeout(function () {
+                                        showError('Errore', 'Attenzione, si è verificato un errore interno al server. Riprovare più tardi.', '<button class="btn btn-light" data-bs-dismiss="modal" type="button">Chiudi</button>', true);
+                                    }, 500);
+                                } else if (parsedResult == return_values.no_permission) {
+                                    setTimeout(function () {
+                                        showError('Errore', 'Attenzione, non si dispone dei permessi necessari a compiere l\'azione. Verrete rediretti alla Dashboard.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="window.location.replace(\'/plantlist.php\');" type="button">Chiudi</button>', true);
+                                    }, 500);
+                                } else if (parsedResult == return_values.session_error) {
+                                    setTimeout(function () {
+                                        showError('Errore', 'Attenzione, la sessione è scaduta. Verrete rediretti alla pagina di login.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="window.location.replace(\'/index.php\');" type="button">Chiudi</button>', true);
+                                    }, 500);
+                                } else if (parsedResult == 30) {
+                                    setTimeout(function () {
+                                        showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                    }, 500);
+                                }
+                                else if (parsedResult == 36) {
+                                    setTimeout(function () {
+                                        showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                    }, 500);
+                                }
+                                else if (parsedResult == 31) {
+                                    setTimeout(function () {
+                                        showError('Errore', 'Attenzione, la mail è già in uso.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                    }, 500);
+                                }
+                                else if (parsedResult == 38) {
+                                    setTimeout(function () {
+                                        showError('Errore', 'Attenzione, la mail non è valida.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                    }, 500);
+                                }*/
+                            }
+                        }
+                    });
+                },
+                edit: function(id) {
+                    jQuery.ajax({
+                        url: ajaxUrl + '?fun=dipendente&oper=edit',
+                        type: 'POST',
+                        dataType: "json",
+                        data: {
+                            id_dipendente : id,
+                            email: PADipendentiAddModal.getFields().email.val(),
+                            password:PADipendentiAddModal.getFields().password.val(),
+                            tel: PADipendentiAddModal.getFields().tel.val(),
+                            nome: PADipendentiAddModal.getFields().nome.val(),
+                            cognome: PADipendentiAddModal.getFields().cognome.val(),
+                            id_compangia:id_compangia,
+                            ruolo:PADipendentiAddModal.getFields().ruolo.val(),
+                        },
+                        async: true,
+                        success: function (data) {
+                            errorModal.hide();
+                            var parsedResult = checkAjaxResponse(data, false);
+                            if (!parsedResult) {
+                                var result = data
+                                PACompagniaAerea.reloadTable();
+                                PACompagniaAereaEditModal.hideModal();
+                                showToast('Utente Modificata con successo.');
+                            } else {
+                                setTimeout(function () {
+                                    showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                }, 500);
+                            }
+                        }
+                    });
+                },
+                getById : function (id) {
+                    let result = null;
+                    jQuery.ajax({
+                        url: ajaxUrl + '?fun=aerei&oper=getById',
+                        type: 'POST',
+                        data: {
+                            id_compagnia: id
+                        },
+                        async: false,
+                        success: function (data) {
+                            errorModal.hide();
+
+                            var parsedResult = checkAjaxResponse(data, false);
+                            if (!parsedResult) {
+                                result = data
+                            }
+                        }
+                    });
+
+                    return result;
+                }
+            }
+        }();
+        let PADipendentiAddModal = function () {
+            let modal;
+            let confirm_button;
+            let show_button;
+            let form;
+            let title;
+            let tel;
+            let email;
+            let password;
+            let ruolo;
+            let cognome;
+            let nome;
+
+            return {
+                init: function () {
+                    modal = new bootstrap.Modal(document.querySelector('#add-dipendenti-modal'));
+                    confirm_button = $('#add-dipendenti-submit');
+                    show_button = $('#table_dipendenti-add_button');
+                    title = $('#add-dipendenti-title');
+
+                    title.text("Aggiungi Dipendente" );
+
+                    tel = $('#add-dipendenti-tel');
+                    email = $('#add-dipendenti-email');
+                    password  = $('#add-dipendenti-password');
+                    ruolo = $('#add-dipendenti-ruolo');
+                    cognome= $('#add-dipendenti-cognome');
+                    nome = $('#add-dipendenti-nome');
+
+                    show_button.on('click',function ()
+                    {
+                        PADipendentiAddModal.showModal();
+                    });
+
+
+                    form = document.getElementById("add-dipendenti-form");
+
+                },
+                showModal: function () {
+
+                    PADipendentiDrawer.hideModal();
+                    form.reset();
+                    confirm_button.off('click');
+                    confirm_button.attr('data-kt-indicator', 'off');
+                    confirm_button.attr('disabled', false);
+
+                    confirm_button.on('click', function () {
+                        confirm_button.attr('data-kt-indicator', 'on');
+                        confirm_button.attr('disabled', true);
+                        PADipendenti.add();
+                    });
+
+                    modal.show();
+                },
+                hideModal: function () {
+                    modal.hide();
+                },
+                errorModal:function ()
+                {
+                    confirm_button.attr('data-kt-indicator', 'off');
+                    confirm_button.attr('disabled', false);
+                },
+                getFields:function ()
+                {
+                    return {
+                        tel:tel,
+                        email:email,
+                        password:password,
+                        ruolo:ruolo,
+                        cognome:cognome,
+                        nome:nome
+                    }
+                }
+            }
+        }();
+        let PADipendentiEditModal = function () {
+            let modal;
+            let confirm_button;
+            let form;
+            let data;
+            let title;
+
+            let tel;
+            let email;
+            let password;
+            let ruolo;
+            let cognome;
+            let nome;
+
+
+            return {
+                init: function () {
+                    modal = new bootstrap.Modal(document.querySelector('#edit-compagnia_aerea-modal'));
+                    confirm_button = $('#edit-compagnia_aerea-submit');
+                    form = document.getElementById("edit-compagnia_aerea-form");
+                    title = $('#edit-compagnia_aerea-title');
+                    title.text('Modifica Utente');
+
+                    tel = $('#edit-dipendenti-tel');
+                    email = $('#edit-dipendenti-email');
+                    password  = $('#edit-dipendenti-password');
+                    ruolo = $('#edit-dipendenti-ruolo');
+                    cognome= $('#edit-dipendenti-cognome');
+                    nome = $('#edit-dipendenti-nome');
+                },
+                showModal: function (id) {
+                    data = PACompagniaAerea.getById(id);
+                    form.reset();
+                    confirm_button.off('click');
+                    confirm_button.attr('data-kt-indicator', 'off');
+                    confirm_button.attr('disabled', false);
+
+                    confirm_button.on('click', function () {
+                        confirm_button.attr('data-kt-indicator', 'on');
+                        confirm_button.attr('disabled', true);
+                        PACompagniaAerea.edit(id);
+                    });
+
+
+
+                    /*** FILL FORM **/
+                    paese_input.val(data.paese);
+                    cod_postale_input.val(data.cod_postale);
+                    citta_input.val(data.citta);
+                    via_input.val(data.via);
+                    civico_input.val(data.civico);
+                    user_name_input.val(data.nome);
+                    tel_input.val(data.tel);
+                    email_input.val(data.email);
+
+                    /*** END ***/
+
+                    modal.show();
+                },
+                hideModal: function () {
+                    modal.hide();
+                },
+                errorModal:function ()
+                {
+                    confirm_button.attr('data-kt-indicator', 'off');
+                    confirm_button.attr('disabled', false);
+                },
+                getFields:function ()
+                {
+                    return {
+                        tel:tel,
+                        email:email,
+                        ruolo:ruolo,
+                        cognome:cognome,
+                        nome:nome
+                    }
+                }
+            }
+        }();
+
+        return {
+            init: function () {
+                drawer = new bootstrap.Offcanvas('#dipendenti-offcanvas',{
+                    backdrop: false
+                });
+                button_header_add = $('#button_header_add');
+
+                modal_title = $('#dipendenti-title');
+
+                PADipendenti.init()
+                PADipendentiAddModal.init();
+                PADipendentiEditModal.init();
+
+            },
+            showModal: function (id_compagnia_in,nome_compagnia) {
+                id_compagnia = id_compagnia_in
+                modal_title.html(`Dipendente per Compagnia ${nome_compagnia}`)
+                drawer.show();
+            },
+            hideModal: function () {
+                drawer.hide();
+            }
+        }
+    }();
 
     document.addEventListener("DOMContentLoaded", function () {
 
@@ -901,10 +1293,10 @@
         PAAereiAddModal.init();
         PAAereiEditModal.init();
 
+        PADipendentiDrawer.init();
+
 
     });
-
-
 
 </script>
 
@@ -957,11 +1349,7 @@
                                 <input id="add-compagnia_aerea-user_name" name="add-compagnia_aerea-user_name" type="text" class="form-control form-control-solid" placeholder="Nome Compagnia"/>
                             </div>
 
-                            <div class="fv-row mb-7">
-                                <label class="required fs-6 fw-semibold mb-2">Indirizzo</label>
-                                <select id="add-compagnia_aerea-user_address" name="add-compagnia_aerea-user_address" type="text" class="form-control form-control-solid" placeholder="email@example.com">
-                                </select>
-                            </div>
+
 
 
                             <div class="fv-row mb-7">
@@ -1042,10 +1430,6 @@
                             </div>
 
 
-                            <div class="fv-row mb-7">
-                                <label class="required fs-6 fw-semibold mb-2">Password</label>
-                                <input id="edit-compagnia_aerea-user_password" name="edit-compagnia_aerea-user_password" type="password" class="form-control form-control-solid" placeholder="Password"/>
-                            </div>
 
 
                             <div class="fv-row mb-7">
@@ -1060,11 +1444,6 @@
                                 <input id="edit-compagnia_aerea-user_name" name="edit-compagnia_aerea-user_name" type="text" class="form-control form-control-solid" placeholder="Nome Compagnia"/>
                             </div>
 
-                            <div class="fv-row mb-7">
-                                <label class="required fs-6 fw-semibold mb-2">Indirizzo</label>
-                                <select id="edit-compagnia_aerea-user_address" name="edit-compagnia_aerea-user_address" type="text" class="form-control form-control-solid" placeholder="email@example.com">
-                                </select>
-                            </div>
 
 
                             <div class="fv-row mb-7">
@@ -1209,6 +1588,331 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="edit-aerei-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered mw-650px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <!--begin::Modal title-->
+                    <h2 id="edit-aerei-title" class="fw-bold">Aggiungi Aereo</h2>
+                    <!--end::Modal title-->
+                    <!--begin::Close-->
+                    <div data-bs-dismiss="modal" class="btn btn-icon btn-sm btn-active-icon-primary">
+                        <i class="ki-duotone ki-cross fs-1">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                        </i>
+                    </div>
+                    <!--end::Close-->
+                </div>
+                <div id="edit-aerei-body" class="modal-body py-10 px-lg-17">
+
+                    <form id="edit-aerei-form">
+                        <div class="scroll-y me-n7 pe-7"
+                             data-kt-scroll="true"
+                             data-kt-scroll-activate="{default: false, lg: true}"
+                             data-kt-scroll-max-height="auto"
+                             data-kt-scroll-offset="300px">
+
+                            <!-- Capacità -->
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Capacità</label>
+                                <input id="edit-aerei-capacita"
+                                       name="capacita"
+                                       type="number"
+                                       class="form-control form-control-solid"
+                                       placeholder="Capacità massima"/>
+                            </div>
+
+                            <!-- Modello -->
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Modello</label>
+                                <input id="edit-aerei-modello"
+                                       name="modello"
+                                       type="text"
+                                       class="form-control form-control-solid"
+                                       placeholder="Modello dell'aereo"/>
+                            </div>
+
+                            <!-- Consumo Medio -->
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Consumo Medio</label>
+                                <input id="edit-aerei-consumoMedio"
+                                       name="consumoMedio"
+                                       type="number"
+                                       class="form-control form-control-solid"
+                                       placeholder="Consumo medio (litri/ora)"/>
+                            </div>
+
+                            <!-- Dimensione -->
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Dimensione</label>
+                                <input id="edit-aerei-dimensione"
+                                       name="dimensione"
+                                       type="number"
+                                       class="form-control form-control-solid"
+                                       placeholder="Dimensione (m²)"/>
+                            </div>
+
+                            <!-- Seleziona Compagnia -->
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Compagnia</label>
+                                <select id="edit-aerei-id_compagnia"
+                                        name="id_compagnia"
+                                        class="form-control form-control-solid">
+                                    <!-- Opzioni da popolare dinamicamente -->
+                                </select>
+                            </div>
+
+                        </div>
+                    </form>
+
+                </div>
+
+                <div class="modal-footer flex-center">
+                    <!--begin::Button-->
+                    <button type="reset" data-bs-dismiss="modal" class="btn btn-light me-3">Annulla</button>
+                    <!--end::Button-->
+                    <!--begin::Button-->
+                    <button type="submit" id="edit-aerei-submit" class="btn btn-primary">
+                        <span class="indicator-label">Crea</span>
+                        <span class="indicator-progress">Attendi...
+                        <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
+                    </span>
+                    </button>
+                    <!--end::Button-->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="add-dipendenti-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered mw-650px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <!--begin::Modal title-->
+                    <h2 id="add-dipendenti-title" class="fw-bold">-------</h2>
+                    <!--end::Modal title-->
+                    <!--begin::Close-->
+                    <div data-bs-dismiss="modal" class="btn btn-icon btn-sm btn-active-icon-primary">
+                        <i class="ki-duotone ki-cross fs-1">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                        </i>
+                    </div>
+                    <!--end::Close-->
+                </div>
+                <div id="add-dipendenti-body" class="modal-body py-10 px-lg-17">
+
+                    <form id="add-dipendenti-form">
+
+                        <div class="scroll-y me-n7 pe-7" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto"  data-kt-scroll-offset="300px">
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Nome</label>
+                                <input id="add-dipendenti-nome" name="add-address-via" type="text" class="form-control form-control-solid" placeholder="Nome"/>
+                            </div>
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Cognome</label>
+                                <input id="add-dipendenti-cognome" name="add-address-citta" type="text" class="form-control form-control-solid" placeholder="Cognome"/>
+                            </div>
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Email</label>
+                                <input id="add-dipendenti-email" name="add-dipendenti-user_email" type="text" class="form-control form-control-solid" placeholder="email@example.com"/>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Password</label>
+                                <input id="add-dipendenti-password" name="add-dipendenti-user_password" type="password" class="form-control form-control-solid" placeholder="Password"/>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Telefono</label>
+                                <input id="add-dipendenti-tel" name="add-dipendenti-user_tel" type="text" class="form-control form-control-solid" placeholder="Telefono"/>
+                            </div>
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Ruolo</label>
+                                <select id="add-dipendenti-ruolo" name="add-address-civico" type="text" class="form-control form-control-solid" placeholder="Ruolo">
+                                    <option value="Orsacchiotto">Orsacchiotto</option>
+                                    <option value="Topogigio">Topogigio</option>
+                                    <option value="Federico">Federico</option>
+                                </select>
+                            </div>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+
+                <div class="modal-footer flex-center">
+                    <!--begin::Button-->
+                    <button type="reset" data-bs-dismiss="modal" class="btn btn-light me-3">Annulla</button>
+                    <!--end::Button-->
+                    <!--begin::Button-->
+                    <button type="submit" id="add-dipendenti-submit" class="btn btn-primary">
+                        <span class="indicator-label">Crea</span>
+                        <span class="indicator-progress">Attendi...
+                            <span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
+                    </button>
+                    <!--end::Button-->
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="edit-dipendenti-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered mw-650px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <!--begin::Modal title-->
+                    <h2 id="edit-dipendenti-title" class="fw-bold">-------</h2>
+                    <!--end::Modal title-->
+                    <!--begin::Close-->
+                    <div data-bs-dismiss="modal" class="btn btn-icon btn-sm btn-active-icon-primary">
+                        <i class="ki-duotone ki-cross fs-1">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                        </i>
+                    </div>
+                    <!--end::Close-->
+                </div>
+                <div id="edit-dipendenti-body" class="modal-body py-10 px-lg-17">
+
+                    <form id="edit-dipendenti-form">
+
+                        <div class="scroll-y me-n7 pe-7" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto"  data-kt-scroll-offset="300px">
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Nome</label>
+                                <input id="edit-dipendenti-nome" name="edit-dipendenti-nome" type="text" class="form-control form-control-solid" placeholder="Nome"/>
+                            </div>
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Cognome</label>
+                                <input id="edit-dipendenti-cognome" name="add-address-citta" type="text" class="form-control form-control-solid" placeholder="Cognome"/>
+                            </div>
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Email</label>
+                                <input id="edit-dipendenti-email" name="add-dipendenti-user_email" type="text" class="form-control form-control-solid" placeholder="email@example.com"/>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Password</label>
+                                <input id="edit-dipendenti-password" name="add-dipendenti-user_password" type="password" class="form-control form-control-solid" placeholder="Password"/>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Telefono</label>
+                                <input id="edit-dipendenti-tel" name="add-dipendenti-user_tel" type="text" class="form-control form-control-solid" placeholder="Telefono"/>
+                            </div>
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Ruolo</label>
+                                <select id="edit-dipendenti-ruolo" name="add-address-civico" type="text" class="form-control form-control-solid" placeholder="Ruolo">
+                                    <option value="Orsacchiotto">Orsacchiotto</option>
+                                    <option value="Topogigio">Topogigio</option>
+                                    <option value="Federico">Federico</option>
+                                </select>
+                            </div>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+
+                <div class="modal-footer flex-center">
+                    <!--begin::Button-->
+                    <button type="reset" data-bs-dismiss="modal" class="btn btn-light me-3">Annulla</button>
+                    <!--end::Button-->
+                    <!--begin::Button-->
+                    <button type="submit" id="add-dipendenti-submit" class="btn btn-primary">
+                        <span class="indicator-label">Crea</span>
+                        <span class="indicator-progress">Attendi...
+                            <span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
+                    </button>
+                    <!--end::Button-->
+                </div>
+            </div>
+        </div>
+    </div>
+
+        <div class="offcanvas offcanvas-end" tabindex="-1" id="dipendenti-offcanvas" aria-labelledby="dipendenti-title" style="width: 800px;">
+        <div class="offcanvas-header bg-primary-dwave">
+            <h3 id="dipendenti-title" class="offcanvas-title fw-bold text-white"></h3>
+            <button type="button" class="btn btn-sm btn-icon btn-primary" data-bs-dismiss="offcanvas" aria-label="Close">
+                <i class="ki-duotone ki-cross fs-1 text-white"></i>
+            </button>
+        </div>
+        <div class="offcanvas-body p-0">
+            <div class="card-body position-relative" id="dipendenti_body">
+                <div id="dipendenti_scroll" class="position-relative scroll-y me-n5 pe-5" style="height: 564px;">
+
+                    <div class="card-header border-0 pt-4 pb-4 bg-light">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center w-100">
+                            <!-- Left: Search & Filters -->
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                <!-- Search -->
+                                <div class="input-group w-auto">
+                                    <input type="text" id="table_dipendenti-search_filter"
+                                           class="form-control form-control-solid rounded w-250px"
+                                           placeholder="Cerca..." />
+                                </div>
+                            </div>
+
+                            <!-- Right: Toolbar Buttons -->
+                            <div class="d-flex align-items-center gap-2">
+                                <!-- Reload Button -->
+                                <button id="table_dipendenti-reload_button" type="button"
+                                        class="btn btn-light border btn-sm" data-kt-table-filter="reload">
+
+                                    <i class="fa-solid fa-rotate-right fs-2"></i>
+
+                                </button>
+
+                                <!-- Add Button -->
+                                <button id="table_dipendenti-add_button" type="button"
+                                        class="btn btn-primary btn-sm px-4">
+                                    <i class="fa fa-plus me-2"></i> Aggiungi
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle fs-6 gy-2 dataTable no-footer" id="table_dipendenti">
+                            <thead>
+                            <tr class="text-start text-white fw-bold text-uppercase bg-ryanair-blue">
+                                <th class="px-3">ID</th>
+                                <th>Compagnia</th>
+                                <th>Email</th>
+                                <th>Telefono</th>
+                                <th>Paese</th>
+                                <th>CAP</th>
+                                <th>Città</th>
+                                <th></th>
+                            </tr>
+                            </thead>
+                            <tbody class="fw-semibold text-gray-700">
+                            <!-- Data will populate dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 
     <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
@@ -1219,7 +1923,7 @@
                     <button class="nav-link" id="aerei-tab" data-bs-toggle="pill" data-bs-target="#aerei" type="button" role="tab" aria-controls="pills-profile" aria-selected="false">Aerei</button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="pills-contact-tab" data-bs-toggle="pill" data-bs-target="#pills-contact" type="button" role="tab" aria-controls="pills-contact" aria-selected="false">Contact</button>
+                    <button class="nav-link" id="pills-contact-tab" data-bs-toggle="pill" data-bs-target="#pills-contact" type="button" role="tab" aria-controls="pills-contact" aria-selected="false">Prova</button>
                 </li>
             </ul>
     <div class="tab-content" id="pills-tabContent">
@@ -1275,9 +1979,13 @@
                                     <thead>
                                     <tr class="text-start text-white fw-bold text-uppercase bg-ryanair-blue">
                                         <th class="px-3">ID</th>
-                                        <<th>Compagnia</th>
+                                        <th>Compagnia</th>
                                         <th>Email</th>
                                         <th>Telefono</th>
+                                        <th>Paese</th>
+                                        <th>CAP</th>
+                                        <th>Citta</th>
+                                        <th></th>
                                         <th></th>
                                     </tr>
                                     </thead>
@@ -1343,8 +2051,8 @@
 
                                     <tr class="text-start text-white fw-bold text-uppercase bg-ryanair-blue">
                                         <th class="px-3">ID</th>
-                                        <th>Capacita</th>
                                         <th>Modello</th>
+                                        <th>Capacità</th>
                                         <th>Consumo Medio</th>
                                         <th>Dimensione</th>
                                         <th>Nome Compagnia</th>
