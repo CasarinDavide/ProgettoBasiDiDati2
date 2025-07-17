@@ -53,7 +53,7 @@
     }
 
     // On document ready
-    KTUtil.onDOMContentLoaded(function () {
+    document.addEventListener("DOMContentLoaded", function () {
         errorModal = new bootstrap.Modal(document.querySelector('#error-modal'));
         toastMessage = bootstrap.Toast.getOrCreateInstance(document.querySelector('#toast-container'));
     });
