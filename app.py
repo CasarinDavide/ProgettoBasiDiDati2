@@ -20,6 +20,7 @@ from System import getParam
 from services.CompagnieRepository import CompagnieRepository
 from services.IndirizziRepository import IndirizziRepository
 from services.AereiRepository import AereiRepository
+from services.ViaggiRepository import ViaggiRepository
 
 load_dotenv()
 
@@ -35,14 +36,45 @@ def load_user(user_id):
     return PasseggeriClass.get_by_id(user_id)
 
 # Home Page
-@app.route('/')
+@app.route('/', methods = ["GET", "POST"])
 def home():
+    nome = ""
     if current_user.is_authenticated:
         nome = PasseggeriClass.get_by_id(current_user.get_id()).nome
-        return render_template('./public_html/home.html', user = nome)
-    
-    return render_template('./public_html/home.html')
 
+    if request.method == "POST":
+        tipo_viaggio = request.form['tipo']
+        partenza = request.form['partenza']
+        arrivo = request.form['arrivo']
+        biglietto = request.form['biglietto']
+
+        data_partenza = request.form['dataPartenza']
+        data_ritorno = request.form['dataRitorno'] if tipo_viaggio == "andata-ritorno" else ""
+
+        return redirect(url_for('trip', da=partenza, a=arrivo, dataP=data_partenza, dataR=data_ritorno, biglietto=biglietto))
+
+    partenze = ViaggiRepository.get_list_partenze()
+    arrivi = ViaggiRepository.get_list_arrivi()
+
+    partenze = ['Barcellona', 'Buenos Aires']
+    arrivi = ['Galliera Veneta', 'Noale-Scorzè']
+
+    if nome != "":
+        return render_template('./public_html/home.html', user=nome, partenze=partenze, arrivi=arrivi)
+    return render_template('./public_html/home.html', partenze=partenze, arrivi=arrivi)
+
+@app.route('/trip', methods=['GET', 'POST'])
+def trip():
+    viaggi_repo = ViaggiRepository()
+    partenza = request.args.get('da')
+    destinazione = request.args.get('a')
+    dataP = request.args.get('dataP')
+    dataR = request.args.get('dataR')
+    biglietto = request.args.get('biglietto')
+
+    voli = viaggi_repo.get_viaggi(partenza=partenza, destinazione=destinazione, dataP=dataP, dataR=dataR, biglietto=biglietto)
+
+    return render_template('./public_html/trip.html', voli=voli)
 
 @app.route('/admin_settings', methods=['GET', 'POST'])
 def admin_settings():
