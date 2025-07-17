@@ -1,6 +1,5 @@
-from services.BaseRepository import BaseRepository
+from services.BaseRepository import BaseRepository, model_to_dict
 from core.ViaggiClass import ViaggiClass
-from core.AereoportiClass import AereoportiClass
 
 from System import engine
 from sqlalchemy.orm import Session
@@ -9,7 +8,6 @@ from datetime import datetime
 from flask import jsonify
 
 from typing import Optional, List
-
 
 class ViaggiRepository(BaseRepository[ViaggiClass]):
 
@@ -24,66 +22,69 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
     def get_list_partenze(self) -> List[str]:
         with Session(engine()) as session:
             query = text(''' 
-                        SELECT DISTINCT i.citta
-                        FROM dev."Viaggi" v JOIN dev."Aereoporti" a ON v.id_aereoporto_partenza = a.id_aereoporto JOIN dev."Indirizzi" i USING(address_id)
+                        SELECT DISTINCT a.citta
+                        FROM dev."Viaggi" v 
+                            JOIN dev."Aereoporti" a ON v.id_aereoporto_partenza = a.id_aereoporto
                         ''')
-            
-            result = session.execute(query).all()
-            return result
+            # conversione in lista
+            result = [x[0] for x in session.execute(query).all()]
+            return 
+
         return None
 
     """ Return the List of possible destinations """
     def get_list_arrivi(self) -> List[str]:
         with Session(engine()) as session:
             query = text(''' 
-                        SELECT DISTINCT i.citta
-                        FROM dev."Viaggi" v JOIN dev."Aereoporti" a ON v.id_aereoporto_arrivo = a.id_aereoporto JOIN dev."Indirizzi" i USING(address_id)
+                        SELECT DISTINCT a.citta
+                        FROM dev."Viaggi" v 
+                            JOIN dev."Aereoporti" a ON v.id_aereoporto_arrivo = a.id_aereoporto
                         ''')
-            
-            return session.execute(query).all()
+            # converto Sequence[Row[Any]] in un List[dict]
+            res = [x[0] for x in session.execute(query).all()]
+            return res
+        return None
     
     """ select all trips with given parameters and all their informations """
     def get_viaggi(self, partenza: str, destinazione: str, dataP: datetime, dataR: datetime, biglietto: str):
         '''
         collection di oggetti json che devono contenere:
-            1 - id_viaggio
-            1 - Durata totale
-            1 - Aereoporto di Partenza
-            1 - Aereoporto di Arrivo
-            1 - Orario di partenza
+            - id_viaggio
+            - Durata totale
+            - Aereoporto di Partenza
+            - Aereoporto di Arrivo
+            - Orario di partenza
             - Orario di arrivo previsto
             - numero di Voli
             - dove arrivano i singoli voli, se ci sono
             - Prezzo del viaggio
         '''
         #non penso funzioni
-        query = '''
+        query = text('''
                 WITH viaggi_dettagli AS (
                     SELECT 
                         v.id_viaggio,
                         v.durata, 
-                        i_prt.citta, 
-                        i_dst.citta,
+                        prt.citta, 
+                        dst.citta,
                         d.data
 
                     FROM dev."Viaggi" v 
-                        JOIN dev."Aereoporti" prt ON v.id_aereoporto_partenza = prt.id_aereoporto 
-                        JOIN dev."Indirizzi" i_prt ON prt.address_id = i_prt.address_id        
+                        JOIN dev."Aereoporti" prt ON v.id_aereoporto_partenza = prt.id_aereoporto     
                         JOIN dev."Aereoporti" dst ON v.id_aereoporto_arrivo = dst.id_aereoporto
-                        JOIN dev."Indirizzi" i_dst ON dst.address_id = i_dst.address_id
                         JOIN dev."DataPartenze" d USING(id_viaggio)
                     
-                    WHERE i_prt = partenza AND i_dst = destinazione AND d.data = dataP
+                    WHERE prt.citta = :partenza AND dst.citta = :destinazione AND d.data = :dataP
                 ),
 
-                WITH costo_biglietto AS (
+                costo_biglietto AS (
                     SELECT v.id_viaggio, MIN(b.prezzo)
-                    FROM dev."Biglietti" b JOIN viaggi_dettagli v ON
-                    WHERE b.categoria = biglietto 
+                    FROM dev."Biglietti" b JOIN viaggi_dettagli v USING(id_viaggio)
+                    WHERE b.categoria = :biglietto 
                     GROUP BY v.id_viaggio
                 ),
                 
-                WITH scali_intermedi AS (
+                numero_scali_intermedi AS (
                     SELECT v.id_viaggio, COUNT(*)
                     FROM dev."Voli" voli JOIN viaggi_dettagli v USING(id_viaggio)
                     GROUP BY v.id_viaggio
@@ -92,15 +93,23 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                 SELECT *
                 FROM viaggi_dettagli vd
                     JOIN costo_biglietto cb USING(id_viaggio)
-                    JOIN scali_intermedi si USING(id_viaggio)
-                '''
+                    JOIN numero_scali_intermedi si USING(id_viaggio)
+                ''')
         
-        stmt = text(query, {
-            'partenza': partenza,
-            'destinazione': destinazione,
-            'dataP': dataP,
-            'biglietto': biglietto
-        })
+        with Session(engine()) as session:
+            res_andata = session.execute( query, {
+                'partenza': partenza,
+                'destinazione': destinazione,
+                'dataP': dataP,
+                'biglietto': biglietto
+            })
+
+            res_ritorno = session.execute( query, {
+                'partenza': destinazione,
+                'destinazione': partenza,
+                'dataP': dataR,
+                'biglietto': biglietto
+            })
 
         andata1 = {
             "id_viaggio": "1",

@@ -12,12 +12,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
 from flask_login import UserMixin
 
 from core.CompagnieClass import CompagnieClass
-from core.IndirizziClass import IndirizziClass
 from services.BaseRepository import BaseRepository, model_to_dict
 from core.CompagnieClass import CompagnieClass
 from services.BaseRepository import BaseRepository
-from services.IndirizziRepository import IndirizziRepository
-
 
 class CompagnieRepository(BaseRepository[CompagnieClass]):
 
@@ -26,21 +23,19 @@ class CompagnieRepository(BaseRepository[CompagnieClass]):
         self.pk_field = "id_compagnia"
 
     def add(self, email: str, password: str, tel: str, nome: str,
-                    civico: str, via: str, citta: str, cod_postale: str, paese: str,id_address:Optional[None] | Optional[str]) -> Response:
+                    civico: str, via: str, citta: str, cod_postale: str, paese: str) -> Response:
         """Create a new Compagnie record (custom wrapper)."""
-
-        if id_address is None or id_address == "":
-            indirizziRepo = IndirizziRepository()
-            address_id = indirizziRepo.create_if_not_exists(civico, via, citta, cod_postale, paese)
-        else:
-            address_id = int(id_address)
 
         rec = super().add(
             email=email,
             password=password,
             tel=tel,
             nome=nome,
-            address_id=address_id
+            civico=civico,
+            via=via,
+            cod_postale=cod_postale,
+            citta=citta,
+            paese=paese
         )
 
         if rec is None:
@@ -58,19 +53,22 @@ class CompagnieRepository(BaseRepository[CompagnieClass]):
         return jsonify(model_to_dict(super().get_by_id(int(compagnie_id), pk_field=self.pk_field,joins=[CompagnieClass.address_rel]),backrefs = True))
 
 
-    def update(self, compagnie_id: int, email: str, password: str, tel: str, nome: str,
-                         address_id: int) -> Response:
+    def update(self, compagnie_id: int, email: str, password: str, tel: str, nome: str, civico: str, via: str, citta: str, cod_postale: str, paese: str) -> Response:
         """
         Update a compagnie.
         kwargs can include email, password, tel, nome, address_id.
         """
         res = super().update(compagnie_id,
-                           self.pk_field,
-                           email=email,
-                           password=password,
-                           tel=tel,
-                           nome=nome,
-                           address_id=address_id)
+                            self.pk_field,
+                            email=email,
+                            password=password,
+                            tel=tel,
+                            nome=nome,
+                            civico=civico,
+                            via=via,
+                            cod_postale=cod_postale,
+                            citta=citta,
+                            paese=paese)
         return jsonify({"success":res})
 
     def delete(self, compagnie_id: int) -> Response:

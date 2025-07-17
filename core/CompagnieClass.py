@@ -14,7 +14,11 @@ CREATE TABLE dev.Compagnie (
                                password VARCHAR(255) NOT NULL,
                                tel VARCHAR(20) NOT NULL,
                                nome VARCHAR(200) NOT NULL,
-                               address_id INTEGER REFERENCES dev.Indirizzi(address_id) ON DELETE SET NULL
+                               via VARCHAR(200) NOT NULL,
+                                civico VARCHAR(200) NOT NULL,
+                                cod_postale INTEGER NOT NULL,
+                                citta VARCHAR(200) NOT NULL,
+                                paese VARCHAR(200) NOT NULL
 );
 """
 
@@ -30,11 +34,12 @@ class CompagnieClass(UserMixin, Base):
     password: Mapped[str] = mapped_column(nullable=False)
     tel: Mapped[str] = mapped_column(nullable=False)
     nome: Mapped[str] = mapped_column(nullable=False)
-    # FK -> Address
-    address_id: Mapped[int] = mapped_column(ForeignKey('dev.Indirizzi.address_id'), nullable=False)
 
-    #Indirizzo della Compagnia
-    address_rel = relationship('IndirizziClass', back_populates='compagnia_rel')
+    via: Mapped[str] = mapped_column(nullable=False)
+    civico: Mapped[str] = mapped_column(nullable=False)
+    cod_postale: Mapped[int] = mapped_column(nullable=False)
+    citta: Mapped[str] = mapped_column(nullable=False)
+    paese: Mapped[str] = mapped_column(nullable=False)
 
     #Dipendenti della compagnia
     dipendenti_rel = relationship('DipendentiClass', back_populates='compagnia_rel')
