@@ -19,6 +19,7 @@ from System import getParam
 from services.CompagnieRepository import CompagnieRepository
 from services.AereiRepository import AereiRepository
 from services.ViaggiRepository import ViaggiRepository
+from services.ViaggiRepository import ViaggiRepository
 
 load_dotenv()
 
@@ -34,8 +35,9 @@ def load_user(user_id):
     return PasseggeriClass.get_by_id(user_id)
 
 # Home Page
-@app.route('/')
+@app.route('/', methods = ["GET", "POST"])
 def home():
+    nome = ""
     if current_user.is_authenticated:
         nome = PasseggeriClass.get_by_id(current_user.get_id()).nome
     
