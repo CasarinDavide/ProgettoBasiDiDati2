@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, url_for, redirect, flash, session
+from flask import Flask, render_template, request, url_for, redirect, flash, session, jsonify
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash
 
@@ -18,6 +18,8 @@ from core.VoliClass import VoliClass
 from dotenv import load_dotenv
 from System import getParam
 from services.CompagnieRepository import CompagnieRepository
+from services.IndirizziRepository import IndirizziRepository
+from services.AereiRepository import AereiRepository
 
 load_dotenv()
 
@@ -51,8 +53,8 @@ def admin_settings():
     if option is None:
         return render_template('./public_html/admin_settings.html')
     else:
-        function_actions()
-    return None
+        return function_actions()
+
 
 
 @app.route('/user_login', methods=['GET', 'POST'])
@@ -131,16 +133,55 @@ def function_actions():
     ####
 
     if target == "compagnia_aerea":
+
         compagnie_repo = CompagnieRepository()
 
         if action == "add":
-            return compagnie_repo.add(getParam("email"),getParam("password"),getParam("tel"), getParam("nome"),getParam("address_id"))
+            return compagnie_repo.add(email=getParam("email"),
+                                      password=getParam("password"),
+                                      tel=getParam("tel"),
+                                      nome=getParam("nome"),
+                                      civico=getParam("civico"),
+                                      via=getParam("via"),
+                                      citta=getParam("citta"),
+                                      cod_postale=getParam("cod_postale"),
+                                      paese=getParam("paese"),
+                                      id_address=getParam("id_address"))
+
         elif action == "getAllDatatable":
             return compagnie_repo.get_datatable(draw,start,length,search_value)
+        elif action == "getById":
+            return compagnie_repo.get_by_id(getParam("id_compagnia"))
+        if action == "get_for_select":
+            return compagnie_repo.get_all()
 
-        return None
 
-    return None
+    elif target == "indirizzi":
+
+        indirizziRepo = IndirizziRepository()
+
+        if action == "get_for_select":
+            return jsonify(indirizziRepo.get_all())
+    elif target == "aerei":
+        aerei_repo = AereiRepository()
+
+        if action == "add":
+            return aerei_repo.add(
+                capacita =getParam("capacita"),
+                modello=getParam("modello"),
+                consumoMedio=getParam("consumoMedio"),
+                dimensione=getParam("dimensione"),
+                id_compagnia=getParam("id_compagnia")
+            )
+
+        elif action == "getAllDatatable":
+            return aerei_repo.get_datatable(draw,start,length,search_value)
+        elif action == "getById":
+            return aerei_repo.get_by_id(getParam("id_aereo"))
+
+
+
+    return jsonify({"error": "Invalid action"}), 400
 
 
 if __name__ == '__main__':

@@ -20,6 +20,6 @@ class AereoportiClass(Base):
     address_id: Mapped[int] = mapped_column(ForeignKey('dev.Indirizzi.address_id'), nullable=False)
     address_rel = relationship('IndirizziClass', back_populates='aereoporto_rel')
 
-    viaggi_partenza_rel = relationship('ViaggiClass', foreign_keys='ViaggiClass.partenza', back_populates='partenza_rel')
+    viaggi_partenza_rel = relationship('ViaggiClass', foreign_keys='ViaggiClass.id_aereoporto_partenza', back_populates='partenza_rel')
     
-    viaggi_arrivo_rel = relationship('ViaggiClass', foreign_keys='ViaggiClass.arrivo', back_populates='arrivo_rel')
+    viaggi_arrivo_rel = relationship('ViaggiClass', foreign_keys='ViaggiClass.id_aereoporto_arrivo', back_populates='arrivo_rel')

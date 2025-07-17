@@ -100,7 +100,7 @@ function checkAjaxResponse(response, redir) {
         }
     }
 
-    return return_values.ok;
+    return 0;
 }
 
 function checkSelectOption(value) {

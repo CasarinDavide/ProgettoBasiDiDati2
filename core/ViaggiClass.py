@@ -22,12 +22,12 @@ class ViaggiClass(Base):
     sconto: Mapped[float] = mapped_column(nullable=False)
     
     # FK -> Aereoporto Partenza
-    partenza: Mapped[int] = mapped_column(ForeignKey('dev.Aereoporti.id_aereoporto'), nullable=False)
-    partenza_rel = relationship('AereoportiClass', foreign_keys=[partenza],back_populates='viaggi_partenza_rel')
+    id_aereoporto_partenza: Mapped[int] = mapped_column(ForeignKey('dev.Aereoporti.id_aereoporto'), nullable=False)
+    partenza_rel = relationship('AereoportiClass', foreign_keys=[id_aereoporto_partenza],back_populates='viaggi_partenza_rel')
     
     # FK -> Aereoporto Arrivo
-    arrivo: Mapped[int] = mapped_column(ForeignKey('dev.Aereoporti.id_aereoporto'), nullable=False)
-    arrivo_rel = relationship('AereoportiClass', foreign_keys=[arrivo],back_populates='viaggi_arrivo_rel')
+    id_aereoporto_arrivo: Mapped[int] = mapped_column(ForeignKey('dev.Aereoporti.id_aereoporto'), nullable=False)
+    arrivo_rel = relationship('AereoportiClass', foreign_keys=[id_aereoporto_arrivo],back_populates='viaggi_arrivo_rel')
 
     #Date di partenza associate al viaggio
     data_partenze_rel = relationship('DataPartenzeClass', back_populates='viaggio_rel')
