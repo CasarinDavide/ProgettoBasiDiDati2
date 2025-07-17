@@ -49,67 +49,80 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
     def get_viaggi(self, partenza: str, destinazione: str, dataP: datetime, dataR: datetime, biglietto: str):
         '''
         collection di oggetti json che devono contenere:
-            - id_viaggio
-            - Durata totale
-            - Aereoporto di Partenza
-            - Aereoporto di Arrivo
-            - Orario di partenza
-            - Orario di arrivo previsto
-            - numero di Voli
+            + id_viaggio
+            + Durata totale
+            + Aereoporto di Partenza
+            + Aereoporto di Arrivo
+            + Orario di partenza
+            + numero di Voli
             - dove arrivano i singoli voli, se ci sono
-            - Prezzo del viaggio
+            + Prezzo del viaggio
         '''
-        #non penso funzioni
-        query = text('''
-                WITH viaggi_dettagli AS (
-                    SELECT 
-                        v.id_viaggio,
-                        v.durata, 
-                        prt.citta, 
-                        dst.citta,
-                        d.data
+        #informazioni sui viaggi ricercati
+        query_info_viaggi = text('''
+                                WITH viaggi_dettagli AS (
+                                    SELECT 
+                                        v.id_viaggio,
+                                        v.durata, 
+                                        prt.citta, 
+                                        dst.citta,
+                                        d.data
 
-                    FROM dev."Viaggi" v 
-                        JOIN dev."Aereoporti" prt ON v.id_aereoporto_partenza = prt.id_aereoporto     
-                        JOIN dev."Aereoporti" dst ON v.id_aereoporto_arrivo = dst.id_aereoporto
-                        JOIN dev."DataPartenze" d USING(id_viaggio)
-                    
-                    WHERE prt.citta = :partenza AND dst.citta = :destinazione AND d.data = :dataP
-                ),
+                                    FROM dev."Viaggi" v 
+                                        JOIN dev."Aereoporti" prt ON v.id_aereoporto_partenza = prt.id_aereoporto     
+                                        JOIN dev."Aereoporti" dst ON v.id_aereoporto_arrivo = dst.id_aereoporto
+                                        JOIN dev."DataPartenze" d USING(id_viaggio)
+                                    
+                                    WHERE prt.citta = :partenza AND dst.citta = :destinazione AND d.data = :dataP
+                                ),
 
-                costo_biglietto AS (
-                    SELECT v.id_viaggio, MIN(b.prezzo)
-                    FROM dev."Biglietti" b JOIN viaggi_dettagli v USING(id_viaggio)
-                    WHERE b.categoria = :biglietto 
-                    GROUP BY v.id_viaggio
-                ),
-                
-                numero_scali_intermedi AS (
-                    SELECT v.id_viaggio, COUNT(*)
-                    FROM dev."Voli" voli JOIN viaggi_dettagli v USING(id_viaggio)
-                    GROUP BY v.id_viaggio
-                )
+                                costo_biglietto AS (
+                                    SELECT v.id_viaggio, MIN(b.prezzo)
+                                    FROM dev."Biglietti" b JOIN viaggi_dettagli v USING(id_viaggio)
+                                    WHERE b.categoria = :biglietto 
+                                    GROUP BY v.id_viaggio
+                                ),
 
-                SELECT *
-                FROM viaggi_dettagli vd
-                    JOIN costo_biglietto cb USING(id_viaggio)
-                    JOIN numero_scali_intermedi si USING(id_viaggio)
-                ''')
+                                numero_scali_intermedi AS (
+                                    SELECT v.id_viaggio, COUNT(*)
+                                    FROM dev."Voli" voli JOIN viaggi_dettagli v USING(id_viaggio)
+                                    GROUP BY v.id_viaggio
+                                )
+
+                                SELECT *
+                                FROM viaggi_dettagli vd
+                                    JOIN costo_biglietto cb USING(id_viaggio)
+                                    JOIN numero_scali_intermedi si USING(id_viaggio)
+                                ''')
+
+        # Informazioni sui voli che trovo con la query precedente
+        query_info_scali = text('''
+                                SELECT vo.id_viaggio, vo.ordine, a.citta
+                                FROM dev."Viaggi" vi 
+                                    JOIN dev."Voli" vo USING(id_viaggio)
+                                    JOIN dev."Aereoporti" a ON vo.id_aereoporto_arrivo = a.id_aereoporto
+                                WHERE vo.ordine <> 1 AND vi.id_viaggio = ANY(:id_viaggi)
+                                ORDER BY vo.ordine
+                                ''')
         
         with Session(engine()) as session:
-            res_andata = session.execute( query, {
+            res_andata = session.execute( query_info_viaggi, {
                 'partenza': partenza,
                 'destinazione': destinazione,
                 'dataP': dataP,
                 'biglietto': biglietto
             })
+            
+            res_ritorno = ''
+            if dataR != '':
+                res_ritorno = session.execute( query_info_viaggi, {
+                    'partenza': destinazione,
+                    'destinazione': partenza,
+                    'dataP': dataR,
+                    'biglietto': biglietto
+                })
 
-            res_ritorno = session.execute( query, {
-                'partenza': destinazione,
-                'destinazione': partenza,
-                'dataP': dataR,
-                'biglietto': biglietto
-            })
+            dst_voli = ''
 
         andata1 = {
             "id_viaggio": "1",

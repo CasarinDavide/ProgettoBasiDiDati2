@@ -19,17 +19,17 @@ Home
                         <i class="fas fa-plane text-primary"></i> Prenota Volo
                     </h1>
 
-                    <form>
+                    <form method="POST">
                         <!-- Tipo Viaggio -->
                         <div class="row mb-3 justify-content-center">
                             <div class="col-4 mb-3">
-                                <input type="radio" class="btn-check" name="tipo" id="andata-ritorno" checked>
+                                <input type="radio" class="btn-check" name="tipo" id="andata-ritorno" value="andata-ritorno" checked>
                                 <label class="btn btn-outline-primary w-100" for="andata-ritorno">
                                     <i class="fas fa-exchange-alt"></i> Andata/Ritorno
                                 </label>
                             </div>
                             <div class="col-4 mb-3">
-                                <input type="radio" class="btn-check" name="tipo" id="solo-andata">
+                                <input type="radio" class="btn-check" name="tipo" id="solo-andata" value="solo-andata">
                                 <label class="btn btn-outline-primary w-100" for="solo-andata">
                                     <i class="fas fa-arrow-right"></i> Solo Andata
                                 </label>
@@ -42,7 +42,7 @@ Home
                                 <label class="form-label">
                                     <i class="fas fa-plane-departure text-muted"></i> Da
                                 </label>
-                                <select class="form-select" required>
+                                <select name="partenza" class="form-select" required>
                                     <option value="">Seleziona partenza</option>
                                     {% for v in partenze %}
                                         <option value="{{ v }}"> {{ v }} </option>
@@ -53,7 +53,7 @@ Home
                                 <label class="form-label">
                                     <i class="fas fa-plane-arrival text-muted"></i> A
                                 </label>
-                                <select class="form-select" required>
+                                <select name="arrivo" class="form-select" required>
                                     <option value="">Seleziona destinazione</option>
                                     {% for v in arrivi %}
                                         <option value="{{ v }}"> {{ v }} </option>
@@ -68,13 +68,13 @@ Home
                                 <label class="form-label">
                                     <i class="fas fa-calendar text-muted"></i> Partenza
                                 </label>
-                                <input id="partenza" onchange="exclude()" type="date" class="form-control" required>
+                                <input name="dataPartenza" id="partenza" onchange="exclude()" type="date" class="form-control" required>
                             </div>
                             <div class="col-md-6" id="ritorno-container">
                                 <label class="form-label">
                                     <i class="fas fa-calendar text-muted"></i> Ritorno
                                 </label>
-                                <input id="ritorno" type="date" class="form-control" id="dataRitorno">
+                                <input name="dataRitorno" id="ritorno" type="date" class="form-control" id="dataRitorno">
                             </div>
                         </div>
 
@@ -82,9 +82,10 @@ Home
                             <label class="form-label"> 
                                 <i class="fa-solid fa-ticket"></i> Tipologia Biglietto 
                             </label>
-                            <select class="form-select">
-                                <option value="economy"> Economy </option>
-                                <option value="first-class"> First-Class </option>
+                            <select name="biglietto" class="form-select" required>
+                                <option value="Economy"> Economy </option>
+                                <option value="Business"> Business </option>
+                                <option value="FirstClass'"> First Class </option>
                             </select>
                         </div>
 

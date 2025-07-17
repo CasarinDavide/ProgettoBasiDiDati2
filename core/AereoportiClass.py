@@ -30,3 +30,6 @@ class AereoportiClass(Base):
     viaggi_partenza_rel = relationship('ViaggiClass', foreign_keys='ViaggiClass.id_aereoporto_partenza', back_populates='partenza_rel')
 
     viaggi_arrivo_rel = relationship('ViaggiClass', foreign_keys='ViaggiClass.id_aereoporto_arrivo', back_populates='arrivo_rel')
+
+    voli_partenza_rel = relationship('VoliClass', foreign_keys='VoliClass.id_aereoporto_partenza', back_populates='aereoporto_partenza_rel')
+    voli_arrivo_rel = relationship('VoliClass', foreign_keys='VoliClass.id_aereoporto_arrivo', back_populates='aereoporto_arrivo_rel')

@@ -20,6 +20,7 @@ class ViaggiClass(Base):
     sosta: Mapped[int] = mapped_column(nullable=False)
     durata: Mapped[int] = mapped_column(nullable=False)
     sconto: Mapped[float] = mapped_column(nullable=False)
+    ordine: Mapped[int] = mapped_column(nullable=False)
     
     # FK -> Aereoporto Partenza
     id_aereoporto_partenza: Mapped[int] = mapped_column(ForeignKey('dev.Aereoporti.id_aereoporto'), nullable=False)

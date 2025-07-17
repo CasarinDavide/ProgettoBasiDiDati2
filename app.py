@@ -42,13 +42,13 @@ def home():
         nome = PasseggeriClass.get_by_id(current_user.get_id()).nome
     
     if request.method == 'POST':
-        tipo_viaggio = request.form['tipo']
-        partenza = request.form['partenza']
-        arrivo = request.form['arrivo']
-        biglietto = request.form['biglietto']
+        tipo_viaggio = request.form.get('tipo', '')
+        partenza = request.form.get('partenza', '')
+        arrivo = request.form.get('arrivo', '')
+        biglietto = request.form.get('biglietto', '')
 
-        data_partenza = request.form['dataPartenza']
-        data_ritorno = request.form['dataRitorno'] if tipo_viaggio == 'andata-ritorno' else ''
+        data_partenza = request.form.get('dataPartenza', '')
+        data_ritorno = request.form.get('dataRitorno') if tipo_viaggio == 'andata-ritorno' else ''
 
         return redirect(url_for('trip', da=partenza, a=arrivo, dataP=data_partenza, dataR=data_ritorno, biglietto=biglietto))
     

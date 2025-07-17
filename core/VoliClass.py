@@ -20,9 +20,17 @@ class VoliClass(Base):
     ritardo: Mapped[int] = mapped_column(nullable=False)
 
     # FK -> Viaggi
-    id_viaggio: Mapped[int] = mapped_column(ForeignKey('dev.Viaggi.id_viaggio'), primary_key=True)
+    id_viaggio: Mapped[int] = mapped_column(ForeignKey('dev.Viaggi.id_viaggio'))
     viaggio_rel = relationship('ViaggiClass', back_populates='voli_rel')
     
     # FK -> Aerei
-    id_aereo: Mapped[int] = mapped_column(ForeignKey('dev.Aerei.id_aereo'), primary_key=True)
-    aereo_rel = relationship('AereiClass', back_populates='voli_rel')   
+    id_aereo: Mapped[int] = mapped_column(ForeignKey('dev.Aerei.id_aereo'))
+    aereo_rel = relationship('AereiClass', back_populates='voli_rel')
+
+    # FK -> Aereoporti
+    id_aereoporto_partenza: Mapped[int] = mapped_column(ForeignKey('dev.Aereoporti.id_aereoporto'), nullable=False)
+    aereoporto_partenza_rel = relationship('AereoportiClass', foreign_keys=[id_aereoporto_partenza], back_populates='voli_partenza_rel')
+
+    # FK -> Aereoporti
+    id_aereoporto_arrivo: Mapped[int] = mapped_column(ForeignKey('dev.Aereoporti.id_aereoporto'), nullable=False)
+    aereoporto_arrivo_rel = relationship('AereoportiClass', foreign_keys=[id_aereoporto_arrivo], back_populates='voli_arrivo_rel')
