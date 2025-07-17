@@ -44,11 +44,9 @@ Home
                                 </label>
                                 <select class="form-select" required>
                                     <option value="">Seleziona partenza</option>
-                                    <option value="MXP">Milano Malpensa</option>
-                                    <option value="FCO">Roma Fiumicino</option>
-                                    <option value="VCE">Venezia Marco Polo</option>
-                                    <option value="NAP">Napoli Capodichino</option>
-                                    <option value="BLQ">Bologna Marconi</option>
+                                    {% for v in partenze %}
+                                        <option value="{{ v }}"> {{ v }} </option>
+                                    {% endfor %}
                                 </select>
                             </div>
                             <div class="col-md-6">
@@ -57,12 +55,9 @@ Home
                                 </label>
                                 <select class="form-select" required>
                                     <option value="">Seleziona destinazione</option>
-                                    <option value="CDG">Parigi CDG</option>
-                                    <option value="LHR">Londra Heathrow</option>
-                                    <option value="MAD">Madrid Barajas</option>
-                                    <option value="BCN">Barcellona El Prat</option>
-                                    <option value="AMS">Amsterdam Schiphol</option>
-                                    <option value="JFK">New York JFK</option>
+                                    {% for v in arrivi %}
+                                        <option value="{{ v }}"> {{ v }} </option>
+                                    {% endfor %}
                                 </select>
                             </div>
                         </div>
@@ -81,6 +76,16 @@ Home
                                 </label>
                                 <input id="ritorno" type="date" class="form-control" id="dataRitorno">
                             </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"> 
+                                <i class="fa-solid fa-ticket"></i> Tipologia Biglietto 
+                            </label>
+                            <select class="form-select">
+                                <option value="economy"> Economy </option>
+                                <option value="first-class"> First-Class </option>
+                            </select>
                         </div>
 
                         <div class="text-center">

@@ -3,7 +3,6 @@ from flask import Flask, render_template, request, url_for, redirect, flash, ses
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash
 
-from core.IndirizziClass import IndirizziClass
 from core.PasseggeriClass import PasseggeriClass
 from core.CompagnieClass import CompagnieClass
 from core.DipendentiClass import DipendentiClass
@@ -18,8 +17,8 @@ from core.VoliClass import VoliClass
 from dotenv import load_dotenv
 from System import getParam
 from services.CompagnieRepository import CompagnieRepository
-from services.IndirizziRepository import IndirizziRepository
 from services.AereiRepository import AereiRepository
+from services.ViaggiRepository import ViaggiRepository
 from services.ViaggiRepository import ViaggiRepository
 
 load_dotenv()
@@ -41,20 +40,21 @@ def home():
     nome = ""
     if current_user.is_authenticated:
         nome = PasseggeriClass.get_by_id(current_user.get_id()).nome
-
-    if request.method == "POST":
+    
+    if request.method == 'POST':
         tipo_viaggio = request.form['tipo']
         partenza = request.form['partenza']
         arrivo = request.form['arrivo']
         biglietto = request.form['biglietto']
 
         data_partenza = request.form['dataPartenza']
-        data_ritorno = request.form['dataRitorno'] if tipo_viaggio == "andata-ritorno" else ""
+        data_ritorno = request.form['dataRitorno'] if tipo_viaggio == 'andata-ritorno' else ''
 
         return redirect(url_for('trip', da=partenza, a=arrivo, dataP=data_partenza, dataR=data_ritorno, biglietto=biglietto))
-
-    partenze = ViaggiRepository.get_list_partenze()
-    arrivi = ViaggiRepository.get_list_arrivi()
+    
+    viaggi_repo = ViaggiRepository()
+    partenze = viaggi_repo.get_list_partenze()
+    arrivi = viaggi_repo.get_list_arrivi()
 
     partenze = ['Barcellona', 'Buenos Aires']
     arrivi = ['Galliera Veneta', 'Noale-Scorzè']
@@ -66,6 +66,7 @@ def home():
 @app.route('/trip', methods=['GET', 'POST'])
 def trip():
     viaggi_repo = ViaggiRepository()
+    
     partenza = request.args.get('da')
     destinazione = request.args.get('a')
     dataP = request.args.get('dataP')
@@ -75,6 +76,7 @@ def trip():
     voli = viaggi_repo.get_viaggi(partenza=partenza, destinazione=destinazione, dataP=dataP, dataR=dataR, biglietto=biglietto)
 
     return render_template('./public_html/trip.html', voli=voli)
+
 
 @app.route('/admin_settings', methods=['GET', 'POST'])
 def admin_settings():
@@ -118,29 +120,21 @@ def user_registration():
         nome = request.form['nome']
         cognome = request.form['cognome']
         prefisso = request.form['prefisso']
-        tel = request.form['tel']
+        tel = request.form['tel'].replace(' ', '')
         nascita = request.form['nascita']
         saldo = 0.0
 
         #Indirizzo passeggero
-        civico = request.form['civico']
         via = request.form['via']
-        citta = request.form['citta']
+        civico = request.form['civico']
         cod_postale = int(request.form['cod_postale'])
+        citta = request.form['citta']
         paese = request.form['paese']
-
-        # Controlla che l'indirizzo esista, evita la ridondanza per persone che abitano assieme
-        addr = IndirizziClass.get_address(civico, via, citta, cod_postale, paese)
-        if addr:
-            id_addr = addr.address_id
-        else:
-            addr = IndirizziClass.add(civico, via, citta, cod_postale, paese)
-            id_addr = addr.address_id
 
         if PasseggeriClass.get_by_email(email):
             flash('A user with this mail already exists.', 'danger')
         else:
-            PasseggeriClass.add(email, generate_password_hash(password), nome, cognome, prefisso+tel, nascita, saldo, id_addr)
+            PasseggeriClass.add(email, generate_password_hash(password), nome, cognome, prefisso+tel, nascita, saldo, via, civico, cod_postale, citta, paese)
             flash('Your account has been created! You can now log in.', 'success')
             return redirect(url_for('home'))
     return render_template('public_html/register.html')
@@ -187,13 +181,6 @@ def function_actions():
         if action == "get_for_select":
             return compagnie_repo.get_all()
 
-
-    elif target == "indirizzi":
-
-        indirizziRepo = IndirizziRepository()
-
-        if action == "get_for_select":
-            return jsonify(indirizziRepo.get_all())
     elif target == "aerei":
         aerei_repo = AereiRepository()
 
@@ -210,7 +197,6 @@ def function_actions():
             return aerei_repo.get_datatable(draw,start,length,search_value)
         elif action == "getById":
             return aerei_repo.get_by_id(getParam("id_aereo"))
-
 
 
     return jsonify({"error": "Invalid action"}), 400

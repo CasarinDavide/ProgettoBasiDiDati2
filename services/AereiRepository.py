@@ -13,11 +13,9 @@ from flask_login import UserMixin
 
 from core.AereiClass import AereiClass
 from core.AereiClass import AereiClass
-from core.IndirizziClass import IndirizziClass
 from services.BaseRepository import BaseRepository, model_to_dict
 from core.AereiClass import AereiClass
 from services.BaseRepository import BaseRepository
-from services.IndirizziRepository import IndirizziRepository
 
 
 class AereiRepository(BaseRepository[AereiClass]):

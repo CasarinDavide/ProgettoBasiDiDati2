@@ -13,8 +13,12 @@ CREATE TABLE dev.Passeggeri (
                                 cognome VARCHAR(200) NOT NULL,
                                 tel VARCHAR(20) NOT NULL,
                                 nascita DATE NOT NULL,
-                                address_id INTEGER REFERENCES dev.Indirizzi(address_id) ON DELETE SET NULL,
-                                saldo REAL NOT NULL
+                                saldo REAL NOT NULL,
+                                via VARCHAR(200) NOT NULL,
+                                civico VARCHAR(200) NOT NULL,
+                                cod_postale INTEGER NOT NULL,
+                                citta VARCHAR(200) NOT NULL,
+                                paese VARCHAR(200) NOT NULL
 );
 """
 #UserMixin è la classe da ereditare per Flask-Login
@@ -32,17 +36,17 @@ class PasseggeriClass(UserMixin, Base):
     nascita: Mapped[datetime] = mapped_column(nullable=False)
     saldo: Mapped[float] = mapped_column(nullable=False)
     
-    #ForeignKey -> Address
-    address_id: Mapped[int] = mapped_column(ForeignKey('dev.Indirizzi.address_id'), nullable=False)
-
-    # Address associato all'utente
-    # la stringa in 'back_populates' corrisponde al nome dell'attributo presente nell'altra classe (non al nome della classe)   
-    address_rel = relationship('IndirizziClass', back_populates='passeggeri_rel')
-
-    #alternativa: relationship(Address, backref='passeggeri')
-    #questo metodo permette di togliere l'attributo passeggeri da Address perché lo crea da solo, ma mi pareva più chiaro usare 'back_populates' normale
+    via: Mapped[str] = mapped_column(nullable=False)
+    civico: Mapped[str] = mapped_column(nullable=False)
+    cod_postale: Mapped[int] = mapped_column(nullable=False)
+    citta: Mapped[str] = mapped_column(nullable=False)
+    paese: Mapped[str] = mapped_column(nullable=False)
 
     # Biglietti posseduti dal passeggero
+    # la stringa in 'back_populates' corrisponde al nome dell'attributo presente nell'altra classe (non al nome della classe)   
+
+    #alternativa: relationship(NomeClass, backref='passeggeri')
+    #questo metodo permette di togliere l'attributo passeggeri da Biglietti perché lo crea da solo, ma mi pareva più chiaro usare 'back_populates' normale
     biglietti_rel = relationship('BigliettiClass', back_populates='passeggero_rel')
 
     def to_dict(self):
@@ -55,11 +59,15 @@ class PasseggeriClass(UserMixin, Base):
             'tel': self.tel,
             'nascita': self.nascita,
             'saldo': self.saldo,
-            'address': self.address_id
+            'via': self.via,
+            'civico': self.civico, 
+            'cod_postale': self.cod_postale, 
+            'citta': self.citta, 
+            'paese': self.paese
         }
 
     @classmethod
-    def add(cls, email, password, nome, cognome, tel, nascita, saldo, address):
+    def add(cls, email, password, nome, cognome, tel, nascita, saldo, via, civico, cod_postale, citta, paese):
         with Session(engine()) as session:
             record = cls(
                 email = email,
@@ -69,7 +77,11 @@ class PasseggeriClass(UserMixin, Base):
                 tel = tel,
                 nascita = nascita,
                 saldo = saldo,
-                address_id = address
+                via = via,
+                civico = civico, 
+                cod_postale = cod_postale, 
+                citta = citta, 
+                paese = paese
             )
             session.add(record)
             session.commit()
