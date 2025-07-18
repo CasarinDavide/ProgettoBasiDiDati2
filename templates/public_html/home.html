@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
 {% block title %}
-{% if user %}
-Home - {{ user }}
-{% else %}
-Home
-{% endif %}
+    {% if user %}
+        Home - {{ user }}
+    {% else %}
+        Home
+    {% endif %}
 {% endblock title %}
 
 {% block main_content %}

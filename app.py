@@ -3,15 +3,15 @@ from flask import Flask, render_template, request, url_for, redirect, flash, ses
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash
 
-from core.PasseggeriClass import PasseggeriClass
-from core.CompagnieClass import CompagnieClass
-from core.DipendentiClass import DipendentiClass
-from core.ViaggiClass import ViaggiClass
 from core.AereiClass import AereiClass
 from core.AereoportiClass import AereoportiClass
-from core.DataPartenzeClass import DataPartenzeClass
-from core.EffettuanoClass import EffettuanoClass
 from core.BigliettiClass import BigliettiClass
+from core.CompagnieClass import CompagnieClass
+from core.DataPartenzeClass import DataPartenzeClass
+from core.DipendentiClass import DipendentiClass
+from core.EffettuanoClass import EffettuanoClass
+from core.PasseggeriClass import PasseggeriClass
+from core.ViaggiClass import ViaggiClass
 from core.VoliClass import VoliClass
 
 from dotenv import load_dotenv
@@ -19,8 +19,7 @@ from System import getParam
 from services.CompagnieRepository import CompagnieRepository
 from services.AereiRepository import AereiRepository
 from services.ViaggiRepository import ViaggiRepository
-from services.ViaggiRepository import ViaggiRepository
-
+from services.PasseggeriRepository import PasseggeriRepository
 load_dotenv()
 
 app = Flask(__name__)
@@ -32,14 +31,16 @@ login_manager.init_app(app)
 # CALLBACK OBBLIGATORIO
 @login_manager.user_loader
 def load_user(user_id):
-    return PasseggeriClass.get_by_id(user_id)
+    passeggeri_repo = PasseggeriRepository()
+    return passeggeri_repo.get_by_id(user_id)
 
 # Home Page
 @app.route('/', methods = ["GET", "POST"])
 def home():
     nome = ""
+    passeggeri_repo = PasseggeriRepository()
     if current_user.is_authenticated:
-        nome = PasseggeriClass.get_by_id(current_user.get_id()).nome
+        nome = passeggeri_repo.get_by_id(current_user.get_id()).nome
     
     if request.method == 'POST':
         tipo_viaggio = request.form.get('tipo', '')
@@ -96,13 +97,15 @@ def user_login():
     if current_user.is_authenticated:
         return 'You are already authenticated'
 
+    passeggeri_repo = PasseggeriRepository()
+
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
         remind = request.form.get('remind_me') != None
         
-        if PasseggeriClass.validate_password(email, password):
-            user = PasseggeriClass.get_by_email(email)
+        if passeggeri_repo.validate_password(email, password):
+            user = passeggeri_repo.get_by_email(email)
             login_user(user, remember = remind )
             return redirect('/')
         else:
@@ -113,6 +116,7 @@ def user_login():
 
 @app.route('/user_registration', methods=['GET', 'POST'])
 def user_registration():
+    passeggeri_repo = PasseggeriRepository()
     if request.method == 'POST':
         #Informazioni principali passeggero
         email = request.form['email']
@@ -131,10 +135,10 @@ def user_registration():
         citta = request.form['citta']
         paese = request.form['paese']
 
-        if PasseggeriClass.get_by_email(email):
+        if passeggeri_repo.get_by_email(email):
             flash('A user with this mail already exists.', 'danger')
         else:
-            PasseggeriClass.add(email, generate_password_hash(password), nome, cognome, prefisso+tel, nascita, saldo, via, civico, cod_postale, citta, paese)
+            passeggeri_repo.add(email, generate_password_hash(password), nome, cognome, prefisso+tel, nascita, saldo, via, civico, cod_postale, citta, paese)
             flash('Your account has been created! You can now log in.', 'success')
             return redirect(url_for('home'))
     return render_template('public_html/register.html')
@@ -146,6 +150,18 @@ def logout():
     logout_user()
     return redirect(url_for('user_login'))
 
+
+@app.route('/mytriviaggi', methods=['GET', 'POST'])
+def personal_area():
+    oper = getParam("oper")
+
+    if oper is None: 
+        if not current_user.is_authenticated:
+            return redirect(url_for(login_user))
+        
+        return render_template("public_html/personal_area.html")
+    else:
+        return function_actions()
 
 def function_actions():
     target = getParam("fun")
@@ -198,12 +214,14 @@ def function_actions():
         elif action == "getById":
             return aerei_repo.get_by_id(getParam("id_aereo"))
 
+    elif target == "mytriviaggi":
+        passeggeri_repo = PasseggeriRepository()
 
+        if action == "get_current":
+            return passeggeri_repo.get_by_id_json(current_user.get_id())
+    
     return jsonify({"error": "Invalid action"}), 400
 
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-

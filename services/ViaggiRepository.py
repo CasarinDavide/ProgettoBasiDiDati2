@@ -5,9 +5,8 @@ from System import engine
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from datetime import datetime
-from flask import jsonify
 
-from typing import Optional, List
+from typing import List
 
 class ViaggiRepository(BaseRepository[ViaggiClass]):
 
@@ -62,11 +61,11 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
         query_info_viaggi = text('''
                                 WITH viaggi_dettagli AS (
                                     SELECT 
-                                        v.id_viaggio,
-                                        v.durata, 
-                                        prt.citta, 
-                                        dst.citta,
-                                        d.data
+                                        v.id_viaggio AS id_viaggio,
+                                        v.durata AS durata, 
+                                        prt.citta AS citta_partenza, 
+                                        dst.citta AS citta_destinazione,
+                                        d.data AS data_partenza
 
                                     FROM dev."Viaggi" v 
                                         JOIN dev."Aereoporti" prt ON v.id_aereoporto_partenza = prt.id_aereoporto     
@@ -77,32 +76,64 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                                 ),
 
                                 costo_biglietto AS (
-                                    SELECT v.id_viaggio, MIN(b.prezzo)
-                                    FROM dev."Biglietti" b JOIN viaggi_dettagli v USING(id_viaggio)
+                                    SELECT 
+                                        v.id_viaggio AS id_viaggio, 
+                                        MIN(b.prezzo) AS prezzo
+                                    
+                                    FROM dev."Biglietti" b 
+                                        JOIN viaggi_dettagli v USING(id_viaggio)
+                                    
                                     WHERE b.categoria = :biglietto 
                                     GROUP BY v.id_viaggio
                                 ),
 
                                 numero_scali_intermedi AS (
-                                    SELECT v.id_viaggio, COUNT(*)
-                                    FROM dev."Voli" voli JOIN viaggi_dettagli v USING(id_viaggio)
+                                    SELECT 
+                                        v.id_viaggio AS id_viaggio, 
+                                        COUNT(*) AS numero_scali
+                                    
+                                    FROM dev."Voli" voli 
+                                        JOIN viaggi_dettagli v USING(id_viaggio)
+                                    
                                     GROUP BY v.id_viaggio
-                                )
+                                ),
+                                 
+                                info_scali AS (
+                                    SELECT 
+                                        vo.id_viaggio AS id_viaggio,
+                                        vo.ordine AS ordine, 
+                                        a.citta AS citta
+                                    FROM dev."Viaggi" vi 
+                                        JOIN dev."Voli" vo USING(id_viaggio)
+                                        JOIN dev."Aereoporti" a ON vo.id_aereoporto_arrivo = a.id_aereoporto
+                                    WHERE vo.ordine <> 1
+                                    ORDER BY vo.ordine
+                                ),
 
-                                SELECT *
+                                info_scali_aggregati AS (
+                                    SELECT
+                                        vo.id_viaggio AS id_viaggio,
+                                        STRING_AGG(a.citta, ', ' ORDER BY vo.ordine) AS scali
+                                    FROM dev."Viaggi" vi
+                                        JOIN dev."Voli" vo USING(id_viaggio)
+                                        JOIN dev."Aereoporti" a ON vo.id_aereoporto_arrivo = a.id_aereoporto
+                                    WHERE vo.ordine <> 1
+                                    GROUP BY vo.id_viaggio
+                                )
+                                SELECT
+                                    vd.id_viaggio AS id_viaggio,
+                                    vd.durata AS durata,
+                                    vd.citta_partenza AS citta_partenza,
+                                    vd.citta_destinazione AS citta_destinazione,
+                                    vd.data_partenza AS data_partenza,
+                                    cb.prezzo AS prezzo_biglietto,
+                                    si.numero_scali AS numero_scali,
+                                    COALESCE(isa.scali, 'Nessuno scalo') AS scali
+                                
                                 FROM viaggi_dettagli vd
                                     JOIN costo_biglietto cb USING(id_viaggio)
                                     JOIN numero_scali_intermedi si USING(id_viaggio)
-                                ''')
-
-        # Informazioni sui voli che trovo con la query precedente
-        query_info_scali = text('''
-                                SELECT vo.id_viaggio, vo.ordine, a.citta
-                                FROM dev."Viaggi" vi 
-                                    JOIN dev."Voli" vo USING(id_viaggio)
-                                    JOIN dev."Aereoporti" a ON vo.id_aereoporto_arrivo = a.id_aereoporto
-                                WHERE vo.ordine <> 1 AND vi.id_viaggio = ANY(:id_viaggi)
-                                ORDER BY vo.ordine
+                                    LEFT JOIN info_scali_aggregati isa USING(id_viaggio);
                                 ''')
         
         with Session(engine()) as session:
@@ -112,7 +143,7 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                 'dataP': dataP,
                 'biglietto': biglietto
             })
-            
+
             res_ritorno = ''
             if dataR != '':
                 res_ritorno = session.execute( query_info_viaggi, {
@@ -122,57 +153,7 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                     'biglietto': biglietto
                 })
 
-            dst_voli = ''
+        andate = [r.__dict__ for r in res_andata]
+        ritorni = [r.__dict__ for r in res_ritorno]
 
-        andata1 = {
-            "id_viaggio": "1",
-            "aereoporto_partenza": "Venezia",
-            "orario_partenza": "8:45",
-            "aereoporto_arrivo": "Barcellona",
-            "orario_arrivo": "10:45",
-            "durata": "2h",
-            "numero_voli": 1,
-            "destinazioni_voli": [],
-            "prezzo": 259.65
-        }
-
-        ritorno1 = {
-            "id_viaggio": "1",
-            "aereoporto_partenza": "Barcellona",
-            "orario_partenza": "8:45",
-            "aereoporto_arrivo": "Venezia",
-            "orario_arrivo": "10:55",
-            "durata": "2h 10min",
-            "numero_voli": 2,
-            "destinazioni_scali": ['Parigi'],
-            "prezzo": 259.65
-        }
-
-        andata2 = {
-            "id_viaggio": "2",
-            "aereoporto_partenza": "Venezia",
-            "orario_partenza": "8:45",
-            "aereoporto_arrivo": "Barcellona",
-            "orario_arrivo": "10:45",
-            "durata": "10h 15min",
-            "numero_voli": 1,
-            "destinazioni_scali": [],
-            "prezzo": 259.65
-        }
-        
-        ritorno2 = {
-            "id_viaggio": "2",
-            "aereoporto_partenza": "Venezia",
-            "orario_partenza": "8:45",
-            "aereoporto_arrivo": "Barcellona",
-            "orario_arrivo": "10:45",
-            "durata": "10h 15min",
-            "numero_voli": 1,
-            "destinazioni_voli": [],
-            "prezzo": 259.65
-        }
-
-        return [
-            [andata1, ritorno1],
-            [andata2, ritorno2]
-            ]
+        return [andate, ritorni]

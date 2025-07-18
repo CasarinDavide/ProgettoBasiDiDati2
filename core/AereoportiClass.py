@@ -11,7 +11,7 @@ CREATE TABLE dev.Aereoporti (
                                 civico VARCHAR(200) NOT NULL,
                                 cod_postale INTEGER NOT NULL,
                                 citta VARCHAR(200) NOT NULL,
-                                paese VARCHAR(200) NOT NULL
+                                paese VARCHAR(200) NOT NULL 
 );
 """
 class AereoportiClass(Base):

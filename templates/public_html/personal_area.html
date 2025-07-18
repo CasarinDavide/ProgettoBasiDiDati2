@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}
+
+{% endblock title %}
+
+{% block main_content %}
+
+<script>
+    getUserData = () => {
+        jQuery.ajax({
+            url: ajaxUrl + "?fun=mytriviaggi&oper=get_current",
+            type: "POST",
+            success: (data) => {
+                console.log(data);
+                title = document.getElementById("title").innerHTML = data.nome;
+            }
+
+        });
+    }
+</script>
+
+<div class="container-fluid">
+    <div class="row vh-100">
+
+        <!-- Sidebar -->
+        <div class="col-md-3 bg-white border-end p-3">
+            <h5 class="mb-4">Home</h5>
+            <ul class="nav flex-column">
+                <li class="nav-item"><a class="nav-link" href="#">Il mio account</a></li>
+                <li class="nav-item"><a class="nav-link" href="#">I miei biglietti</a></li>
+                <li class="nav-item"><a class="nav-link" href="#">Assistenza</a></li>
+                <li class="nav-item"><a class="nav-link" href="#">FAQ</a></li>
+            </ul>
+        </div>
+
+        <!-- Contenuto principale -->
+        <div class="col-md-9 p-4">
+            <h3>Il mio account</h3>
+            <p class="text-muted">Le tue informazioni personali</p>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Nome e cognome</label>
+                <div class="d-flex justify-content-between align-items-center border p-2 bg-white">
+                    <span>Stettin Mallow</span>
+                    <button class="btn btn-link btn-sm">Modifica</button>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Data di nascita</label>
+                <div class="d-flex justify-content-between align-items-center border p-2 bg-white">
+                    <span>-</span>
+                    <button class="btn btn-link btn-sm">Aggiungi</button>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Indirizzo email</label>
+                <div class="d-flex justify-content-between align-items-center border p-2 bg-white">
+                    <span>stettinmallow@gmail.com</span>
+                    <button class="btn btn-link btn-sm">Modifica</button>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Numero di telefono</label>
+                <div class="d-flex justify-content-between align-items-center border p-2 bg-white">
+                    <span>-</span>
+                    <button class="btn btn-link btn-sm">Aggiungi</button>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Password</label>
+                <div class="d-flex justify-content-between align-items-center border p-2 bg-white">
+                    <span>********</span>
+                    <button onclick="getUserData()" class="btn btn-link btn-sm">Modifica</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock main_content %}
