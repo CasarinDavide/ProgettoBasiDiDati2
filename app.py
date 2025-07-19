@@ -67,6 +67,7 @@ def home():
 @app.route('/trip', methods=['GET', 'POST'])
 def trip():
     viaggi_repo = ViaggiRepository()
+    nome = PasseggeriRepository().get_by_id(current_user.get_id()).nome
     
     partenza = request.args.get('da')
     destinazione = request.args.get('a')
@@ -76,15 +77,13 @@ def trip():
 
     voli = viaggi_repo.get_viaggi(partenza=partenza, destinazione=destinazione, dataP=dataP, dataR=dataR, biglietto=biglietto)
 
-    return render_template('./public_html/trip.html', voli=voli)
+    return render_template('./public_html/trip.html', user=nome, voli=voli)
 
 
 @app.route('/admin_settings', methods=['GET', 'POST'])
 def admin_settings():
-    print(request.method)
     option = getParam("oper")
-    print(request.args)
-    print(option)
+    
     if option is None:
         return render_template('./public_html/admin_settings.html')
     else:
@@ -154,12 +153,13 @@ def logout():
 @app.route('/mytriviaggi', methods=['GET', 'POST'])
 def personal_area():
     oper = getParam("oper")
+    nome = PasseggeriRepository().get_by_id(current_user.get_id()).nome
 
     if oper is None: 
         if not current_user.is_authenticated:
             return redirect(url_for(login_user))
         
-        return render_template("public_html/personal_area.html")
+        return render_template("public_html/personal_area.html", user=nome)
     else:
         return function_actions()
 
@@ -214,11 +214,46 @@ def function_actions():
         elif action == "getById":
             return aerei_repo.get_by_id(getParam("id_aereo"))
 
-    elif target == "mytriviaggi":
+    elif target == "personalArea":
         passeggeri_repo = PasseggeriRepository()
 
-        if action == "get_current":
+        if action == "getCurrentInfo":
             return passeggeri_repo.get_by_id_json(current_user.get_id())
+
+        if action == "update":
+            element = getParam("element")
+            val = getParam("new_value")
+            id_passeggero = current_user.get_id()
+            pk_field = passeggeri_repo.pk_field
+            
+            if element == "nome_cognome":
+                nome = val.split(" ")[0]
+                cognome = val.split(" ")[1]
+                return passeggeri_repo.update(id_passeggero, pk_field, nome=nome, cognome=cognome)
+            elif element == "email":
+                return passeggeri_repo.update(id_passeggero, pk_field, email=val)
+            elif element == "password":
+                password = generate_password_hash(val)
+                return passeggeri_repo.update(id_passeggero, pk_field, password=password)
+            elif element == "telefono":
+                tel = val.replace(' ', '')
+                return passeggeri_repo.update(id_passeggero, pk_field, tel=tel)
+            elif element == "nascita":
+                return passeggeri_repo.update(id_passeggero, pk_field, nascita=val)
+            elif element == "indirizzo":
+                civico = val.split(' ')[0]
+                via = val.split(' ')[1]
+                citta = val.split(' ')[2]
+                cod_postale = val.split(' ')[3]
+                paese = val.split(' ')[4]
+                return passeggeri_repo.update(id_passeggero, pk_field,  
+                                                civico=civico,
+                                                via=via,
+                                                citta=citta,
+                                                cod_postale=cod_postale,
+                                                paese=paese
+                                            )
+
     
     return jsonify({"error": "Invalid action"}), 400
 

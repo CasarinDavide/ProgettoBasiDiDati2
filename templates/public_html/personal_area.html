@@ -1,22 +1,167 @@
 {% extends "base.html" %}
 
 {% block title %}
-
+...
 {% endblock title %}
 
-{% block main_content %}
+{% block extra_jquery %}
 
 <script>
-    getUserData = () => {
-        jQuery.ajax({
-            url: ajaxUrl + "?fun=mytriviaggi&oper=get_current",
-            type: "POST",
-            success: (data) => {
-                console.log(data);
-                title = document.getElementById("title").innerHTML = data.nome;
-            }
 
-        });
+    //send the request as soon as the head starts loading and update the DOM
+    $.when($.ajax({
+        url: ajaxUrl + "?fun=personalArea&oper=getCurrentInfo",
+        type: "POST"
+    }), jQuery.isReady).then((response) => {
+        if (response[1] != "success")
+            return;
+
+        let data = response[0];
+
+        let nome = document.getElementById('nome_cognome').firstElementChild;
+        let cognome = document.getElementById('nome_cognome').firstElementChild.nextElementSibling;
+        let nascita = document.getElementById('data_nascita').firstElementChild;
+        let email = document.getElementById('email').firstElementChild;
+        let telefono = document.getElementById('telefono').firstElementChild;
+        let civico = document.getElementById('civico');
+        let via = document.getElementById('via');
+        let citta = document.getElementById('citta');
+        let cod_postale = document.getElementById('cod_postale');
+        let paese = document.getElementById('paese');
+
+        nome.innerText = data.nome;
+        cognome.innerText = data.cognome;
+        nascita.innerText = data.nascita;
+        email.innerText = data.email;
+        telefono.innerText = data.tel;
+        civico.innerText = data.civico;
+        via.innerText = data.via;
+        citta.innerText = data.citta;
+        cod_postale.innerText = data.cod_postale;
+        paese.innerText = data.paese;
+    });
+</script>
+
+{% endblock extra_jquery %}
+
+
+{% block main_content %}
+<script>
+    //hide everything except account details
+    document.addEventListener("DOMContentLoaded", () => {
+        document.getElementById('account').style.display = 'block';
+        document.getElementById('biglietti').style.display = 'none';
+    });
+
+    function save(element_id) {
+        let el = document.getElementById(element_id);
+        let new_value = ""
+
+        //reset the corresponding field
+        switch (element_id) {
+            case 'nome_cognome':
+                let nome = el.firstElementChild.value
+                let cognome = el.firstElementChild.nextElementSibling.value
+
+                new_value = nome + " " + cognome
+
+                el.innerHTML = `
+                    <span class="form-control"> ${nome} </span>
+                    <span class="form-control"> ${cognome} </span>
+                `;
+                break;
+
+            case 'indirizzo':
+                let civico = document.getElementById('civico').value
+                let via = document.getElementById('via').value
+                let citta = document.getElementById('citta').value
+                let cod_postale = document.getElementById('cod_postale').value
+                let paese = document.getElementById('paese').value
+
+                new_value = civico + " " + via + " " + citta + " " + cod_postale + " " + paese;
+                console.log(new_value)
+
+                el.innerHTML = `
+                    <span id="civico" class="form-control"> ${civico} </span>
+                    <span id="via" class="form-control"> ${via} </span>
+                    <span id="citta" class="form-control"> ${citta} </span>
+                    <span id="cod_postale" class="form-control"> ${cod_postale} </span>
+                    <span id="paese" class="form-control"> ${paese} </span>
+                `
+                break;
+            default:
+                new_value = el.firstElementChild.value
+
+                el.innerHTML = `<span class="form-control"> ${new_value} </span>`
+        }
+
+        //reset the modify button
+        el.nextElementSibling.innerHTML = `
+                    <button onclick="edit('${element_id}')" class="btn btn-link btn-sm">Modifica</button>
+                `;
+
+        // $.ajax({
+        //     url: ajaxUrl + `?fun=personalArea&oper=update&element=${element_id}&value=${new_value}`,
+        //     type: "POST"
+        // });
+
+
+
+    }
+
+    function edit(element_id) {
+        let el = document.getElementById(element_id);
+
+        //set the field to modify
+        switch (element_id) {
+            case 'nome_cognome':
+                el.innerHTML = `
+                    <input type="text" class="form-control" placeholder="Nome"> 
+                    <input type="text" class="form-control" placeholder="Cognome">
+                    `;
+                break;
+
+            case 'data_nascita':
+                el.innerHTML = `<input type="date" class="form-control" required>`;
+                break;
+
+            case 'email':
+                el.innerHTML = `<input type="email" class="form-control" placeholder="Email" required>`;
+                break;
+
+            case 'telefono':
+                el.innerHTML = `<input type="tel" class="form-control" placeholder="+39..." required>`;
+                break;
+
+            case 'password':
+                el.innerHTML = `<input type="password" class="form-control" placeholder="Password "required>`;
+                break;
+
+            case 'indirizzo':
+                el.innerHTML = `
+                    <input id="civico" placeholder="Civico" type="text" class="form-control" required>
+                    <input id="via" placeholder="Via" type="text" class="form-control" required>
+                    <input id="citta" placeholder="Citta" type="text" class="form-control" required>
+                    <input id="cod_postale" placeholder="Codice Postale" type="number" class="form-control" required>
+                    <input id="paese" placeholder="Paese" type="text" class="form-control" required>
+                `
+                break;
+        }
+
+        //set the confirm button
+        el.nextElementSibling.innerHTML = `
+                    <button class="btn btn-link btn-sm" onclick="save('${element_id}')"> <i class="fa-solid fa-check"></i> </button>
+                `;
+
+    };
+
+    function changeFocus(id) {
+        let hide = document.getElementsByClassName('window');
+        for (el of hide) {
+            el.style.display = 'none';
+        }
+
+        document.getElementById(id).style.display = 'block';
     }
 </script>
 
@@ -27,59 +172,179 @@
         <div class="col-md-3 bg-white border-end p-3">
             <h5 class="mb-4">Home</h5>
             <ul class="nav flex-column">
-                <li class="nav-item"><a class="nav-link" href="#">Il mio account</a></li>
-                <li class="nav-item"><a class="nav-link" href="#">I miei biglietti</a></li>
+                <li class="nav-item"><a class="nav-link" onclick="changeFocus('account')">Il mio account</a></li>
+                <li class="nav-item"><a class="nav-link" onclick="changeFocus('biglietti')">I miei biglietti</a></li>
                 <li class="nav-item"><a class="nav-link" href="#">Assistenza</a></li>
                 <li class="nav-item"><a class="nav-link" href="#">FAQ</a></li>
             </ul>
         </div>
 
-        <!-- Contenuto principale -->
-        <div class="col-md-9 p-4">
+        <!-- Il mio Account -->
+        <div id="account" class="window col-md-9 p-4">
             <h3>Il mio account</h3>
             <p class="text-muted">Le tue informazioni personali</p>
 
             <div class="mb-3">
                 <label class="form-label fw-bold">Nome e cognome</label>
-                <div class="d-flex justify-content-between align-items-center border p-2 bg-white">
-                    <span>Stettin Mallow</span>
-                    <button class="btn btn-link btn-sm">Modifica</button>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div id="nome_cognome" class="input-group">
+                        <span class="form-control"> - </span>
+                        <span class="form-control"> - </span>
+                    </div>
+
+                    <div style="margin-left: 1%;">
+                        <button onclick="edit('nome_cognome')" class="btn btn-link btn-sm">Modifica</button>
+                    </div>
                 </div>
             </div>
 
             <div class="mb-3">
                 <label class="form-label fw-bold">Data di nascita</label>
-                <div class="d-flex justify-content-between align-items-center border p-2 bg-white">
-                    <span>-</span>
-                    <button class="btn btn-link btn-sm">Aggiungi</button>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div id="data_nascita" class="input-group">
+                        <span class="form-control"> - </span>
+                    </div>
+                    <div style="margin-left: 1%;">
+                        <button onclick="edit('data_nascita')" class="btn btn-link btn-sm">Modifica</button>
+                    </div>
                 </div>
             </div>
 
             <div class="mb-3">
                 <label class="form-label fw-bold">Indirizzo email</label>
-                <div class="d-flex justify-content-between align-items-center border p-2 bg-white">
-                    <span>stettinmallow@gmail.com</span>
-                    <button class="btn btn-link btn-sm">Modifica</button>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div id="email" class="input-group">
+                        <span class="form-control"> - </span>
+                    </div>
+                    <div style="margin-left: 1%;">
+                        <button onclick="edit('email')" class="btn btn-link btn-sm">Modifica</button>
+                    </div>
                 </div>
             </div>
 
             <div class="mb-3">
                 <label class="form-label fw-bold">Numero di telefono</label>
-                <div class="d-flex justify-content-between align-items-center border p-2 bg-white">
-                    <span>-</span>
-                    <button class="btn btn-link btn-sm">Aggiungi</button>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div id="telefono" class="input-group">
+                        <span class="form-control"> - </span>
+                    </div>
+                    <div style="margin-left: 1%;">
+                        <button onclick="edit('telefono')" class="btn btn-link btn-sm">Modifica</button>
+                    </div>
                 </div>
             </div>
 
             <div class="mb-3">
                 <label class="form-label fw-bold">Password</label>
-                <div class="d-flex justify-content-between align-items-center border p-2 bg-white">
-                    <span>********</span>
-                    <button onclick="getUserData()" class="btn btn-link btn-sm">Modifica</button>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div id="password" class="input-group">
+                        <span class="form-control"> ********** </span>
+                    </div>
+                    <div style="margin-left: 1%;">
+                        <button onclick="edit('password')" class="btn btn-link btn-sm">Modifica</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Indirizzo</label>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div id="indirizzo" class="input-group">
+                        <span id="civico" class="form-control"> - </span>
+                        <span id="via" class="form-control"> - </span>
+                        <span id="citta" class="form-control"> - </span>
+                        <span id="cod_postale" class="form-control"> - </span>
+                        <span id="paese" class="form-control"> - </span>
+                    </div>
+                    <div style="margin-left: 1%;">
+                        <button onclick="edit('indirizzo')" class="btn btn-link btn-sm">Modifica</button>
+                    </div>
                 </div>
             </div>
 
         </div>
+
+
+        <div id="biglietti" class="window col-md-9 p-4">
+            <h3>I miei biglietti</h3>
+            <p class="text-muted">I tuoi voli prenotati</p>
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <h5 class="card-title mb-1">Milano MXP</h5>
+                            <small class="text-muted">10:30 - 25 Gen</small>
+                        </div>
+                        <div class="col-md-1 text-center">
+                            <i class="fas fa-plane text-primary"></i>
+                        </div>
+                        <div class="col-md-3">
+                            <h5 class="card-title mb-1">Roma FCO</h5>
+                            <small class="text-muted">12:15 - 25 Gen</small>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="badge bg-success">Confermato</span>
+                            <p class="mb-0 mt-1"><small>Volo AZ123 • Posto 14A</small></p>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <button class="btn btn-outline-primary btn-sm">Dettagli</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <h5 class="card-title mb-1">Roma FCO</h5>
+                            <small class="text-muted">18:45 - 28 Gen</small>
+                        </div>
+                        <div class="col-md-1 text-center">
+                            <i class="fas fa-plane text-primary"></i>
+                        </div>
+                        <div class="col-md-3">
+                            <h5 class="card-title mb-1">Milano MXP</h5>
+                            <small class="text-muted">20:30 - 28 Gen</small>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="badge bg-warning">Check-in aperto</span>
+                            <p class="mb-0 mt-1"><small>Volo AZ456 • Posto 18C</small></p>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <button class="btn btn-outline-primary btn-sm">Dettagli</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <h5 class="card-title mb-1">Milano MXP</h5>
+                            <small class="text-muted">14:20 - 02 Feb</small>
+                        </div>
+                        <div class="col-md-1 text-center">
+                            <i class="fas fa-plane text-primary"></i>
+                        </div>
+                        <div class="col-md-3">
+                            <h5 class="card-title mb-1">Barcellona BCN</h5>
+                            <small class="text-muted">16:05 - 02 Feb</small>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="badge bg-secondary">Programmato</span>
+                            <p class="mb-0 mt-1"><small>Volo VY789 • Posto 22F</small></p>
+                        </div>
+                        <div class="col-md-2 text-end">
+                            <button class="btn btn-outline-primary btn-sm">Dettagli</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </div>
 {% endblock main_content %}

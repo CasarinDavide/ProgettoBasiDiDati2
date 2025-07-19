@@ -5,6 +5,7 @@ from System import engine
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from datetime import datetime
+from flask import jsonify, Response
 
 from typing import List
 
@@ -45,7 +46,7 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
         return None
     
     """ select all trips with given parameters and all their informations """
-    def get_viaggi(self, partenza: str, destinazione: str, dataP: datetime, dataR: datetime, biglietto: str):
+    def get_viaggi(self, partenza: str, destinazione: str, dataP: datetime, dataR: datetime, biglietto: str) -> Response:
         '''
         collection di oggetti json che devono contenere:
             + id_viaggio
@@ -55,7 +56,7 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
             + Orario di partenza
             + numero di Voli
             - dove arrivano i singoli voli, se ci sono
-            + Prezzo del viaggio
+            + Prezzo del singolo viaggio (quello totale sarà andata + ritorno se c'è)
         '''
         #informazioni sui viaggi ricercati
         query_info_viaggi = text('''
