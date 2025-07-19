@@ -121,7 +121,8 @@ class BaseRepository(Generic[T]):
             length: int,
             search_value: str,
             search_fields: List[str],
-            joins: Optional[List[Any]] = None
+            joins: Optional[List[Any]] = None,
+            **kwargs
     ):
         """
         Generic DataTable query with search + optional joins.
@@ -139,6 +140,9 @@ class BaseRepository(Generic[T]):
                     for field in search_fields
                 ]
                 query = query.filter(or_(*filters))
+
+            filters = [getattr(self.model, key) == value for key, value in kwargs.items()]
+            query = query.filter(and_(*filters))
 
             records_filtered = query.count()
             rows = query.offset(start).limit(length).all()

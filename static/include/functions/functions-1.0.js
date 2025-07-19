@@ -49,9 +49,11 @@ function resizeJQGrid(grid_id) {
 
 function checkAjaxResponse(response, redir) {
     message = false;
-    if (("" + response).startsWith('Ex:')) {
-        response = (response.substring(3));
-        message = true;
+
+    if (response.success === false)
+    {
+        showError('Attenzione', "Errore", '<button class="btn btn-primary" data-dismiss="modal" type="button">Chiudi</button>');
+        return 1;
     }
 
     if (message) {

@@ -26,6 +26,7 @@ class CompagnieRepository(BaseRepository[CompagnieClass]):
                     civico: str, via: str, citta: str, cod_postale: str, paese: str) -> Response:
         """Create a new Compagnie record (custom wrapper)."""
 
+
         rec = super().add(
             email=email,
             password=password,
@@ -39,7 +40,7 @@ class CompagnieRepository(BaseRepository[CompagnieClass]):
         )
 
         if rec is None:
-            jsonify({"success":False})
+            return jsonify({"success":False})
 
         return jsonify({"success":True})
 
@@ -50,10 +51,10 @@ class CompagnieRepository(BaseRepository[CompagnieClass]):
     def get_by_id(self, compagnie_id: str) -> Response:
         """Fetch a single compagnie by ID."""
 
-        return jsonify(model_to_dict(super().get_by_id(int(compagnie_id), pk_field=self.pk_field,joins=[CompagnieClass.address_rel]),backrefs = True))
+        return jsonify(model_to_dict(super().get_by_id(int(compagnie_id), pk_field=self.pk_field,joins=[]),backrefs = True))
 
 
-    def update(self, compagnie_id: int, email: str, password: str, tel: str, nome: str, civico: str, via: str, citta: str, cod_postale: str, paese: str) -> Response:
+    def update(self, compagnie_id: int, email: str, tel: str, nome: str, civico: str, via: str, citta: str, cod_postale: str, paese: str) -> Response:
         """
         Update a compagnie.
         kwargs can include email, password, tel, nome, address_id.
@@ -61,7 +62,6 @@ class CompagnieRepository(BaseRepository[CompagnieClass]):
         res = super().update(compagnie_id,
                             self.pk_field,
                             email=email,
-                            password=password,
                             tel=tel,
                             nome=nome,
                             civico=civico,

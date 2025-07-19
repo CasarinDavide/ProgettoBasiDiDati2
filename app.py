@@ -18,6 +18,7 @@ from dotenv import load_dotenv
 from System import getParam
 from services.CompagnieRepository import CompagnieRepository
 from services.AereiRepository import AereiRepository
+from services.DipendentiRepository import DipendentiRepository
 from services.ViaggiRepository import ViaggiRepository
 from services.PasseggeriRepository import PasseggeriRepository
 load_dotenv()
@@ -188,14 +189,26 @@ def function_actions():
                                       citta=getParam("citta"),
                                       cod_postale=getParam("cod_postale"),
                                       paese=getParam("paese"),
-                                      id_address=getParam("id_address"))
+                                      )
 
         elif action == "getAllDatatable":
             return compagnie_repo.get_datatable(draw,start,length,search_value)
         elif action == "getById":
             return compagnie_repo.get_by_id(getParam("id_compagnia"))
-        if action == "get_for_select":
+        elif action == "get_for_select":
             return compagnie_repo.get_all()
+        elif action == "edit":
+            return compagnie_repo.update(
+                                         compagnie_id=getParam("id_compagnia"),
+                                         email=getParam("email"),
+                                         tel=getParam("tel"),
+                                         nome=getParam("nome"),
+                                         civico=getParam("civico"),
+                                         via=getParam("via"),
+                                         citta=getParam("citta"),
+                                         cod_postale=getParam("cod_postale"),
+                                         paese=getParam("paese"),)
+
 
     elif target == "aerei":
         aerei_repo = AereiRepository()
@@ -213,6 +226,37 @@ def function_actions():
             return aerei_repo.get_datatable(draw,start,length,search_value)
         elif action == "getById":
             return aerei_repo.get_by_id(getParam("id_aereo"))
+    elif target == "dipendenti":
+
+        dipendenti_repo = DipendentiRepository()
+
+        if action == "add":
+            return dipendenti_repo.add(email=getParam("email"),
+                                      password=getParam("password"),
+                                      tel=getParam("tel"),
+                                      nome=getParam("nome"),
+                                      cognome=getParam("cognome"),
+                                      ruolo=getParam("ruolo"),
+                                      id_compagnia=getParam("id_compania"),
+                                      )
+
+        elif action == "getAllDatatable":
+            return dipendenti_repo.get_datatable(draw,start,length,search_value,id_compagnia = getParam("id_compagnia"))
+        elif action == "getById":
+            return dipendenti_repo.get_by_id(getParam("id_dipendente"))
+        elif action == "get_for_select":
+            return dipendenti_repo.get_all()
+        elif action == "edit":
+            return dipendenti_repo.update(
+                id_dipendente=getParam("id_dipendente"),
+                email=getParam("email"),
+                tel=getParam("tel"),
+                nome=getParam("nome"),
+                cognome=getParam("cognome"),
+                ruolo=getParam("ruolo"),
+                id_compagnia=getParam("id_compania")
+            )
+
 
     elif target == "personalArea":
         passeggeri_repo = PasseggeriRepository()
