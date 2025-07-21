@@ -57,9 +57,8 @@ def home():
     viaggi_repo = ViaggiRepository()
     partenze = viaggi_repo.get_list_partenze()
     arrivi = viaggi_repo.get_list_arrivi()
-
-    partenze = ['Barcellona', 'Buenos Aires']
-    arrivi = ['Galliera Veneta', 'Noale-Scorzè']
+    print(partenze)
+    print(arrivi)
 
     if nome != "":
         return render_template('./public_html/home.html', user=nome, partenze=partenze, arrivi=arrivi)
@@ -67,19 +66,15 @@ def home():
 
 @app.route('/trip', methods=['GET', 'POST'])
 def trip():
-    viaggi_repo = ViaggiRepository()
-    nome = PasseggeriRepository().get_by_id(current_user.get_id()).nome
+    oper = getParam('oper')
+    passeggeri_repo = PasseggeriRepository()
+    nome = passeggeri_repo.get_by_id(current_user.get_id()).nome
     
-    partenza = request.args.get('da')
-    destinazione = request.args.get('a')
-    dataP = request.args.get('dataP')
-    dataR = request.args.get('dataR')
-    biglietto = request.args.get('biglietto')
-
-    voli = viaggi_repo.get_viaggi(partenza=partenza, destinazione=destinazione, dataP=dataP, dataR=dataR, biglietto=biglietto)
-
-    return render_template('./public_html/trip.html', user=nome, voli=voli)
-
+    function_actions()
+    if oper is None:
+        return render_template('./public_html/trip.html', user=nome)
+    else:
+        return function_actions()
 
 @app.route('/admin_settings', methods=['GET', 'POST'])
 def admin_settings():
@@ -257,7 +252,6 @@ def function_actions():
                 id_compagnia=getParam("id_compania")
             )
 
-
     elif target == "personalArea":
         passeggeri_repo = PasseggeriRepository()
 
@@ -297,11 +291,25 @@ def function_actions():
                                                 cod_postale=cod_postale,
                                                 paese=paese
                                             )
+
     elif target == "tickets":
         biglietti_repo = BigliettiRepository()
 
         if action == "getTickets":
             return biglietti_repo.get_by_user(current_user.get_id())
+        
+    elif target == "trips":
+        viaggi_repo = ViaggiRepository()
+
+        if action == "getSelectedTrips":
+            partenza = getParam('da')
+            destinazione = getParam('a')
+            dataP = getParam('dataP')
+            dataR = getParam('dataR')
+            biglietto = getParam('biglietto')
+
+            return viaggi_repo.get_viaggi(partenza=partenza, destinazione=destinazione, dataP=dataP, dataR=dataR, biglietto=biglietto)
+
     
     return jsonify({"error": "Invalid action"}), 400
 
