@@ -16,7 +16,7 @@ class PasseggeriRepository(BaseRepository[PasseggeriClass]):
 
     def add(self, email: str, password:str , nome: str, cognome: str, tel: str, nascita: datetime, saldo: float, via: str, civico: str, cod_postale: int, citta: str, paese: str) -> Response:
         
-        record = super.add(
+        record = super().add(
             email = email,
             password = password,
             nome = nome,
@@ -33,9 +33,11 @@ class PasseggeriRepository(BaseRepository[PasseggeriClass]):
         
         if record is None:
             return jsonify({ "success": False })
+        else:
+            return jsonify({ "success": True })
 
     def get_all(self) -> Response:
-        return jsonify( [model_to_dict(passeggero) for passeggero in super.get_all()] )
+        return jsonify( [model_to_dict(passeggero) for passeggero in super().get_all()] )
 
     def get_by_id(self, id: str):
         return super().search_single_by_columns(id_passeggero=id)
@@ -44,18 +46,18 @@ class PasseggeriRepository(BaseRepository[PasseggeriClass]):
         return super().search_single_by_columns(email=email)
 
     def get_by_email_json(self, email: str) -> Response:
-        return jsonify( model_to_dict(super().search_by_single_columns(email=email)) )
+        return jsonify( model_to_dict(super().search_single_by_columns(email=email)) )
     
     def get_by_id_json(self, id: int) -> Response:
         return jsonify( model_to_dict(super().get_by_id(obj_id=id, pk_field=self.pk_field)) )
     
-    def get_single_value(self, id: int, field_name: str) -> Response:
+    def get_single_attribute(self, id: int, field_name: str) -> Response:
         '''
-            Return the value of a single attribute of the record
+            Return the value of a single attribute of the user's record
         '''
         user = super().search_single_by_columns(id_passeggero = id)
         r = jsonify(model_to_dict(user))
-        return r[field_name] 
+        return r
 
     def validate_password(self, email: str, password: str) -> bool:
         user = super().search_single_by_columns(email=email)

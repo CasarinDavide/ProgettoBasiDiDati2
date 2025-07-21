@@ -4,11 +4,13 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 """
 CREATE TABLE dev.Voli (
-                          id_voli SERIAL PRIMARY KEY,
-                          comandante VARCHAR(200) NOT NULL,
-                          ritardo INTEGER NOT NULL,
-                          id_viaggio INTEGER REFERENCES dev.Viaggi(id_viaggio) ON DELETE CASCADE,
-                          id_aereo INTEGER REFERENCES dev.Aerei(id_aerei) ON DELETE CASCADE
+                        id_voli SERIAL PRIMARY KEY,
+                        comandante VARCHAR(200) NOT NULL,
+                        ritardo INTEGER NOT NULL,
+                        id_viaggio INTEGER REFERENCES dev.Viaggi(id_viaggio) ON DELETE CASCADE,
+                        id_aereo INTEGER REFERENCES dev.Aerei(id_aerei) ON DELETE CASCADE
+                        id_aereoporto_partenza VARCHAR(200) REFERENCES dev.Aereoporti(id_aereoporto) ON DELETE NO ACTION
+                        id_aereoporto_arrivo VARCHAR(200) REFERENCES dev.Aereoporti(id_aereoporto) ON DELETE NO ACTION
 );
 """
 class VoliClass(Base):
@@ -18,6 +20,8 @@ class VoliClass(Base):
     id_volo: Mapped[int] = mapped_column(primary_key=True)
     comandante: Mapped[str] = mapped_column(nullable=False)
     ritardo: Mapped[int] = mapped_column(nullable=False)
+    ordine: Mapped[int] = mapped_column(nullable=False)
+
 
     # FK -> Viaggi
     id_viaggio: Mapped[int] = mapped_column(ForeignKey('dev.Viaggi.id_viaggio'))
@@ -28,9 +32,9 @@ class VoliClass(Base):
     aereo_rel = relationship('AereiClass', back_populates='voli_rel')
 
     # FK -> Aereoporti
-    id_aereoporto_partenza: Mapped[int] = mapped_column(ForeignKey('dev.Aereoporti.id_aereoporto'), nullable=False)
+    id_aereoporto_partenza: Mapped[str] = mapped_column(ForeignKey('dev.Aereoporti.id_aereoporto'), nullable=False)
     aereoporto_partenza_rel = relationship('AereoportiClass', foreign_keys=[id_aereoporto_partenza], back_populates='voli_partenza_rel')
 
     # FK -> Aereoporti
-    id_aereoporto_arrivo: Mapped[int] = mapped_column(ForeignKey('dev.Aereoporti.id_aereoporto'), nullable=False)
+    id_aereoporto_arrivo: Mapped[str] = mapped_column(ForeignKey('dev.Aereoporti.id_aereoporto'), nullable=False)
     aereoporto_arrivo_rel = relationship('AereoportiClass', foreign_keys=[id_aereoporto_arrivo], back_populates='voli_arrivo_rel')

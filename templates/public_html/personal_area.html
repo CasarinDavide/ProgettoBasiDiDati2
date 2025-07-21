@@ -8,38 +8,94 @@
 
 <script>
 
-    //send the request as soon as the head starts loading and update the DOM
-    $.when($.ajax({
-        url: ajaxUrl + "?fun=personalArea&oper=getCurrentInfo",
-        type: "POST"
-    }), jQuery.isReady).then((response) => {
-        if (response[1] != "success")
-            return;
+    //Request to get the user information
+    $(document).ready(() => {
+        $.ajax({
+            url: ajaxUrl + "?fun=personalArea&oper=getCurrentInfo",
+            type: "POST",
+            success: (data) => {
+                let nome = document.getElementById('nome_cognome').firstElementChild;
+                let cognome = document.getElementById('nome_cognome').firstElementChild.nextElementSibling;
+                let nascita = document.getElementById('data_nascita').firstElementChild;
+                let email = document.getElementById('email').firstElementChild;
+                let telefono = document.getElementById('telefono').firstElementChild;
+                let civico = document.getElementById('civico');
+                let via = document.getElementById('via');
+                let citta = document.getElementById('citta');
+                let cod_postale = document.getElementById('cod_postale');
+                let paese = document.getElementById('paese');
 
-        let data = response[0];
-
-        let nome = document.getElementById('nome_cognome').firstElementChild;
-        let cognome = document.getElementById('nome_cognome').firstElementChild.nextElementSibling;
-        let nascita = document.getElementById('data_nascita').firstElementChild;
-        let email = document.getElementById('email').firstElementChild;
-        let telefono = document.getElementById('telefono').firstElementChild;
-        let civico = document.getElementById('civico');
-        let via = document.getElementById('via');
-        let citta = document.getElementById('citta');
-        let cod_postale = document.getElementById('cod_postale');
-        let paese = document.getElementById('paese');
-
-        nome.innerText = data.nome;
-        cognome.innerText = data.cognome;
-        nascita.innerText = data.nascita;
-        email.innerText = data.email;
-        telefono.innerText = data.tel;
-        civico.innerText = data.civico;
-        via.innerText = data.via;
-        citta.innerText = data.citta;
-        cod_postale.innerText = data.cod_postale;
-        paese.innerText = data.paese;
+                nome.innerText = data.nome;
+                cognome.innerText = data.cognome;
+                nascita.innerText = data.nascita;
+                email.innerText = data.email;
+                telefono.innerText = data.tel;
+                civico.innerText = data.civico;
+                via.innerText = data.via;
+                citta.innerText = data.citta;
+                cod_postale.innerText = data.cod_postale;
+                paese.innerText = data.paese;
+            }
+        })
     });
+
+    $(document).ready(() => {
+        $.ajax({
+            url: ajaxUrl + "?fun=tickets&oper=getTickets",
+            type: "POST",
+            success: (data) => {
+                let i = 1
+
+                console.log(data)
+
+                for (ticket of data) {
+                    let partenza = new Date(ticket.data_partenza + " " + ticket.orario_partenza)
+                    // Calcola l'orario di arrivo
+                    let arrivo = new Date(partenza.getTime() + 
+                        (ticket.durata * 60 * 1000) +    // durata in minuti -> millisecondi
+                        (ticket.sosta * 60 * 1000)       // sosta in minuti -> millisecondi  
+                    );
+
+                    let n = document.createElement('div')
+                    n.innerHTML =
+                        `<div id='ticket ${i}' class="card mb-3">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-3">
+                                        <h5 class="card-title mb-1"> ${ticket.id_aereoporto_partenza} </h5>
+                                        <small id="orario_partenza" class="text-muted"> ${partenza.toLocaleTimeString()} - ${partenza.toLocaleDateString()} </small>
+                                    </div>
+                                    <div class="col-md-1 text-center">
+                                        <i class="fas fa-plane text-primary"></i>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <h5 class="card-title mb-1"> ${ticket.id_aereoporto_arrivo}</h5>
+                                        <small id="orario_arrivo" class="text-muted"> ${arrivo.toLocaleTimeString()} - ${arrivo.toLocaleDateString()}</small>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <p class="mb-0 mt-1">
+                                            <small> ${ticket.id_biglietto} • Posto ${ticket.posto} </small>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-2 text-end">
+                                        <button class="btn btn-outline-primary btn-sm">Dettagli</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+
+                    document.getElementById('tickets').appendChild(n);
+                    i += 1;
+                }
+            },
+
+            error: (err) => {
+                console.log(err)
+            }
+        })
+    });
+
+
 </script>
 
 {% endblock extra_jquery %}
@@ -50,7 +106,7 @@
     //hide everything except account details
     document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('account').style.display = 'block';
-        document.getElementById('biglietti').style.display = 'none';
+        document.getElementById('tickets').style.display = 'none';
     });
 
     function save(element_id) {
@@ -100,13 +156,10 @@
                     <button onclick="edit('${element_id}')" class="btn btn-link btn-sm">Modifica</button>
                 `;
 
-        // $.ajax({
-        //     url: ajaxUrl + `?fun=personalArea&oper=update&element=${element_id}&value=${new_value}`,
-        //     type: "POST"
-        // });
-
-
-
+        $.ajax({
+            url: ajaxUrl + `?fun=personalArea&oper=update&element=${element_id}&value=${new_value}`,
+            type: "POST"
+        });
     }
 
     function edit(element_id) {
@@ -173,7 +226,7 @@
             <h5 class="mb-4">Home</h5>
             <ul class="nav flex-column">
                 <li class="nav-item"><a class="nav-link" onclick="changeFocus('account')">Il mio account</a></li>
-                <li class="nav-item"><a class="nav-link" onclick="changeFocus('biglietti')">I miei biglietti</a></li>
+                <li class="nav-item"><a class="nav-link" onclick="changeFocus('tickets')">I miei biglietti</a></li>
                 <li class="nav-item"><a class="nav-link" href="#">Assistenza</a></li>
                 <li class="nav-item"><a class="nav-link" href="#">FAQ</a></li>
             </ul>
@@ -265,86 +318,11 @@
         </div>
 
 
-        <div id="biglietti" class="window col-md-9 p-4">
+        <div id="tickets" class="window col-md-9 p-4">
             <h3>I miei biglietti</h3>
             <p class="text-muted">I tuoi voli prenotati</p>
 
-            <div class="card mb-3">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-3">
-                            <h5 class="card-title mb-1">Milano MXP</h5>
-                            <small class="text-muted">10:30 - 25 Gen</small>
-                        </div>
-                        <div class="col-md-1 text-center">
-                            <i class="fas fa-plane text-primary"></i>
-                        </div>
-                        <div class="col-md-3">
-                            <h5 class="card-title mb-1">Roma FCO</h5>
-                            <small class="text-muted">12:15 - 25 Gen</small>
-                        </div>
-                        <div class="col-md-3">
-                            <span class="badge bg-success">Confermato</span>
-                            <p class="mb-0 mt-1"><small>Volo AZ123 • Posto 14A</small></p>
-                        </div>
-                        <div class="col-md-2 text-end">
-                            <button class="btn btn-outline-primary btn-sm">Dettagli</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="card mb-3">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-3">
-                            <h5 class="card-title mb-1">Roma FCO</h5>
-                            <small class="text-muted">18:45 - 28 Gen</small>
-                        </div>
-                        <div class="col-md-1 text-center">
-                            <i class="fas fa-plane text-primary"></i>
-                        </div>
-                        <div class="col-md-3">
-                            <h5 class="card-title mb-1">Milano MXP</h5>
-                            <small class="text-muted">20:30 - 28 Gen</small>
-                        </div>
-                        <div class="col-md-3">
-                            <span class="badge bg-warning">Check-in aperto</span>
-                            <p class="mb-0 mt-1"><small>Volo AZ456 • Posto 18C</small></p>
-                        </div>
-                        <div class="col-md-2 text-end">
-                            <button class="btn btn-outline-primary btn-sm">Dettagli</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card mb-3">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-3">
-                            <h5 class="card-title mb-1">Milano MXP</h5>
-                            <small class="text-muted">14:20 - 02 Feb</small>
-                        </div>
-                        <div class="col-md-1 text-center">
-                            <i class="fas fa-plane text-primary"></i>
-                        </div>
-                        <div class="col-md-3">
-                            <h5 class="card-title mb-1">Barcellona BCN</h5>
-                            <small class="text-muted">16:05 - 02 Feb</small>
-                        </div>
-                        <div class="col-md-3">
-                            <span class="badge bg-secondary">Programmato</span>
-                            <p class="mb-0 mt-1"><small>Volo VY789 • Posto 22F</small></p>
-                        </div>
-                        <div class="col-md-2 text-end">
-                            <button class="btn btn-outline-primary btn-sm">Dettagli</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
-
     </div>
-</div>
-{% endblock main_content %}
+    {% endblock main_content %}

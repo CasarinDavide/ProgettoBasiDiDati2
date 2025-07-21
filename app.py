@@ -7,7 +7,6 @@ from core.AereiClass import AereiClass
 from core.AereoportiClass import AereoportiClass
 from core.BigliettiClass import BigliettiClass
 from core.CompagnieClass import CompagnieClass
-from core.DataPartenzeClass import DataPartenzeClass
 from core.DipendentiClass import DipendentiClass
 from core.EffettuanoClass import EffettuanoClass
 from core.PasseggeriClass import PasseggeriClass
@@ -21,6 +20,7 @@ from services.AereiRepository import AereiRepository
 from services.DipendentiRepository import DipendentiRepository
 from services.ViaggiRepository import ViaggiRepository
 from services.PasseggeriRepository import PasseggeriRepository
+from services.BigliettiRepository import BigliettiRepository
 load_dotenv()
 
 app = Flask(__name__)
@@ -297,7 +297,11 @@ def function_actions():
                                                 cod_postale=cod_postale,
                                                 paese=paese
                                             )
+    elif target == "tickets":
+        biglietti_repo = BigliettiRepository()
 
+        if action == "getTickets":
+            return biglietti_repo.get_by_user(current_user.get_id())
     
     return jsonify({"error": "Invalid action"}), 400
 

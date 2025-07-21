@@ -27,9 +27,6 @@ def model_to_dict(obj, include_relationships=True, backrefs=False):
             if not backrefs and rel.back_populates:
                 continue
 
-            if rel.key in state.unloaded:
-                continue
-
             value = getattr(obj, rel.key)
 
             if value is None:
@@ -164,7 +161,9 @@ class BaseRepository(Generic[T]):
         """
         with Session(engine()) as session:
             query = session.query(self.model)
+            
             query = self._apply_joins(query, joins)
+            
             filters = [getattr(self.model, key) == value for key, value in kwargs.items()]
             query = query.filter(and_(*filters))
             return query.all()
