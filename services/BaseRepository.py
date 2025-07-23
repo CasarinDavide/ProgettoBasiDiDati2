@@ -1,3 +1,4 @@
+import datetime
 from typing import Optional, List, Type, TypeVar, Generic, Any, Dict
 from flask import jsonify
 from sqlalchemy.orm import Session, joinedload
@@ -20,11 +21,18 @@ def model_to_dict(obj, include_relationships=True, backrefs=False):
 
     # Extract basic columns
     for c in mapper.columns:
-        data[c.key] = getattr(obj, c.key)
+        value = getattr(obj, c.key)
+        if isinstance(value, (datetime.datetime, datetime.date, datetime.time)):
+            data[c.key] = value.isoformat()
+        else:
+            data[c.key] = value
 
     if include_relationships:
         for rel in mapper.relationships:
             if not backrefs and rel.back_populates:
+                continue
+
+            if rel.key in state.unloaded:
                 continue
 
             value = getattr(obj, rel.key)
@@ -79,7 +87,7 @@ class BaseRepository(Generic[T]):
                     query = query.options(joinedload(j))
             return query.all()
 
-    def get_by_id(self, obj_id: int, pk_field: str = "id", joins: Optional[List[Any]] = None) -> Optional[T]:
+    def get_by_id(self, obj_id, pk_field: str = "id", joins: Optional[List[Any]] = None) -> Optional[T]:
         """Fetch a single record by primary key, with optional joins."""
         with Session(engine()) as session:
             query = session.query(self.model)
@@ -90,7 +98,7 @@ class BaseRepository(Generic[T]):
             print(str(query.statement.compile(compile_kwargs={"literal_binds": True})))
             return query.first()
 
-    def update(self, obj_id: int, pk_field: str = "id", **kwargs) -> bool:
+    def update(self, obj_id, pk_field: str = "id", **kwargs) -> bool:
         """Update a record by ID."""
         with Session(engine()) as session:
             obj = session.query(self.model).filter(getattr(self.model, pk_field) == obj_id).first()
@@ -101,7 +109,7 @@ class BaseRepository(Generic[T]):
             session.commit()
             return True
 
-    def delete(self, obj_id: int, pk_field: str = "id") -> bool:
+    def delete(self, obj_id, pk_field: str = "id") -> bool:
         """Delete a record by ID."""
         with Session(engine()) as session:
             obj = session.query(self.model).filter(getattr(self.model, pk_field) == obj_id).first()
@@ -137,6 +145,7 @@ class BaseRepository(Generic[T]):
                     for field in search_fields
                 ]
                 query = query.filter(or_(*filters))
+
 
             filters = [getattr(self.model, key) == value for key, value in kwargs.items()]
             query = query.filter(and_(*filters))

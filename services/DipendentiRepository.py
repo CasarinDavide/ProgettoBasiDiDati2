@@ -51,7 +51,7 @@ class DipendentiRepository(BaseRepository[DipendentiClass]):
         return jsonify(model_to_dict(super().get_by_id(int(dipendente_id), pk_field=self.pk_field,joins=[]),backrefs = True))
 
 
-    def update(self, dipendente_id: int, email: str, password: str, tel: str, nome: str,
+    def update(self, dipendente_id: int, email: str, tel: str, nome: str,
                cognome: str, ruolo: str,id_compagnia:str) -> Response:
         """
         Update a Dipendenti.
@@ -63,7 +63,7 @@ class DipendentiRepository(BaseRepository[DipendentiClass]):
                             tel=tel,
                             nome=nome,
                             cognome=cognome,
-                            id_compagnia=id_compagnia)
+                            id_compagnia=int(id_compagnia))
         return jsonify({"success":res})
 
     def delete(self, dipendente_id: int) -> Response:
@@ -78,4 +78,5 @@ class DipendentiRepository(BaseRepository[DipendentiClass]):
                                      length=length,
                                      search_value=search_value,
                                      search_fields=["email","nome","cognome","tel"],
-                                     id_compagnia = int(id_compagnia))
+                                     id_compagnia = int(id_compagnia),
+                                     joins=[DipendentiClass.compagnia_rel])

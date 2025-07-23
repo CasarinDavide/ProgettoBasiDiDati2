@@ -43,7 +43,8 @@ class AereiRepository(BaseRepository[AereiClass]):
 
     def get_all(self) -> List["AereiClass"]:
         """Fetch all compagnie records."""
-        return super().get_all()
+        return jsonify([model_to_dict(aereo,backrefs=True) for aereo in super().get_all(joins=[AereiClass.compagnia_rel])])
+
 
     def get_by_id(self, id_aereo: str) -> Response:
         """Fetch a single compagnie by ID."""
@@ -51,19 +52,18 @@ class AereiRepository(BaseRepository[AereiClass]):
         return jsonify(model_to_dict(super().get_by_id(int(id_aereo), pk_field=self.pk_field,joins=[AereiClass.compagnia_rel]),backrefs = True))
 
 
-    def update(self, id_aereo: int, email: str, password: str, tel: str, nome: str,
-                         address_id: int) -> Response:
+    def update(self, id_aereo: int, capacita: str, modello: str, consumoMedio: str, dimensione: str,id_compagnia:Optional[None] | Optional[str]) -> Response:
         """
         Update a compagnie.
         kwargs can include email, password, tel, nome, address_id.
         """
         res = super().update(id_aereo,
                            self.pk_field,
-                           email=email,
-                           password=password,
-                           tel=tel,
-                           nome=nome,
-                           address_id=address_id)
+                           capacita=capacita,
+                             modello=modello,
+                             consumoMedio=consumoMedio,
+                             dimensione=dimensione,
+                             id_compagnia=id_compagnia)
         return jsonify({"success":res})
 
     def delete(self, id_aereo: int) -> Response:

@@ -28,8 +28,69 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
         super().__init__(ViaggiClass)
         self.pk_field = "id_viaggio"
 
-    def get_all(self):
-        return super().get_all()
+    def add(self,sosta: str, durata: str, id_aereoporto_partenza: str, id_aereoporto_arrivo: str,
+            sconto_biglietto: str,data_partenza: str,orario_partenza:str) -> Response:
+
+        """Create a new Compagnie record (custom wrapper)."""
+
+        rec = super().add(
+            sosta = sosta,
+            durata = durata,
+            id_aereoporto_partenza = id_aereoporto_partenza,
+            id_aereoporto_arrivo = id_aereoporto_arrivo,
+            sconto_biglietto = sconto_biglietto,
+            data_partenza = data_partenza,
+            orario_partenza = orario_partenza,
+        )
+
+        if rec is None:
+              return jsonify({"success":False})
+
+        return jsonify({"success":True})
+
+    def get_all(self) -> Response:
+        """Fetch all Aereoporti records."""
+        return jsonify([model_to_dict(aereoporti) for aereoporti in super().get_all()])
+
+    def get_by_id(self, id_viaggio: str) -> Response:
+        """Fetch a single Aereoporti by ID."""
+        return jsonify(model_to_dict(super().get_by_id(id_viaggio, pk_field=self.pk_field,joins=[ViaggiClass.partenza_rel,ViaggiClass.arrivo_rel]),backrefs = True))
+
+
+    def update(self,id_viaggio:str,sosta: str, durata: str, id_aereoporto_partenza: str, id_aereoporto_arrivo: str,
+               sconto_biglietto: str,data_partenza: str,orario_partenza:str) -> Response:
+        """
+        Update a Aereoporti.
+        kwargs can include email, password, tel, nome, address_id.
+        """
+        res = super().update(id_viaggio,
+                             self.pk_field,
+                             sosta = sosta,
+                             durata = durata,
+                             id_aereoporto_partenza = id_aereoporto_partenza,
+                             id_aereoporto_arrivo = id_aereoporto_arrivo,
+                             sconto_biglietto = sconto_biglietto,
+                             data_partenza = data_partenza,
+                             orario_partenza = orario_partenza)
+
+        return jsonify({"success":res})
+
+    def delete(self, id_viaggio: str) -> Response:
+        """Delete a Aereoporti by ID."""
+        res = super().delete(id_viaggio, self.pk_field)
+        return jsonify({"success":res})
+
+    def get_datatable(self, draw: int   , start: int, length: int, search_value: str):
+
+        return super().get_datatable(draw=draw,
+                                     start=start,
+                                     length=length,
+                                     search_value=search_value,
+                                     search_fields=["nome","citta"],joins=[ViaggiClass.partenza_rel,ViaggiClass.arrivo_rel])
+
+    #TODO : COMMENTATO CONTROLLARE SE HA ROTTO QUALCOSA DI RIKY
+    #def get_all(self):
+    #    return super().get_all()
 
     """ Return the List of possible departure """
     def get_list_partenze(self) -> List[str]:
@@ -39,6 +100,10 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                         FROM dev."Viaggi" v 
                             JOIN dev."Aereoporti" a ON v.id_aereoporto_partenza = a.id_aereoporto
                         ''')
+            # Nel merge mi dava un conflitto questo è il codice vecchio, non so bene il perchè
+            # conversione in lista
+            #result = [x[0] for x in session.execute(query).all()]
+            #return
         
         with Session(engine()) as session:
             rows = session.execute(query).fetchall()

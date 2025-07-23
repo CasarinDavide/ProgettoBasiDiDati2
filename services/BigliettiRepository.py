@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from core.BigliettiClass import BigliettiClass
 from services.BaseRepository import BaseRepository
 
