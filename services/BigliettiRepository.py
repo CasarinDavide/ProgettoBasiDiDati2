@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 from core.BigliettiClass import BigliettiClass
-from core.ViaggiClass import ViaggiClass
-from services.BaseRepository import BaseRepository, model_to_dict
+from services.BaseRepository import BaseRepository
 
 from flask import jsonify, Response
 from sqlalchemy import text, Row
 from System import engine
 from sqlalchemy.orm import Session
-from typing import Sequence
+from typing import Sequence, Any
 from datetime import date, time, datetime
 
-def json(rows: Sequence[Row], error: str):
+def json(rows: Sequence[Row[Any]], error: str) -> Response:
     data = []
     for row in rows:
         row_dict = dict(row._mapping)
@@ -85,7 +84,7 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
             res = session.execute(query, {
                 'destinazione': destinazione,
                 'user': id_passeggero
-            })
+            }).fetchall()
 
             json(res, 'Luogo non trovato')
 
@@ -109,7 +108,7 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
             res = session.execute(query, {
                 'partenza': partenza,
                 'user': id_passeggero
-            })
+            }).fetchall()
 
             return json(res, 'Luogo non trovato')
         
