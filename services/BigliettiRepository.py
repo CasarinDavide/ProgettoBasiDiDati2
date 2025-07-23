@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from core.BigliettiClass import BigliettiClass
 from core.ViaggiClass import ViaggiClass
 from services.BaseRepository import BaseRepository, model_to_dict

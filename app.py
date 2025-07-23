@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, url_for, redirect, flash, ses
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash
 
+from System import getParam
 from core.AereiClass import AereiClass
 from core.AereoportiClass import AereoportiClass
 from core.BigliettiClass import BigliettiClass
@@ -14,13 +15,14 @@ from core.ViaggiClass import ViaggiClass
 from core.VoliClass import VoliClass
 
 from dotenv import load_dotenv
-from System import getParam
+from services.AereoportiRepository import AereoportiRepository
 from services.CompagnieRepository import CompagnieRepository
 from services.AereiRepository import AereiRepository
 from services.DipendentiRepository import DipendentiRepository
 from services.ViaggiRepository import ViaggiRepository
 from services.PasseggeriRepository import PasseggeriRepository
 from services.BigliettiRepository import BigliettiRepository
+from services.VoliRepository import VoliRepository
 load_dotenv()
 
 app = Flask(__name__)
@@ -169,10 +171,12 @@ def function_actions():
     action = getParam("oper")
 
     # datatable standard
-    draw = int(request.args.get('draw', 1))
-    start = int(request.args.get('start', 0))  # offset
-    length = int(request.args.get('length', 10))  # page size
-    search_value = request.args.get('search[value]', '')
+
+    draw = getParam('draw')
+    start = getParam('start')  # offset
+    length = getParam('length')  # page size
+    search_value = getParam('search[value]')
+
     ####
 
     if target == "compagnia_aerea":
@@ -208,8 +212,6 @@ def function_actions():
                                          citta=getParam("citta"),
                                          cod_postale=getParam("cod_postale"),
                                          paese=getParam("paese"),)
-
-
     elif target == "aerei":
         aerei_repo = AereiRepository()
 
@@ -226,6 +228,18 @@ def function_actions():
             return aerei_repo.get_datatable(draw,start,length,search_value)
         elif action == "getById":
             return aerei_repo.get_by_id(getParam("id_aereo"))
+        elif action == "edit":
+            return aerei_repo.update(
+                id_aereo= getParam("id_aereo"),
+                capacita =getParam("capacita"),
+                modello=getParam("modello"),
+                consumoMedio=getParam("consumoMedio"),
+                dimensione=getParam("dimensione"),
+                id_compagnia=getParam("id_compagnia")
+            )
+        elif action == "get_for_select":
+            return aerei_repo.get_all()
+
     elif target == "dipendenti":
 
         dipendenti_repo = DipendentiRepository()
@@ -237,7 +251,7 @@ def function_actions():
                                       nome=getParam("nome"),
                                       cognome=getParam("cognome"),
                                       ruolo=getParam("ruolo"),
-                                      id_compagnia=getParam("id_compania"),
+                                      id_compagnia=getParam("id_compagnia"),
                                       )
 
         elif action == "getAllDatatable":
@@ -248,16 +262,40 @@ def function_actions():
             return dipendenti_repo.get_all()
         elif action == "edit":
             return dipendenti_repo.update(
-                id_dipendente=getParam("id_dipendente"),
+                dipendente_id=getParam("id_dipendente"),
                 email=getParam("email"),
                 tel=getParam("tel"),
                 nome=getParam("nome"),
                 cognome=getParam("cognome"),
                 ruolo=getParam("ruolo"),
-                id_compagnia=getParam("id_compania")
+                id_compagnia=getParam("id_compagnia")
             )
-
-
+    elif target == "aereoporti":
+        aereoporti_repo = AereoportiRepository()
+        if action == "add":
+            return aereoporti_repo.add(id_aereoporto = getParam("id_aereoporto"),
+                                       nome = getParam("nome"),
+                                       civico = getParam("civico"),
+                                       via = getParam("via"),
+                                       cod_postale = getParam("cod_postale"),
+                                       citta = getParam("citta"),
+                                       paese = getParam("paese"))
+        elif action == "getAllDatatable":
+            return aereoporti_repo.get_datatable(draw,start,length,search_value)
+        elif action == "getById":
+            return aereoporti_repo.get_by_id(getParam("id_aereoporto"))
+        elif action == "get_for_select":
+            return aereoporti_repo.get_all()
+        elif action == "edit":
+            return aereoporti_repo.update(
+                id_aereoporto=getParam("id_aereoporto"),
+                nome = getParam("nome"),
+                civico = getParam("civico"),
+                via = getParam("via"),
+                cod_postale = getParam("cod_postale"),
+                citta = getParam("citta"),
+                paese = getParam("paese")
+            )
     elif target == "personalArea":
         passeggeri_repo = PasseggeriRepository()
 
@@ -302,7 +340,64 @@ def function_actions():
 
         if action == "getTickets":
             return biglietti_repo.get_by_user(current_user.get_id())
-    
+    elif target == "viaggi":
+        viaggi_repo = ViaggiRepository()
+        if action == "add":
+            return viaggi_repo.add(sosta = getParam("sosta"),
+                                   durata= getParam("durata"),
+                                   id_aereoporto_partenza= getParam("id_aereoporto_partenza"),
+                                   id_aereoporto_arrivo= getParam("id_aereoporto_arrivo"),
+                                   sconto_biglietto= getParam("sconto_biglietto"),
+                                   data_partenza= getParam("data_partenza"),
+                                   orario_partenza= getParam("orario_partenza"))
+        elif action == "getAllDatatable":
+            return viaggi_repo.get_datatable(draw,start,length,search_value)
+        elif action == "getById":
+            return viaggi_repo.get_by_id(getParam("id_viaggio"))
+        elif action == "get_for_select":
+            return viaggi_repo.get_all()
+        elif action == "edit":
+            return viaggi_repo.update(
+                id_viaggio=getParam("id_viaggio"),
+                sosta = getParam("sosta"),
+                durata= getParam("durata"),
+                id_aereoporto_partenza= getParam("id_aereoporto_partenza"),
+                id_aereoporto_arrivo= getParam("id_aereoporto_arrivo"),
+                sconto_biglietto= getParam("sconto_biglietto"),
+                data_partenza= getParam("data_partenza"),
+                orario_partenza= getParam("orario_partenza")
+            )
+    elif target == "voli":
+        voli_repo = VoliRepository()
+        if action == "add":
+            return voli_repo.add(
+                comandante=getParam("comandante"),
+                ritardo=getParam("ritardo"),
+                id_viaggio=getParam("id_viaggio"),
+                id_aereo =getParam("id_aereo"),
+                id_aereoporto_partenza= getParam("id_aereoporto_partenza"),
+                id_aereoporto_arrivo=getParam("id_aereoporto_arrivo"))
+        elif action == "getAllDatatable":
+            return voli_repo.get_datatable(draw,start,length,search_value,getParam("id_viaggio"))
+        elif action == "getById":
+            return voli_repo.get_by_id(getParam("id_volo"))
+        elif action == "get_for_select":
+            return voli_repo.get_all()
+        elif action == "edit":
+            return voli_repo.update(
+                id_volo=getParam("id_volo"),
+                comandante=getParam("comandante"),
+                ritardo=getParam("ritardo"),
+                id_viaggio=getParam("id_viaggio"),
+                id_aereo =getParam("id_aereo"),
+                id_aereoporto_partenza= getParam("id_aereoporto_partenza"),
+                id_aereoporto_arrivo=getParam("id_aereoporto_arrivo")
+            )
+        elif action == "add_from_json":
+            return voli_repo.add_from_json(getParam("voli_json"))
+        elif action == "delete_all":
+            return voli_repo.delete_all(getParam("id_viaggio"))
+
     return jsonify({"error": "Invalid action"}), 400
 
 
