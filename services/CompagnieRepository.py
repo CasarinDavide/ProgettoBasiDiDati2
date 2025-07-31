@@ -4,6 +4,8 @@ from typing import Optional, List
 
 from flask import jsonify, Response
 from sqlalchemy.exc import SQLAlchemyError
+from werkzeug.security import check_password_hash, generate_password_hash
+
 from System import engine, Base
 
 from System import Base
@@ -29,7 +31,7 @@ class CompagnieRepository(BaseRepository[CompagnieClass]):
 
         rec = super().add(
             email=email,
-            password=password,
+            password=generate_password_hash(password),
             tel=tel,
             nome=nome,
             civico=civico,
@@ -83,3 +85,14 @@ class CompagnieRepository(BaseRepository[CompagnieClass]):
                                      length=length,
                                      search_value=search_value,
                                      search_fields=["email","nome","tel"])
+    def validate_password(self, email: str, password: str) -> bool:
+        user = super().search_single_by_columns(email=email)
+        if user and check_password_hash(user.password, password):
+            return True  # Password is correct
+        return False  # Password is incorrect
+
+    def get_by_email(self, email: str):
+        return super().search_single_by_columns(email=email)
+
+
+

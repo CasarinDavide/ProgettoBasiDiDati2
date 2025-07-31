@@ -78,13 +78,17 @@ class BaseRepository(Generic[T]):
             print(f"Error adding record: {e}")
             return None
 
-    def get_all(self, joins: Optional[List[Any]] = None) -> List[T]:
+    def get_all(self, joins: Optional[List[Any]] = None,**kwargs) -> List[T]:
         """Fetch all records, with optional joins."""
         with Session(engine()) as session:
             query = session.query(self.model)
             if joins:
                 for j in joins:
                     query = query.options(joinedload(j))
+
+            filters = [getattr(self.model, key) == value for key, value in kwargs.items()]
+            query = query.filter(and_(*filters))
+
             return query.all()
 
     def get_by_id(self, obj_id, pk_field: str = "id", joins: Optional[List[Any]] = None) -> Optional[T]:

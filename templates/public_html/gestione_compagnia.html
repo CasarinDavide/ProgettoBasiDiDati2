@@ -3,444 +3,647 @@
 {% block title %} Login - TriViaggi {% endblock title %}
 
 {% block main_content %}
-<script>
+    <script>
 
 
-    function getSelectAllAddress(selects = [],none_option = true){
+        function getSelectAllAddress(selects = [],none_option = true){
 
-        jQuery.ajax({
-            url: ajaxUrl + '?fun=indirizzi&oper=get_for_select',
-            type: 'POST',
-            data: {},
-            dataType: "json",
-            async: true,
-            success: function (data) {
-               
-                var parsedResult = checkAjaxResponse(data, false);
-                if (!parsedResult) {
-                    var result = data
+            jQuery.ajax({
+                url: ajaxUrl + '?fun=indirizzi&oper=get_for_select',
+                type: 'POST',
+                data: {},
+                dataType: "json",
+                async: true,
+                success: function (data) {
 
-                    let string_to_append = "";
+                    var parsedResult = checkAjaxResponse(data, false);
+                    if (!parsedResult) {
+                        var result = data
 
-                    if(none_option)
-                        string_to_append = "<option value='0'>---- Seleziona un elemento --- </option>";
+                        let string_to_append = "";
 
-
-                    for(let i = 0; i < result.length; i ++)
-                    {
-                        string_to_append += `<option value='${result[i].address_id}'>${result[i].citta} ${result[i].paese} ${result[i].via} ${result[i].civico} </option>`;
-                    }
-
-                    for(let i = 0; i < selects.length; i++)
-                    {
-                        selects.empty();
-                        selects[i].append(string_to_append);
-                        selects.trigger('change');
-                    }
-                }
-            }
-        });
-
-    }
-    function getSelectAllCompagnie(selects = [],none_option = true){
-
-        jQuery.ajax({
-            url: ajaxUrl + '?fun=compagnia_aerea&oper=get_for_select',
-            type: 'POST',
-            data: {},
-            dataType: "json",
-            async: false,
-            success: function (data) {
-                var parsedResult = checkAjaxResponse(data, false);
-                if (!parsedResult) {
-                    var result = data;
-
-                    let string_to_append = "";
-
-                    if(none_option)
-                        string_to_append = "<option value='0'>---- Seleziona un elemento --- </option>";
+                        if(none_option)
+                            string_to_append = "<option value='0'>---- Seleziona un elemento --- </option>";
 
 
-                    for(let i = 0; i < result.length; i ++)
-                    {
-                        string_to_append += `<option value='${result[i].id_compagnia}'>${result[i].nome}</option>`;
-                    }
+                        for(let i = 0; i < result.length; i ++)
+                        {
+                            string_to_append += `<option value='${result[i].address_id}'>${result[i].citta} ${result[i].paese} ${result[i].via} ${result[i].civico} </option>`;
+                        }
 
-                    for(let i = 0; i < selects.length; i++)
-                    {
-                        let select = selects[i]
-                        select.empty();
-                        select.append(string_to_append);
-                        select.trigger('change');
+                        for(let i = 0; i < selects.length; i++)
+                        {
+                            selects.empty();
+                            selects[i].append(string_to_append);
+                            selects.trigger('change');
+                        }
                     }
                 }
+            });
+
+        }
+        function getSelectAllAereoporti(selects = [],none_option = true){
+
+            jQuery.ajax({
+                url: ajaxUrl + '?fun=aereoporti&oper=get_for_select',
+                type: 'POST',
+                data: {},
+                dataType: "json",
+                async: false,
+                success: function (data) {
+                    var parsedResult = checkAjaxResponse(data, false);
+                    if (!parsedResult) {
+                        var result = data;
+
+                        let string_to_append = "";
+
+                        if(none_option)
+                            string_to_append = "<option value='0'>---- Seleziona un elemento --- </option>";
+
+
+                        for(let i = 0; i < result.length; i ++)
+                        {
+                            string_to_append += `<option value='${result[i].id_aereoporto}'>${result[i].nome}</option>`;
+                        }
+
+                        for(let i = 0; i < selects.length; i++)
+                        {
+                            let select = selects[i]
+                            select.empty();
+                            select.append(string_to_append);
+                            select.trigger('change');
+                        }
+                    }
+                }
+            });
+
+        }
+        function getSelectAllAerei(selects = [],none_option = true){
+
+            jQuery.ajax({
+                url: ajaxUrl + '?fun=aerei&oper=get_for_select_compagnia',
+                type: 'POST',
+                data: {
+                },
+                dataType: "json",
+                async: false,
+                success: function (data) {
+                    var parsedResult = checkAjaxResponse(data, false);
+                    if (!parsedResult) {
+                        var result = data;
+
+                        let string_to_append = "";
+
+                        if(none_option)
+                            string_to_append = "<option value='0'>---- Seleziona un elemento --- </option>";
+
+
+                        for(let i = 0; i < result.length; i ++)
+                        {
+                            string_to_append += `<option value='${result[i].id_aereo}'>${result[i].modello} - ${result[i].compagnia_rel.nome} </option>`;
+                        }
+
+                        for(let i = 0; i < selects.length; i++)
+                        {
+                            let select = selects[i]
+                            select.empty();
+                            select.append(string_to_append);
+                            select.trigger('change');
+                        }
+                    }
+                }
+            });
+
+        }
+
+
+        let PACompagniaAerea = function () {
+            // Define shared variables (not accessible outside this block)
+            let datatable;
+            let table;
+            let reloadButton;
+            let add_button;
+            let timeoutSearchTyping;
+            let usergroup_filter = "";
+            let initialSearchValue = "";
+            let customer_filters;
+
+            // Private functions
+            var initDatatable = function () {
+                // Init datatable --- more info on datatables: https://datatables.net/manual/
+                datatable = $(table).DataTable({
+                    ajax: {
+                        url: ajaxUrl + '?fun=compagnia_aerea&oper=getAllDatatable',
+                        type: "POST",
+                        data: function (data) {
+                            data.columns[1].data = 'surname';
+                            data.customer_filters = customer_filters;
+                        }
+                    },
+                    "language": {
+                        "url": "js/i18n/DataTable-Italian.json"
+                    },
+                    "oSearch": {"sSearch": initialSearchValue},
+                    pageLength: 25,
+                    "info": false,
+                    'order': [0, "ASC"],
+                    serverSide: true,
+                    'columns': [
+                        /*0*/   {data: 'id_compagnia'},
+                        /*1*/   {data: 'nome'},
+                        /*2*/   {data: 'email'},
+                        /*3*/   {data: 'tel'},
+                        /*4*/   {data: 'paese'},
+                        /*5*/   {data: 'cod_postale'},
+                        /*6*/   {data: 'citta'},
+                        /*7*/   {data: null,"width": '50px'},
+                        /*8*/   {data: null,"width": '50px'},
+
+                    ],
+                    'columnDefs': [
+                        {
+                            "targets": [0],
+                            "visible": false
+                        },
+                        {
+                            "targets": [4],
+                            "className": "text-center",
+                            "createdCell": function (td, cellData, rowData, row, col) {
+                                $(td, td).html(`${rowData.citta} ${rowData.via} ${rowData.civico}`);
+                            }
+
+                        },
+                        {
+                            "targets": [7],
+                            "createdCell": function (td, cellData, rowData, row, col) {
+                                $(td, td).html(`<a class="cursor-pointer" onclick="PACompagniaAereaEditModal.showModal()" ><i title="Modifica Utente" class="fa fs-3 fa-gear"></i></a>`);
+                            }
+                        },
+                    ],
+                    "drawCallback": function (settings) {
+                        PACompagniaAerea.onReloadDone();
+                    }
+                });
+
+                // Re-init functions on every table re-draw -- more info: https://datatables.net/reference/event/draw
+                datatable.on('draw', function () {
+                    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+                    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+                });
+
             }
-        });
 
-    }
 
-    let PACompagniaAereaInfoStats = function () {
+            // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
+            var handleSearchDatatable = () => {
+                const filterSearch = document.querySelector('#table_compagnie-search_filter');
+                filterSearch.value = initialSearchValue;
+                filterSearch.addEventListener('keyup', function (e) {
+                    if(timeoutSearchTyping) clearTimeout(timeoutSearchTyping);
+                    timeoutSearchTyping = setTimeout(function() { datatable.search(e.target.value).draw() }, 500);
+                });
+            }
 
-    }();
 
-    let PAAerei = function () {
-        // Define shared variables (not accessible outside this block)
-        let datatable;
-        let table;
-        let reloadButton;
-        let add_button;
-        let timeoutSearchTyping;
-        let usergroup_filter = "";
-        let initialSearchValue = "";
-        let customer_filters;
+            // Handle status filter dropdown
+            var handleCustomerFilter = () => {
+                const filterCustomer = document.querySelector('#table_compagnie-customer_filter');
+                $(filterCustomer).val(customer_filters).trigger('change');
 
-        // Private functions
-        var initDatatable = function () {
-            // Init datatable --- more info on datatables: https://datatables.net/manual/
-            datatable = $(table).DataTable({
-                ajax: {
-                    url: ajaxUrl + '?fun=aerei&oper=getAllDatatable',
-                    type: "POST",
-                    data: function (data) {
-                        data.columns[1].data = 'surname';
-                        data.customer_filters = customer_filters;
+                $(filterCustomer).on('change', e => {
+                    customer_filters = $(filterCustomer).val();
+                    datatable.draw();
+                });
+            }
+
+            // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
+            var handleReloadTable = () => {
+                const reloadButton = document.querySelector('#table_compagnie-reload_button');
+                reloadButton.addEventListener('click', function (e) {
+                    datatable.ajax.reload();
+                });
+            }
+
+            // Public methods
+            return {
+                reloadTable: function () {
+                    datatable.ajax.reload();
+                },
+                onReloadDone: function () {
+                    reloadButton.blur();
+                },
+                init: function () {
+                    table = document.querySelector('#table_compagnie');
+                    reloadButton = document.querySelector('#table_compagnie-reload_button');
+                    add_button = document.querySelector('#table_compagnie-add_button');
+                    if (!table) {
+                        return;
+                    }
+
+                    initDatatable();
+                    handleSearchDatatable();
+                    handleReloadTable();
+                    handleCustomerFilter();
+                },
+                edit: function(id) {
+                    jQuery.ajax({
+                        url: ajaxUrl + '?fun=compagnia_aerea&oper=edit_compagnia',
+                        type: 'POST',
+                        dataType: "json",
+                        data: {
+                            email: PACompagniaAereaEditModal.getFields().email_input.val(),
+                            tel: PACompagniaAereaEditModal.getFields().tel_input.val(),
+                            nome: PACompagniaAereaEditModal.getFields().user_name_input.val(),
+                            civico:PACompagniaAereaEditModal.getFields().civico_input.val(),
+                            via:PACompagniaAereaEditModal.getFields().via_input.val(),
+                            citta:PACompagniaAereaEditModal.getFields().citta_input.val(),
+                            cod_postale:PACompagniaAereaEditModal.getFields().cod_postale_input.val(),
+                            paese:PACompagniaAereaEditModal.getFields().paese_input.val(),
+                        },
+                        async: true,
+                        success: function (data) {
+                            errorModal.hide();
+                            var parsedResult = checkAjaxResponse(data, false);
+                            if (!parsedResult) {
+                                var result = data
+                                PACompagniaAerea.reloadTable();
+                                PACompagniaAereaEditModal.hideModal();
+                                showToast('Utente Modificata con successo.');
+                            } else {
+                                setTimeout(function () {
+                                    showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                }, 500);
+                            }
+                        }
+                    });
+                },
+                getById : function (id) {
+                    let result = null;
+                    jQuery.ajax({
+                        url: ajaxUrl + '?fun=compagnia_aerea&oper=getById_compagnia',
+                        type: 'POST',
+                        dataType: "json",
+                        data: {
+                        },
+                        async: false,
+                        success: function (data) {
+                            errorModal.hide();
+
+                            var parsedResult = checkAjaxResponse(data, false);
+                            if (!parsedResult) {
+                                result = data
+                            }
+                        }
+                    });
+
+                    return result;
+                }
+            }
+        }();
+
+        let PAAerei = function () {
+            // Define shared variables (not accessible outside this block)
+            let datatable;
+            let table;
+            let reloadButton;
+            let add_button;
+            let timeoutSearchTyping;
+            let usergroup_filter = "";
+            let initialSearchValue = "";
+            let customer_filters;
+
+            // Private functions
+            var initDatatable = function () {
+                // Init datatable --- more info on datatables: https://datatables.net/manual/
+                datatable = $(table).DataTable({
+                    ajax: {
+                        url: ajaxUrl + '?fun=aerei&oper=getAllDatatable',
+                        type: "POST",
+                        data: function (data) {
+                            data.columns[1].data = 'surname';
+                            data.customer_filters = customer_filters;
+                        }
+                    },
+                    "language": {
+                        "url": "js/i18n/DataTable-Italian.json"
+                    },
+                    "oSearch": {"sSearch": initialSearchValue},
+                    pageLength: 25,
+                    "info": false,
+                    'order': [0, "ASC"],
+                    serverSide: true,
+                    'columns': [
+                        /*0*/   {data: 'id_aereo'},
+                        /*1*/   {data: 'modello'},
+                        /*2*/   {data: 'capacita'},
+                        /*3*/   {data: 'consumoMedio'},
+                        /*4*/   {data: 'dimensione'},
+                        /*6*/   {data: null,"width": '50px'},
+                    ],
+                    'columnDefs': [
+                        {
+                            "targets": [0],
+                            "visible": false
+                        },
+                        {
+                            "targets": [5],
+                            "createdCell": function (td, cellData, rowData, row, col) {
+                                $(td, td).html(`${rowData.compagnia_rel.nome}`);
+                            }
+                        },
+                        {
+                            "targets": [5],
+                            "createdCell": function (td, cellData, rowData, row, col) {
+                                $(td, td).html(`<a class="cursor-pointer" onclick="PAAereiEditModal.showModal()" ><i title="Modifica Utente" class="fa fs-3 fa-gear"></i></a>`);
+                            }
+                        }
+                    ],
+                    "drawCallback": function (settings) {
+                        PAAerei.onReloadDone();
+                    }
+                });
+
+                // Re-init functions on every table re-draw -- more info: https://datatables.net/reference/event/draw
+                datatable.on('draw', function () {
+                    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+                    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+                });
+
+            }
+
+
+            // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
+            var handleSearchDatatable = () => {
+                const filterSearch = document.querySelector('#table_aerei-search_filter');
+                filterSearch.value = initialSearchValue;
+                filterSearch.addEventListener('keyup', function (e) {
+                    if(timeoutSearchTyping) clearTimeout(timeoutSearchTyping);
+                    timeoutSearchTyping = setTimeout(function() { datatable.search(e.target.value).draw() }, 500);
+                });
+            }
+
+
+            // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
+            var handleReloadTable = () => {
+                const reloadButton = document.querySelector('#table_aerei-reload_button');
+                reloadButton.addEventListener('click', function (e) {
+                    datatable.ajax.reload();
+                });
+            }
+
+            // Public methods
+            return {
+                reloadTable: function () {
+                    datatable.ajax.reload();
+                },
+                onReloadDone: function () {
+                    reloadButton.blur();
+                },
+                init: function () {
+                    table = document.querySelector('#table_aerei');
+                    reloadButton = document.querySelector('#table_aerei-reload_button');
+                    add_button = document.querySelector('#table_aerei-add_button');
+                    if (!table) {
+                        return;
+                    }
+
+                    initDatatable();
+                    handleSearchDatatable();
+                    handleReloadTable();
+                },
+                add: function() {
+                    jQuery.ajax({
+                        url: ajaxUrl + '?fun=aerei&oper=add_compagnia',
+                        type: 'POST',
+                        data: {
+                            capacita : PAAereiAddModal.getFields().capacita.val(),
+                            modello: PAAereiAddModal.getFields().modello.val(),
+                            consumoMedio: PAAereiAddModal.getFields().consumoMedio.val(),
+                            dimensione: PAAereiAddModal.getFields().dimensione.val(),
+                        },
+                        async: true,
+                        success: function (data) {
+                            errorModal.hide();
+
+                            var parsedResult = checkAjaxResponse(data, false);
+                            if (!parsedResult) {
+                                var result = data
+                                PAAerei.reloadTable();
+                                PAAereiAddModal.hideModal();
+                                showToast('Aereo Aggiunta con successo.');
+
+                            } else {
+                                setTimeout(function () {
+                                    showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PAAereiAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                }, 500);
+
+                            }
+                        }
+                    });
+                },
+                edit: function(id) {
+                    jQuery.ajax({
+                        url: ajaxUrl + '?fun=aerei&oper=edit_compagnia',
+                        type: 'POST',
+                        data: {
+                            id_aereo : id,
+                            capacita : PAAereiEditModal.getFields().capacita.val(),
+                            modello: PAAereiEditModal.getFields().modello.val(),
+                            consumoMedio: PAAereiEditModal.getFields().consumoMedio.val(),
+                            dimensione: PAAereiEditModal.getFields().dimensione.val(),
+                        },
+                        async: true,
+                        success: function (data) {
+                            errorModal.hide();
+
+                            var parsedResult = checkAjaxResponse(data, false);
+                            if (!parsedResult) {
+                                var result = data
+                                PAAerei.reloadTable();
+                                PAAereiEditModal.hideModal();
+                                showToast('Aereo Modificato con successo.');
+
+                            } else {
+                                setTimeout(function () {
+                                    showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PAAereiAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                }, 500);
+                            }
+                        }
+                    });
+                },
+                getById : function (id) {
+                    let result = null;
+                    jQuery.ajax({
+                        url: ajaxUrl + '?fun=aerei&oper=getById',
+                        type: 'POST',
+                        data: {
+                            id_aereo: id
+                        },
+                        async: false,
+                        success: function (data) {
+                            errorModal.hide();
+
+                            var parsedResult = checkAjaxResponse(data, false);
+                            if (!parsedResult) {
+                                result = data
+                            }
+                        }
+                    });
+
+                    return result;
+                }
+            }
+        }();
+        let PAAereiAddModal = function () {
+            let modal;
+            let confirm_button;
+            let show_button;
+            let form;
+            let title;
+
+            // NEW inputs
+            let capacita_input;
+            let modello_input;
+            let consumoMedio_input;
+            let dimensione_input;
+            let compagnia_select;
+
+            return {
+                init: function () {
+                    modal = new bootstrap.Modal(document.querySelector('#add-aerei-modal'));
+                    confirm_button = $('#add-aerei-submit');
+                    show_button = $('#table_aerei-add_button');
+                    title = $('#add-aerei-title');
+
+                    title.text("Crea Nuovo Aereo");
+
+                    // Map NEW fields
+                    capacita_input = $('#add-aerei-capacita');
+                    modello_input = $('#add-aerei-modello');
+                    consumoMedio_input = $('#add-aerei-consumoMedio');
+                    dimensione_input = $('#add-aerei-dimensione');
+
+                    show_button.on('click', function () {
+                        PAAereiAddModal.showModal();
+                    });
+
+                    form = document.getElementById("add-aerei-form");
+                },
+
+                showModal: function () {
+                    form.reset();
+
+                    confirm_button.off('click');
+                    confirm_button.attr('data-kt-indicator', 'off');
+                    confirm_button.attr('disabled', false);
+
+                    confirm_button.on('click', function () {
+                        confirm_button.attr('data-kt-indicator', 'on');
+                        confirm_button.attr('disabled', true);
+                        PAAerei.add();
+                    });
+
+                    // (Optional) dynamically load compagnia options
+                    getSelectAllCompagnie([compagnia_select],true)
+
+                    modal.show();
+                },
+
+                hideModal: function () {
+                    modal.hide();
+                },
+
+                errorModal: function () {
+                    confirm_button.attr('data-kt-indicator', 'off');
+                    confirm_button.attr('disabled', false);
+                },
+
+                // Return fields as an object
+                getFields: function () {
+                    return {
+                        capacita: capacita_input,
+                        modello: modello_input,
+                        consumoMedio: consumoMedio_input,
+                        dimensione: dimensione_input,
                     }
                 },
-                "language": {
-                    "url": "js/i18n/DataTable-Italian.json"
+            }
+        }();
+        let PAAereiEditModal = function () {
+            let modal;
+            let confirm_button;
+            let form;
+            let data;
+            let title;
+
+            let capacita_input;
+            let modello_input;
+            let consumoMedio_input;
+            let dimensione_input;
+            let compagnia_select;
+
+
+            return {
+                init: function () {
+                    modal = new bootstrap.Modal(document.querySelector('#edit-aerei-modal'));
+                    confirm_button = $('#edit-aerei-submit');
+                    form = document.getElementById("edit-aerei-form");
+                    title = $('#edit-aerei-title');
+                    title.text('Modifica Utente');
+
+
+                    capacita_input = $('#edit-aerei-capacita');
+                    modello_input = $('#edit-aerei-modello');
+                    consumoMedio_input = $('#edit-aerei-consumoMedio');
+                    dimensione_input = $('#edit-aerei-dimensione');
+
                 },
-                "oSearch": {"sSearch": initialSearchValue},
-                pageLength: 25,
-                "info": false,
-                'order': [0, "ASC"],
-                serverSide: true,
-                'columns': [
-                    /*0*/   {data: 'id_aereo'},
-                    /*1*/   {data: 'modello'},
-                    /*2*/   {data: 'capacita'},
-                    /*3*/   {data: 'consumoMedio'},
-                    /*4*/   {data: 'dimensione'},
-                    /*5*/   {data: 'id_compagnia'},
-                    /*6*/   {data: null,"width": '50px'},
+                showModal: function (id) {
+                    data = PAAerei.getById(id);
+                    form.reset();
+                    confirm_button.off('click');
+                    confirm_button.attr('data-kt-indicator', 'off');
+                    confirm_button.attr('disabled', false);
 
-                ],
-                'columnDefs': [
-                    {
-                        "targets": [0],
-                        "visible": false
-                    },
-                    {
-                        "targets": [5],
-                        "createdCell": function (td, cellData, rowData, row, col) {
-                            $(td, td).html(`${rowData.compagnia_rel.nome}`);
-                        }
-                    },
-                    {
-                        "targets": [6],
-                        "createdCell": function (td, cellData, rowData, row, col) {
-                            $(td, td).html(`<a class="cursor-pointer" onclick="PAAereiEditModal.showModal(${rowData.id_compagnia})" ><i title="Modifica Utente" class="fa fs-3 fa-gear"></i></a>`);
-                        }
+                    confirm_button.on('click', function () {
+                        confirm_button.attr('data-kt-indicator', 'on');
+                        confirm_button.attr('disabled', true);
+                        PAAerei.edit(data.id);
+                    });
+
+
+
+                    /*** FILL FORM **/
+
+                    getSelectAllCompagnie([compagnia_select],false)
+                    capacita_input.val(data.capacita);
+                    modello_input.val(data.modello);
+                    consumoMedio_input.val(data.consumoMedio);
+                    dimensione_input.val(data.dimensione);
+
+                    /*** END ***/
+
+                    modal.show();
+                },
+                hideModal: function () {
+                    modal.hide();
+                },
+                errorModal:function ()
+                {
+                    confirm_button.attr('data-kt-indicator', 'off');
+                    confirm_button.attr('disabled', false);
+                },
+                getFields:function ()
+                {
+                    return {
+                        capacita: capacita_input,
+                        modello: modello_input,
+                        consumoMedio: consumoMedio_input,
+                        dimensione: dimensione_input,
                     }
-                ],
-                "drawCallback": function (settings) {
-                    PAAerei.onReloadDone();
-                }
-            });
-
-            // Re-init functions on every table re-draw -- more info: https://datatables.net/reference/event/draw
-            datatable.on('draw', function () {
-                const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-                const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
-            });
-
-        }
-
-
-        // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
-        var handleSearchDatatable = () => {
-            const filterSearch = document.querySelector('#table_aerei-search_filter');
-            filterSearch.value = initialSearchValue;
-            filterSearch.addEventListener('keyup', function (e) {
-                if(timeoutSearchTyping) clearTimeout(timeoutSearchTyping);
-                timeoutSearchTyping = setTimeout(function() { datatable.search(e.target.value).draw() }, 500);
-            });
-        }
-
-
-        // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
-        var handleReloadTable = () => {
-            const reloadButton = document.querySelector('#table_aerei-reload_button');
-            reloadButton.addEventListener('click', function (e) {
-                datatable.ajax.reload();
-            });
-        }
-
-        // Public methods
-        return {
-            reloadTable: function () {
-                datatable.ajax.reload();
-            },
-            onReloadDone: function () {
-                reloadButton.blur();
-            },
-            init: function () {
-                table = document.querySelector('#table_aerei');
-                reloadButton = document.querySelector('#table_aerei-reload_button');
-                add_button = document.querySelector('#table_aerei-add_button');
-                if (!table) {
-                    return;
-                }
-
-                initDatatable();
-                handleSearchDatatable();
-                handleReloadTable();
-            },
-            add: function() {
-                jQuery.ajax({
-                    url: ajaxUrl + '?fun=aerei&oper=add',
-                    type: 'POST',
-                    data: {
-                        capacita : PAAereiAddModal.getFields().capacita.val(),
-                        modello: PAAereiAddModal.getFields().modello.val(),
-                        consumoMedio: PAAereiAddModal.getFields().consumoMedio.val(),
-                        dimensione: PAAereiAddModal.getFields().dimensione.val(),
-                        id_compagnia: PAAereiAddModal.getFields().id_compagnia.val()
-                    },
-                    async: true,
-                    success: function (data) {
-                        errorModal.hide();
-                       
-                        var parsedResult = checkAjaxResponse(data, false);
-                        if (!parsedResult) {
-                            var result = data
-                            PAAerei.reloadTable();
-                            PAAereiAddModal.hideModal();
-                            showToast('Aereo Aggiunta con successo.');
-
-                        } else {
-                            setTimeout(function () {
-                                showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PAAereiAddModal.errorModal();" type="button">Chiudi</button>', true);
-                            }, 500);
-
-                        }
-                    }
-                });
-            },
-            edit: function(id) {
-                jQuery.ajax({
-                    url: ajaxUrl + '?fun=aerei&oper=edit',
-                    type: 'POST',
-                    data: {
-                        id_aereo : id,
-                        capacita : PAAereiEditModal.getFields().capacita.val(),
-                        modello: PAAereiEditModal.getFields().modello.val(),
-                        consumoMedio: PAAereiEditModal.getFields().consumoMedio.val(),
-                        dimensione: PAAereiEditModal.getFields().dimensione.val(),
-                        id_compagnia: PAAereiEditModal.getFields().id_compagnia.val()
-                    },
-                    async: true,
-                    success: function (data) {
-                        errorModal.hide();
-                       
-                        var parsedResult = checkAjaxResponse(data, false);
-                        if (!parsedResult) {
-                            var result = data
-                            PAAerei.reloadTable();
-                            PAAereiEditModal.hideModal();
-                            showToast('Aereo Modificato con successo.');
-
-                        } else {
-                            setTimeout(function () {
-                                showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PAAereiAddModal.errorModal();" type="button">Chiudi</button>', true);
-                            }, 500);
-                        }
-                    }
-                });
-            },
-            getById : function (id) {
-                let result = null;
-                jQuery.ajax({
-                    url: ajaxUrl + '?fun=aerei&oper=getById',
-                    type: 'POST',
-                    data: {
-                        id_compagnia: id
-                    },
-                    async: false,
-                    success: function (data) {
-                        errorModal.hide();
-                       
-                        var parsedResult = checkAjaxResponse(data, false);
-                        if (!parsedResult) {
-                            result = data
-                        }
-                    }
-                });
-
-                return result;
-            }
-        }
-    }();
-    let PAAereiAddModal = function () {
-        let modal;
-        let confirm_button;
-        let show_button;
-        let form;
-        let title;
-
-        // NEW inputs
-        let capacita_input;
-        let modello_input;
-        let consumoMedio_input;
-        let dimensione_input;
-        let compagnia_select;
-
-        return {
-            init: function () {
-                modal = new bootstrap.Modal(document.querySelector('#add-aerei-modal'));
-                confirm_button = $('#add-aerei-submit');
-                show_button = $('#table_aerei-add_button');
-                title = $('#add-aerei-title');
-
-                title.text("Crea Nuovo Aereo");
-
-                // Map NEW fields
-                capacita_input = $('#add-aerei-capacita');
-                modello_input = $('#add-aerei-modello');
-                consumoMedio_input = $('#add-aerei-consumoMedio');
-                dimensione_input = $('#add-aerei-dimensione');
-                compagnia_select = $('#add-aerei-id_compagnia');
-
-                show_button.on('click', function () {
-                    PAAereiAddModal.showModal();
-                });
-
-                form = document.getElementById("add-aerei-form");
-            },
-
-            showModal: function () {
-                form.reset();
-
-                confirm_button.off('click');
-                confirm_button.attr('data-kt-indicator', 'off');
-                confirm_button.attr('disabled', false);
-
-                confirm_button.on('click', function () {
-                    confirm_button.attr('data-kt-indicator', 'on');
-                    confirm_button.attr('disabled', true);
-                    PAAerei.add();
-                });
-
-                // (Optional) dynamically load compagnia options
-                getSelectAllCompagnie([compagnia_select],true)
-
-                modal.show();
-            },
-
-            hideModal: function () {
-                modal.hide();
-            },
-
-            errorModal: function () {
-                confirm_button.attr('data-kt-indicator', 'off');
-                confirm_button.attr('disabled', false);
-            },
-
-            // Return fields as an object
-            getFields: function () {
-                return {
-                    capacita: capacita_input,
-                    modello: modello_input,
-                    consumoMedio: consumoMedio_input,
-                    dimensione: dimensione_input,
-                    id_compagnia: compagnia_select,
-                }
-            },
-        }
-    }();
-    let PAAereiEditModal = function () {
-        let modal;
-        let confirm_button;
-        let form;
-        let data;
-        let title;
-
-        let capacita_input;
-        let modello_input;
-        let consumoMedio_input;
-        let dimensione_input;
-        let compagnia_select;
-
-
-        return {
-            init: function () {
-                modal = new bootstrap.Modal(document.querySelector('#edit-aerei-modal'));
-                confirm_button = $('#edit-aerei-submit');
-                form = document.getElementById("edit-aerei-form");
-                title = $('#edit-aerei-title');
-                title.text('Modifica Utente');
-
-
-                capacita_input = $('#edit-aerei-capacita');
-                modello_input = $('#edit-aerei-modello');
-                consumoMedio_input = $('#edit-aerei-consumoMedio');
-                dimensione_input = $('#edit-aerei-dimensione');
-                compagnia_select = $('#edit-aerei-id_compagnia');
-
-            },
-            showModal: function (id) {
-                data = PAAerei.getById(id);
-                form.reset();
-                confirm_button.off('click');
-                confirm_button.attr('data-kt-indicator', 'off');
-                confirm_button.attr('disabled', false);
-
-                confirm_button.on('click', function () {
-                    confirm_button.attr('data-kt-indicator', 'on');
-                    confirm_button.attr('disabled', true);
-                    PAAerei.edit(data.id);
-                });
-
-
-
-                /*** FILL FORM **/
-
-                getSelectAllCompagnie([compagnia_select],false)
-                capacita_input.val(data.capacita);
-                modello_input.val(data.modello);
-                consumoMedio_input.val(data.consumoMedio);
-                dimensione_input.val(data.dimensione);
-                compagnia_select.val(data.id_compagnia).trigger('change');
-
-                /*** END ***/
-
-                modal.show();
-            },
-            hideModal: function () {
-                modal.hide();
-            },
-            errorModal:function ()
-            {
-                confirm_button.attr('data-kt-indicator', 'off');
-                confirm_button.attr('disabled', false);
-            },
-            getFields:function ()
-            {
-                return {
-                    capacita: capacita_input,
-                    modello: modello_input,
-                    consumoMedio: consumoMedio_input,
-                    dimensione: dimensione_input,
-                    id_compagnia: compagnia_select,
                 }
             }
-        }
-    }();
-
-    let PADipendentiDrawer = function () {
-        let drawer;
-        let button_header_add;
-        let modal_title;
-        let id_compangia = 0;
+        }();
 
         let PADipendenti = function () {
             // Define shared variables (not accessible outside this block)
@@ -458,22 +661,18 @@
                 // Init datatable --- more info on datatables: https://datatables.net/manual/
                 datatable = $(table).DataTable({
                     ajax: {
-                        url: ajaxUrl + '?fun=dipendenti&oper=getAllDatatable',
+                        url: ajaxUrl + '?fun=dipendenti&oper=getAllDatatable_compagnia',
                         type: "POST",
                         data: function (data) {
-                            data.id_compagnia = id_compangia;
-                        }
-                    },
-                    "language": {
-                        "url": "js/i18n/DataTable-Italian.json"
+                        },
                     },
                     "oSearch": {"sSearch": initialSearchValue},
                     pageLength: 25,
+                    serverSide: true,
                     "info": false,
                     'order': [0, "ASC"],
-                    serverSide: true,
                     'columns': [
-                        /*0*/   {data: 'id'},
+                        /*0*/   {data: 'id_dipendente'},
                         /*1*/   {data: 'email'},
                         /*2*/   {data: 'tel'},
                         /*3*/   {data: 'nome'},
@@ -495,7 +694,7 @@
                         {
                             "targets": [6],
                             "createdCell": function (td, cellData, rowData, row, col) {
-                                $(td, td).html(`<a class="cursor-pointer" onclick="PAAereiEditModal.showModal(${rowData.id_compagnia})" ><i title="Modifica Utente" class="fa fs-3 fa-gear"></i></a>`);
+                                $(td, td).html(`<a class="cursor-pointer" onclick="PADipendentiEditModal.showModal(${rowData.id_dipendente})" ><i title="Modifica Dipendente" class="fa fs-3 fa-gear"></i></a>`);
                             }
                         }
                     ],
@@ -554,7 +753,7 @@
                 },
                 add: function() {
                     jQuery.ajax({
-                        url: ajaxUrl + '?fun=dipendenti&oper=add',
+                        url: ajaxUrl + '?fun=dipendenti&oper=add_compagnia',
                         type: 'POST',
                         dataType: "json",
                         data: {
@@ -563,7 +762,6 @@
                             tel: PADipendentiAddModal.getFields().tel.val(),
                             nome: PADipendentiAddModal.getFields().nome.val(),
                             cognome: PADipendentiAddModal.getFields().cognome.val(),
-                            id_compangia:id_compangia,
                             ruolo:PADipendentiAddModal.getFields().ruolo.val(),
                         },
                         async: true,
@@ -575,7 +773,6 @@
                                 var result = data;
                                 PACompagniaAerea.reloadTable();
                                 PACompagniaAereaAddModal.hideModal();
-                                PADipendentiDrawer.showModal();
                                 showToast('Utente Aggiunta con successo.');
 
                             } else {
@@ -583,58 +780,22 @@
                                     showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
                                 }, 500);
 
-
-                                /*
-                                if (parsedResult == return_values.db_error) {
-                                    setTimeout(function () {
-                                        showError('Errore', 'Attenzione, si è verificato un errore interno al server. Riprovare più tardi.', '<button class="btn btn-light" data-bs-dismiss="modal" type="button">Chiudi</button>', true);
-                                    }, 500);
-                                } else if (parsedResult == return_values.no_permission) {
-                                    setTimeout(function () {
-                                        showError('Errore', 'Attenzione, non si dispone dei permessi necessari a compiere l\'azione. Verrete rediretti alla Dashboard.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="window.location.replace(\'/plantlist.php\');" type="button">Chiudi</button>', true);
-                                    }, 500);
-                                } else if (parsedResult == return_values.session_error) {
-                                    setTimeout(function () {
-                                        showError('Errore', 'Attenzione, la sessione è scaduta. Verrete rediretti alla pagina di login.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="window.location.replace(\'/index.php\');" type="button">Chiudi</button>', true);
-                                    }, 500);
-                                } else if (parsedResult == 30) {
-                                    setTimeout(function () {
-                                        showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
-                                    }, 500);
-                                }
-                                else if (parsedResult == 36) {
-                                    setTimeout(function () {
-                                        showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
-                                    }, 500);
-                                }
-                                else if (parsedResult == 31) {
-                                    setTimeout(function () {
-                                        showError('Errore', 'Attenzione, la mail è già in uso.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
-                                    }, 500);
-                                }
-                                else if (parsedResult == 38) {
-                                    setTimeout(function () {
-                                        showError('Errore', 'Attenzione, la mail non è valida.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
-                                    }, 500);
-                                }*/
                             }
                         }
                     });
                 },
                 edit: function(id) {
                     jQuery.ajax({
-                        url: ajaxUrl + '?fun=dipendente&oper=edit',
+                        url: ajaxUrl + '?fun=dipendenti&oper=edit_compagnia',
                         type: 'POST',
                         dataType: "json",
                         data: {
                             id_dipendente : id,
-                            email: PADipendentiAddModal.getFields().email.val(),
-                            password:PADipendentiAddModal.getFields().password.val(),
-                            tel: PADipendentiAddModal.getFields().tel.val(),
-                            nome: PADipendentiAddModal.getFields().nome.val(),
-                            cognome: PADipendentiAddModal.getFields().cognome.val(),
-                            id_compangia:id_compangia,
-                            ruolo:PADipendentiAddModal.getFields().ruolo.val(),
+                            email: PADipendentiEditModal.getFields().email.val(),
+                            tel: PADipendentiEditModal.getFields().tel.val(),
+                            nome: PADipendentiEditModal.getFields().nome.val(),
+                            cognome: PADipendentiEditModal.getFields().cognome.val(),
+                            ruolo:PADipendentiEditModal.getFields().ruolo.val(),
                         },
                         async: true,
                         success: function (data) {
@@ -642,9 +803,10 @@
                             var parsedResult = checkAjaxResponse(data, false);
                             if (!parsedResult) {
                                 var result = data
-                                PACompagniaAerea.reloadTable();
-                                PACompagniaAereaEditModal.hideModal();
-                                showToast('Utente Modificata con successo.');
+                                PADipendenti.reloadTable();
+                                PADipendentiEditModal.hideModal();
+
+                                showToast('Dipendente Modificato con successo.');
                             } else {
                                 setTimeout(function () {
                                     showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
@@ -656,10 +818,10 @@
                 getById : function (id) {
                     let result = null;
                     jQuery.ajax({
-                        url: ajaxUrl + '?fun=aerei&oper=getById',
+                        url: ajaxUrl + '?fun=dipendenti&oper=getById',
                         type: 'POST',
                         data: {
-                            id_compagnia: id
+                            id_dipendente: id
                         },
                         async: false,
                         success: function (data) {
@@ -673,6 +835,10 @@
                     });
 
                     return result;
+                },
+                adjustColumns : function()
+                {
+                    datatable.columns.adjust().draw();
                 }
             }
         }();
@@ -716,7 +882,6 @@
                 },
                 showModal: function () {
 
-                    PADipendentiDrawer.hideModal();
                     form.reset();
                     confirm_button.off('click');
                     confirm_button.attr('data-kt-indicator', 'off');
@@ -768,11 +933,11 @@
 
             return {
                 init: function () {
-                    modal = new bootstrap.Modal(document.querySelector('#edit-compagnia_aerea-modal'));
-                    confirm_button = $('#edit-compagnia_aerea-submit');
-                    form = document.getElementById("edit-compagnia_aerea-form");
-                    title = $('#edit-compagnia_aerea-title');
-                    title.text('Modifica Utente');
+                    modal = new bootstrap.Modal(document.querySelector('#edit-dipendenti-modal'));
+                    confirm_button = $('#edit-dipendenti-submit');
+                    form = document.getElementById("edit-dipendenti-form");
+                    title = $('#edit-dipendenti-title');
+                    title.text('Modifica Dipendenti');
 
                     tel = $('#edit-dipendenti-tel');
                     email = $('#edit-dipendenti-email');
@@ -780,9 +945,10 @@
                     ruolo = $('#edit-dipendenti-ruolo');
                     cognome= $('#edit-dipendenti-cognome');
                     nome = $('#edit-dipendenti-nome');
+
                 },
                 showModal: function (id) {
-                    data = PACompagniaAerea.getById(id);
+                    data = PADipendenti.getById(id);
                     form.reset();
                     confirm_button.off('click');
                     confirm_button.attr('data-kt-indicator', 'off');
@@ -791,21 +957,18 @@
                     confirm_button.on('click', function () {
                         confirm_button.attr('data-kt-indicator', 'on');
                         confirm_button.attr('disabled', true);
-                        PACompagniaAerea.edit(id);
+                        PADipendenti.edit(id);
                     });
 
 
 
                     /*** FILL FORM **/
-                    paese_input.val(data.paese);
-                    cod_postale_input.val(data.cod_postale);
-                    citta_input.val(data.citta);
-                    via_input.val(data.via);
-                    civico_input.val(data.civico);
-                    user_name_input.val(data.nome);
-                    tel_input.val(data.tel);
-                    email_input.val(data.email);
 
+                    tel.val(data.tel);
+                    email.val(data.email);
+                    ruolo.val(data.ruolo).trigger('change');
+                    cognome.val(data.cognome);
+                    nome.val(data.nome);
                     /*** END ***/
 
                     modal.show();
@@ -831,47 +994,1069 @@
             }
         }();
 
-        return {
-            init: function () {
-                drawer = new bootstrap.Offcanvas('#dipendenti-offcanvas',{
-                    backdrop: false
+        let PAAereoporti = function () {
+            // Define shared variables (not accessible outside this block)
+            let datatable;
+            let table;
+            let reloadButton;
+            let add_button;
+            let timeoutSearchTyping;
+            let usergroup_filter = "";
+            let initialSearchValue = "";
+            let customer_filters;
+
+            // Private functions
+            var initDatatable = function () {
+                // Init datatable --- more info on datatables: https://datatables.net/manual/
+                datatable = $(table).DataTable({
+                    ajax: {
+                        url: ajaxUrl + '?fun=aereoporti&oper=getAllDatatable',
+                        type: "POST",
+                        data: function (data) {
+                        }
+                    },
+                    "oSearch": {"sSearch": initialSearchValue},
+                    pageLength: 25,
+                    "info": false,
+                    'order': [0, "ASC"],
+                    serverSide: true,
+                    'columns': [
+                        /*0*/   {data: 'id_aereoporto'},
+                        /*1*/   {data: 'nome'},
+                        /*2*/   {data: 'paese'},
+                        /*3*/   {data: 'citta'},
+                        /*4*/   {data: 'cod_postale'},
+                        /*5*/   {data: 'via'},
+                        /*6*/   {data: 'civico'},
+                        /*7*/   {data: null,"width": '50px'},
+                    ],
+                    'columnDefs': [
+                        {
+                            "targets": [0],
+                            "visible": false
+                        },
+                        {
+                            "targets": [7],
+                            "createdCell": function (td, cellData, rowData, row, col) {
+                                $(td, td).html(`<a class="cursor-pointer" onclick="PAAereoportiEditModal.showModal('${rowData.id_aereoporto}')" ><i title="Modifica Aereoporto" class="fa fs-3 fa-gear"></i></a>`);
+                            }
+                        }
+
+                    ],
+                    "drawCallback": function (settings) {
+                        PAAereoporti.onReloadDone();
+                    }
                 });
-                button_header_add = $('#button_header_add');
 
-                modal_title = $('#dipendenti-title');
+                // Re-init functions on every table re-draw -- more info: https://datatables.net/reference/event/draw
+                datatable.on('draw', function () {
+                    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+                    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+                });
 
-                PADipendenti.init()
-                PADipendentiAddModal.init();
-                PADipendentiEditModal.init();
-
-            },
-            showModal: function (id_compagnia_in,nome_compagnia) {
-                id_compagnia = id_compagnia_in
-                modal_title.html(`Dipendente per Compagnia ${nome_compagnia}`)
-                drawer.show();
-            },
-            hideModal: function () {
-                drawer.hide();
             }
-        }
-    }();
-
-    document.addEventListener("DOMContentLoaded", function () {
-
-        PACompagniaAerea.init()
-        PACompagniaAereaAddModal.init();
-        PACompagniaAereaEditModal.init();
-
-        PAAerei.init();
-        PAAereiAddModal.init();
-        PAAereiEditModal.init();
-
-        PADipendentiDrawer.init();
 
 
-    });
+            // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
+            var handleSearchDatatable = () => {
+                const filterSearch = document.querySelector('#table_aereoporto-search_filter');
+                filterSearch.value = initialSearchValue;
+                filterSearch.addEventListener('keyup', function (e) {
+                    if(timeoutSearchTyping) clearTimeout(timeoutSearchTyping);
+                    timeoutSearchTyping = setTimeout(function() { datatable.search(e.target.value).draw() }, 500);
+                });
+            }
 
-</script>
+
+            // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
+            var handleReloadTable = () => {
+                const reloadButton = document.querySelector('#table_aereoporto-reload_button');
+                reloadButton.addEventListener('click', function (e) {
+                    datatable.ajax.reload();
+                });
+            }
+
+            // Public methods
+            return {
+                reloadTable: function () {
+                    datatable.ajax.reload();
+                },
+                onReloadDone: function () {
+                    reloadButton.blur();
+                },
+                init: function () {
+                    table = document.querySelector('#table_aereoporto');
+                    reloadButton = document.querySelector('#table_aereoporto-reload_button');
+                    add_button = document.querySelector('#table_aereoporto-add_button');
+                    if (!table) {
+                        return;
+                    }
+
+                    initDatatable();
+                    handleSearchDatatable();
+                    handleReloadTable();
+                },
+                add: function() {
+                    jQuery.ajax({
+                        url: ajaxUrl + '?fun=aereoporti&oper=add',
+                        type: 'POST',
+                        dataType: "json",
+                        data: {
+                            id_aereoporto:PAAereoportiAddModal.getFields().id_aereoporto.val(),
+                            nome: PAAereoportiAddModal.getFields().nome.val(),
+                            civico:PAAereoportiAddModal.getFields().civico.val(),
+                            via:PAAereoportiAddModal.getFields().via.val(),
+                            citta:PAAereoportiAddModal.getFields().citta.val(),
+                            cod_postale:PAAereoportiAddModal.getFields().cod_postale.val(),
+                            paese:PAAereoportiAddModal.getFields().paese.val(),
+                        },
+                        async: true,
+                        success: function (data) {
+                            errorModal.hide();
+
+                            var parsedResult = checkAjaxResponse(data, false);
+                            if (!parsedResult) {
+                                var result = data;
+                                PAAereoporti.reloadTable();
+                                PAAereoportiAddModal.hideModal();
+                                showToast('Aereoporto Aggiunta con successo.');
+
+                            } else {
+                                if (data.Message)
+                                {
+                                    setTimeout(function () {
+                                        showError('Errore', `Attenzione,${data.Message}. Controllare e riprovare.`, '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PAAereoportiAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                    }, 500);
+                                }
+                                else
+                                {
+                                    setTimeout(function () {
+                                        showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PAAereoportiAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                    }, 500);
+                                }
+
+                            }
+                        }
+                    });
+                },
+                edit: function(id) {
+                    jQuery.ajax({
+                        url: ajaxUrl + '?fun=aereoporti&oper=edit',
+                        type: 'POST',
+                        dataType: "json",
+                        data: {
+                            id_aereoporto : id,
+                            nome: PAAereoportiEditModal.getFields().nome.val(),
+                            civico:PAAereoportiEditModal.getFields().civico.val(),
+                            via:PAAereoportiEditModal.getFields().via.val(),
+                            citta:PAAereoportiEditModal.getFields().citta.val(),
+                            cod_postale:PAAereoportiEditModal.getFields().cod_postale.val(),
+                            paese:PAAereoportiEditModal.getFields().paese.val(),
+                        },
+                        async: true,
+                        success: function (data) {
+                            errorModal.hide();
+                            var parsedResult = checkAjaxResponse(data, false);
+                            if (!parsedResult) {
+                                var result = data
+                                PAAereoporti.reloadTable();
+                                PAAereoportiEditModal.hideModal();
+                                showToast('Aereoporto Modificato con successo.');
+                            } else {
+                                setTimeout(function () {
+                                    showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PAAereoportiAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                }, 500);
+                            }
+                        }
+                    });
+                },
+                getById : function (id) {
+                    let result = null;
+                    jQuery.ajax({
+                        url: ajaxUrl + '?fun=aereoporti&oper=getById',
+                        type: 'POST',
+                        dataType: "json",
+                        data: {
+                            id_aereoporto: id
+                        },
+                        async: false,
+                        success: function (data) {
+                            errorModal.hide();
+
+                            var parsedResult = checkAjaxResponse(data, false);
+                            if (!parsedResult) {
+                                result = data
+                            }
+                        }
+                    });
+
+                    return result;
+                }
+            }
+        }();
+
+        let PAViaggi = function () {
+            // Define shared variables (not accessible outside this block)
+            let datatable;
+            let table;
+            let reloadButton;
+            let add_button;
+            let timeoutSearchTyping;
+            let usergroup_filter = "";
+            let initialSearchValue = "";
+            let customer_filters;
+
+            // Private functions
+            var initDatatable = function () {
+                // Init datatable --- more info on datatables: https://datatables.net/manual/
+                datatable = $(table).DataTable({
+                    ajax: {
+                        url: ajaxUrl + '?fun=viaggi&oper=getAllDatatable',
+                        type: "POST",
+                        data: function (data) {
+                        }
+                    },
+                    "oSearch": {"sSearch": initialSearchValue},
+                    pageLength: 25,
+                    "info": false,
+                    'order': [0, "ASC"],
+                    serverSide: true,
+                    'columns': [
+                        /*0*/   {data: 'id_viaggio'},
+                        /*1*/   {data: 'id_aereoporto_partenza'},
+                        /*2*/   {data: 'id_aereoporto_arrivo'},
+                        /*3*/   {data: 'sconto_biglietto'},
+                        /*4*/   {data: 'data_partenza'},
+                        /*5*/   {data: 'orario_partenza'},
+                        /*6*/   {data: 'durata'},
+                        /*6*/   {data: 'sosta'},
+                        /*7*/   {data: null,"width": '50px'},
+                        /*8*/   {data: null,"width": '50px'},
+                    ],
+                    'columnDefs': [
+                        {
+                            "targets": [0],
+                            "visible": false
+                        },
+                        {
+                            "targets": [8],
+                            "createdCell": function (td, cellData, rowData, row, col) {
+                                $(td, td).html(`<a class="cursor-pointer" onclick="PAViaggiEditModal.showModal('${rowData.id_viaggio}')" ><i title="Modifica Viaggio" class="fa fs-3 fa-gear"></i></a>`);
+                            }
+                        },
+                        {
+                            "targets": [9],
+                            "createdCell": function (td, cellData, rowData, row, col) {
+                                $(td, td).html(`<a class="cursor-pointer" onclick="PAVoliDrawer.showModal(${rowData.id_viaggio})" ><i title="Dettaglio" class="fa fs-3 fa-gear"></i></a>`);
+                            }
+                        }
+
+                    ],
+                    "drawCallback": function (settings) {
+                        PAViaggi.onReloadDone();
+                    }
+                });
+
+                // Re-init functions on every table re-draw -- more info: https://datatables.net/reference/event/draw
+                datatable.on('draw', function () {
+                    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+                    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+                });
+
+            }
+
+
+            // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
+            var handleSearchDatatable = () => {
+                const filterSearch = document.querySelector('#table_viaggi-search_filter');
+                filterSearch.value = initialSearchValue;
+                filterSearch.addEventListener('keyup', function (e) {
+                    if(timeoutSearchTyping) clearTimeout(timeoutSearchTyping);
+                    timeoutSearchTyping = setTimeout(function() { datatable.search(e.target.value).draw() }, 500);
+                });
+            }
+
+
+            // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
+            var handleReloadTable = () => {
+                const reloadButton = document.querySelector('#table_viaggi-reload_button');
+                reloadButton.addEventListener('click', function (e) {
+                    datatable.ajax.reload();
+                });
+            }
+
+            // Public methods
+            return {
+                reloadTable: function () {
+                    datatable.ajax.reload();
+                },
+                onReloadDone: function () {
+                    reloadButton.blur();
+                },
+                init: function () {
+                    table = document.querySelector('#table_viaggi');
+                    reloadButton = document.querySelector('#table_viaggi-reload_button');
+                    add_button = document.querySelector('#table_viaggi-add_button');
+                    if (!table) {
+                        return;
+                    }
+
+                    initDatatable();
+                    handleSearchDatatable();
+                    handleReloadTable();
+                },
+                add: function() {
+                    jQuery.ajax({
+                        url: ajaxUrl + '?fun=viaggi&oper=add',
+                        type: 'POST',
+                        dataType: "json",
+                        data: {
+                            sosta:PAViaggiAddModal.getFields().sosta.val(),
+                            durata: PAViaggiAddModal.getFields().durata.val(),
+                            id_aereoporto_partenza:PAViaggiAddModal.getFields().id_aereoporto_partenza.val(),
+                            id_aereoporto_arrivo:PAViaggiAddModal.getFields().id_aereoporto_arrivo.val(),
+                            sconto_biglietto:PAViaggiAddModal.getFields().sconto_biglietto.val(),
+                            data_partenza:PAViaggiAddModal.getFields().data_partenza.val(),
+                            orario_partenza:PAViaggiAddModal.getFields().orario_partenza.val(),
+                        },
+                        async: true,
+                        success: function (data) {
+                            errorModal.hide();
+
+                            var parsedResult = checkAjaxResponse(data, false);
+                            if (!parsedResult) {
+                                var result = data;
+                                PAViaggi.reloadTable();
+                                PAViaggiAddModal.hideModal();
+                                showToast('Viaggio Aggiunto con successo.');
+
+                            } else {
+                                if (data.Message)
+                                {
+                                    setTimeout(function () {
+                                        showError('Errore', `Attenzione,${data.Message}. Controllare e riprovare.`, '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PAAereoportiAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                    }, 500);
+                                }
+                                else
+                                {
+                                    setTimeout(function () {
+                                        showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PAAereoportiAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                    }, 500);
+                                }
+
+                            }
+                        }
+                    });
+                },
+                edit: function(id) {
+                    jQuery.ajax({
+                        url: ajaxUrl + '?fun=viaggi&oper=edit',
+                        type: 'POST',
+                        dataType: "json",
+                        data: {
+                            id_viaggio : id,
+                            sosta:PAViaggiEditModal.getFields().sosta.val(),
+                            durata: PAViaggiEditModal.getFields().durata.val(),
+                            id_aereoporto_partenza:PAViaggiEditModal.getFields().id_aereoporto_partenza.val(),
+                            id_aereoporto_arrivo:PAViaggiEditModal.getFields().id_aereoporto_arrivo.val(),
+                            sconto_biglietto:PAViaggiEditModal.getFields().sconto_biglietto.val(),
+                            data_partenza:PAViaggiEditModal.getFields().data_partenza.val(),
+                            orario_partenza:PAViaggiEditModal.getFields().orario_partenza.val(),
+                        },
+                        async: true,
+                        success: function (data) {
+                            errorModal.hide();
+                            var parsedResult = checkAjaxResponse(data, false);
+                            if (!parsedResult) {
+                                var result = data
+                                PAViaggi.reloadTable();
+                                PAViaggiEditModal.hideModal();
+                                showToast('Viaggio Modificato con successo.');
+                            } else {
+                                setTimeout(function () {
+                                    showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PAAereoportiAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                }, 500);
+                            }
+                        }
+                    });
+                },
+                getById : function (id) {
+                    let result = null;
+                    jQuery.ajax({
+                        url: ajaxUrl + '?fun=viaggi&oper=getById',
+                        type: 'POST',
+                        dataType: "json",
+                        data: {
+                            id_viaggio: id
+                        },
+                        async: false,
+                        success: function (data) {
+                            errorModal.hide();
+
+                            var parsedResult = checkAjaxResponse(data, false);
+                            if (!parsedResult) {
+                                result = data
+                            }
+                        }
+                    });
+
+                    return result;
+                }
+            }
+        }();
+        let PAViaggiAddModal = function () {
+            let modal;
+            let confirm_button;
+            let show_button;
+            let form;
+            let title;
+
+            let sosta;
+            let durata;
+            let id_aereoporto_partenza;
+            let id_aereoporto_arrivo;
+            let sconto_biglietto;
+            let data_partenza;
+            let orario_partenza;
+
+            return {
+                init: function () {
+                    modal = new bootstrap.Modal(document.querySelector('#add-viaggi-modal'));
+                    confirm_button = $('#add-viaggi-submit');
+                    show_button = $('#table_viaggi-add_button');
+                    title = $('#add-viaggi-title');
+
+                    title.text("Crea Nuovo Viaggio" );
+
+                    sosta = $('#add-viaggi-sosta');
+                    durata = $('#add-viaggi-durata');
+                    id_aereoporto_partenza = $('#add-viaggi-id_aereoporto_partenza');
+                    id_aereoporto_arrivo  = $('#add-viaggi-id_aereoporto_arrivo');
+                    sconto_biglietto= $('#add-viaggi-sconto_biglietto');
+                    data_partenza= $('#add-viaggi-data_partenza');
+                    orario_partenza = $('#add-viaggi-orario_partenza');
+
+                    show_button.on('click',function ()
+                    {
+                        PAViaggiAddModal.showModal();
+                    });
+
+
+                    form = document.getElementById("add-viaggi-form");
+
+                },
+                showModal: function () {
+                    form.reset();
+                    confirm_button.off('click');
+                    confirm_button.attr('data-kt-indicator', 'off');
+                    confirm_button.attr('disabled', false);
+
+                    confirm_button.on('click', function () {
+                        confirm_button.attr('data-kt-indicator', 'on');
+                        confirm_button.attr('disabled', true);
+                        PAViaggi.add();
+                    });
+
+                    getSelectAllAereoporti([id_aereoporto_arrivo,id_aereoporto_partenza])
+
+
+                    modal.show();
+                },
+                hideModal: function () {
+                    modal.hide();
+                },
+                errorModal:function ()
+                {
+                    confirm_button.attr('data-kt-indicator', 'off');
+                    confirm_button.attr('disabled', false);
+                },
+                getFields:function ()
+                {
+                    return {
+                        sosta : sosta,
+                        durata : durata,
+                        id_aereoporto_partenza:id_aereoporto_partenza,
+                        id_aereoporto_arrivo  : id_aereoporto_arrivo,
+                        sconto_biglietto:sconto_biglietto,
+                        data_partenza:data_partenza,
+                        orario_partenza:orario_partenza
+                    }
+                }
+            }
+        }();
+        let PAViaggiEditModal = function () {
+            let modal;
+            let confirm_button;
+            let form;
+            let data;
+            let title;
+
+            let sosta;
+            let durata;
+            let id_aereoporto_partenza;
+            let id_aereoporto_arrivo;
+            let sconto_biglietto;
+            let data_partenza;
+            let orario_partenza;
+
+            return {
+                init: function () {
+                    modal = new bootstrap.Modal(document.querySelector('#edit-viaggi-modal'));
+                    confirm_button = $('#edit-viaggi-submit');
+                    form = document.getElementById("edit-viaggi-form");
+                    title = $('#edit-viaggi-title');
+                    title.text('Modifica Viaggi');
+
+                    sosta = $('#edit-viaggi-sosta');
+                    durata = $('#edit-viaggi-durata');
+                    id_aereoporto_partenza = $('#edit-viaggi-id_aereoporto_partenza');
+                    id_aereoporto_arrivo  = $('#edit-viaggi-id_aereoporto_arrivo');
+                    sconto_biglietto= $('#edit-viaggi-sconto_biglietto');
+                    data_partenza= $('#edit-viaggi-data_partenza');
+                    orario_partenza = $('#edit-viaggi-orario_partenza');
+
+                },
+                showModal: function (id) {
+                    data = PAViaggi.getById(id);
+                    form.reset();
+                    confirm_button.off('click');
+                    confirm_button.attr('data-kt-indicator', 'off');
+                    confirm_button.attr('disabled', false);
+
+                    confirm_button.on('click', function () {
+                        confirm_button.attr('data-kt-indicator', 'on');
+                        confirm_button.attr('disabled', true);
+                        PAViaggi.edit(id);
+                    });
+
+                    getSelectAllAereoporti([id_aereoporto_arrivo,id_aereoporto_partenza])
+
+                    /*** FILL FORM **/
+                    sosta.val(data.sosta);
+                    durata.val(data.durata);
+                    id_aereoporto_partenza.val(data.id_aereoporto_partenza);
+                    id_aereoporto_arrivo.val(data.id_aereoporto_arrivo);
+                    sconto_biglietto.val(data.sconto_biglietto);
+                    data_partenza.val(data.data_partenza);
+                    orario_partenza.val(data.orario_partenza);
+
+                    /*** END ***/
+
+                    modal.show();
+                },
+                hideModal: function () {
+                    modal.hide();
+                },
+                errorModal:function ()
+                {
+                    confirm_button.attr('data-kt-indicator', 'off');
+                    confirm_button.attr('disabled', false);
+                },
+                getFields:function ()
+                {
+                    return {
+                        sosta : sosta,
+                        durata : durata,
+                        id_aereoporto_partenza:id_aereoporto_partenza,
+                        id_aereoporto_arrivo  : id_aereoporto_arrivo,
+                        sconto_biglietto:sconto_biglietto,
+                        data_partenza:data_partenza,
+                        orario_partenza:orario_partenza
+                    }
+                }
+            }
+        }();
+
+        let PAVoliDrawer = function () {
+            let drawer;
+            let button_header_add;
+            let modal_title;
+            let id_viaggio = 0;
+            let viaggio_obj;
+
+            let remove_all;
+
+            function getViaggio()
+            {
+                viaggio_obj = PAViaggi.getById(id_viaggio);
+            }
+
+            let PAVoliAddModal = function () {
+                let modal;
+                let confirm_button;
+                let show_button;
+                let form;
+                let title;
+
+                let id_aereo;
+                let scaliContainer;
+                let addScaloBtn;
+                let tratteContainer;
+
+                let partenzaFissa;
+                let destinazioneFissa;
+                let back_to_inserisci_tratte;
+                let tratte_generate_div;
+                let inserisci_tratte_div;
+                let confirm_tratte_btn;
+
+                return {
+                    init: function () {
+                        modal = new bootstrap.Modal(document.querySelector('#add-voli-modal'));
+                        confirm_button = $('#add-voli-submit');
+                        show_button = $('#table_voli-add_button');
+                        title = $('#add-voli-title');
+
+                        id_aereo = $('#add-voli-id_aereo');
+                        form = document.getElementById("add-voli-form");
+
+                        scaliContainer = document.getElementById("scali-container");
+                        addScaloBtn = document.getElementById("add-scalo-btn");
+                        tratteContainer = document.getElementById("tratte-container");
+
+                        partenzaFissa = document.getElementById("add-voli-partenza-fissa");
+                        destinazioneFissa = document.getElementById("add-voli-destinazione-fissa");
+
+                        inserisci_tratte_div = $('#inserisci_tratte');
+                        tratte_generate_div = $('#tratte_generate_div');
+                        back_to_inserisci_tratte = $('#back_to-tratte-btn');
+                        confirm_tratte_btn = $('#confirm-tratte-btn');
+
+                        back_to_inserisci_tratte.on('click',function()
+                        {
+                            confirm_button.addClass("d-none")
+                            tratte_generate_div.addClass("d-none");
+                            inserisci_tratte_div.removeClass("d-none");
+                        });
+
+                        confirm_tratte_btn.on('click',()=>
+                        {
+                            tratte_generate_div.removeClass("d-none");
+                            inserisci_tratte_div.addClass("d-none");
+                            confirm_button.removeClass("d-none")
+                            this.generateTratte();
+                        });
+
+
+                        // Aggiungi scalo
+                        addScaloBtn.addEventListener("click", () => this.addScalo());
+
+                        // Mostra modal
+                        show_button.on('click', () => this.showModal());
+                    },
+
+                    showModal: function () {
+                        // Reset form
+
+                        PAVoliDrawer.hideModal();
+
+                        confirm_button.addClass("d-none")
+                        tratte_generate_div.addClass("d-none");
+
+                        form.reset();
+                        scaliContainer.innerHTML = "";
+                        tratteContainer.innerHTML = "";
+
+                        // Recupera aeroporti fissi
+                        let partenza = viaggio_obj.partenza_rel;
+                        let destinazione = viaggio_obj.arrivo_rel;
+
+                        partenzaFissa.innerHTML = `<option value="${partenza.id_aereoporto}" selected>${partenza.nome}</option>`;
+                        destinazioneFissa.innerHTML = `<option value="${destinazione.id_aereoporto}" selected>${destinazione.nome}</option>`;
+
+                        // Popola selezione aerei
+                        getSelectAllAerei([id_aereo]);
+
+                        // Aggiorna tratte minime (partenza→destinazione)
+                        this.generateTratte();
+
+                        // Setup confirm
+                        confirm_button.off('click');
+                        confirm_button.attr('data-kt-indicator', 'off').attr('disabled', false);
+                        confirm_button.on('click', () => {
+                            confirm_button.attr('data-kt-indicator', 'on').attr('disabled', true);
+                            PAVoli.add()
+                        });
+
+                        modal.show();
+                    },
+
+                    errorModal:function ()
+                    {
+                        confirm_button.attr('data-kt-indicator', 'off');
+                        confirm_button.attr('disabled', false);
+                    },
+
+                    addScalo: function () {
+                        let scaloItem = document.createElement("div");
+                        scaloItem.classList.add("scalo-item", "d-flex", "gap-3", "align-items-center", "mb-2");
+
+                        scaloItem.innerHTML = `
+                                        <select name="scali[]" class="form-control form-control-solid scalo-select" required></select>
+                                        <button type="button" class="btn btn-danger btn-sm remove-scalo">X</button>
+                                      `;
+
+                        scaliContainer.appendChild(scaloItem);
+                        getSelectAllAereoporti([$(scaloItem).find("select")]);
+
+                        scaloItem.querySelector(".remove-scalo").addEventListener("click", function () {
+                            scaloItem.remove();
+                        });
+                    },
+
+                    // Genera le tratte dinamiche in base a [Partenza, ...Scali..., Destinazione]
+                    generateTratte: function () {
+                        tratteContainer.innerHTML = ""; // pulisco
+
+                        let percorso = [];
+
+                        percorso.push({
+                            id: partenzaFissa.value,
+                            nome: partenzaFissa.options[0].text
+                        });
+
+                        scaliContainer.querySelectorAll("select[name='scali[]']").forEach(sel => {
+                            if (sel.value) {
+                                percorso.push({
+                                    id: sel.value,
+                                    nome: sel.options[sel.selectedIndex].text
+                                });
+                            }
+                        });
+
+                        percorso.push({
+                            id: destinazioneFissa.value,
+                            nome: destinazioneFissa.options[0].text
+                        });
+
+                        // Ora creo N tratte
+                        for (let i = 0; i < percorso.length - 1; i++) {
+                            let from = percorso[i];
+                            let to = percorso[i + 1];
+
+                            let trattaDiv = document.createElement("div");
+                            trattaDiv.classList.add("card", "p-3", "mb-3");
+
+                            trattaDiv.innerHTML = `
+                              <h6 class="fw-bold">${from.nome} ➔ ${to.nome}</h6>
+                              <input type="hidden" name="from[]" value="${from.id}">
+                              <input type="hidden" name="to[]" value="${to.id}">
+
+                              <div class="row mt-2">
+                                <div class="col-md-4">
+                                  <label class="form-label">Aereo</label>
+                                  <select name="aereo[]" class="form-control form-control-solid tratta-aereo"></select>
+                                </div>
+                                <div class="col-md-4">
+                                  <label class="form-label">Comandante</label>
+                                  <input type="text" name="comandante[]" class="form-control form-control-solid" required placeholder="Nome Comandante">
+                                </div>
+                                <div class="col-md-4">
+                                  <label class="form-label">Ritardo (minuti)</label>
+                                  <input type="number" min="0" name="ritardo[]" class="form-control form-control-solid" placeholder="0">
+                                </div>
+                              </div>
+                            `;
+
+                            tratteContainer.appendChild(trattaDiv);
+
+                            // Popolo la select degli aerei
+                            let selectAereo = $(trattaDiv).find(".tratta-aereo");
+                            getSelectAllAerei([selectAereo]);
+                        }
+                    },
+
+                    hideModal: function () {
+                        modal.hide();
+                    },
+                    collectData: function () {
+                        let tratte = [];
+                        let cards = tratteContainer.querySelectorAll(".card");
+
+                        cards.forEach(card => {
+                            let from = card.querySelector("input[name='from[]']").value;
+                            let to = card.querySelector("input[name='to[]']").value;
+                            let comandante = card.querySelector("input[name='comandante[]']").value;
+                            let ritardo = card.querySelector("input[name='ritardo[]']").value || 0;
+                            let aereo = card.querySelector("select[name='aereo[]']").value;
+
+                            tratte.push({
+                                id_aereoporto_partenza: from,
+                                id_aereoporto_arrivo: to,
+                                id_aereo: aereo,
+                                id_viaggio: id_viaggio,
+                                comandante: comandante,
+                                ritardo: ritardo
+                            });
+                        });
+
+                        return { tratte: tratte };
+                    }
+                }
+            }();
+
+            let PAVoli = function () {
+                // Define shared variables (not accessible outside this block)
+                let datatable;
+                let table;
+                let reloadButton;
+                let add_button;
+                let timeoutSearchTyping;
+                let usergroup_filter = "";
+                let initialSearchValue = "";
+                let customer_filters;
+
+                // Private functions
+                var initDatatable = function () {
+                    // Init datatable --- more info on datatables: https://datatables.net/manual/
+                    datatable = $(table).DataTable({
+                        ajax: {
+                            url: ajaxUrl + '?fun=voli&oper=getAllDatatable',
+                            type: "POST",
+                            data: function (data) {
+                                data.id_viaggio = id_viaggio
+                            },
+                        },
+
+                        "oSearch": {"sSearch": initialSearchValue},
+                        pageLength: 25,
+                        serverSide: true,
+                        "info": false,
+                        'order': [0, "ASC"],
+                        'columns': [
+                            /*0*/   {data: 'id_volo'},
+                            /*1*/   {data: 'comandante'},
+                            /*2*/   {data: 'ritardo'},
+                            /*3*/   {data: 'id_aereo'},
+                            /*4*/   {data: 'id_aereoporto_partenza'},
+                            /*5*/   {data: 'id_aereoporto_arrivo'},
+                            /*6*/   {data: 'ordine'},
+                        ],
+                        'columnDefs': [
+                            {
+                                "targets": [0],
+                                "visible": false
+                            },
+                            {
+                                "targets": [3],
+                                "createdCell": function (td, cellData, rowData, row, col) {
+                                    //$(td, td).html(`${rowData.compagnia_rel.nome}`);
+                                }
+                            },
+                            {
+                                "targets": [6],
+                                "createdCell": function (td, cellData, rowData, row, col) {
+                                    $(td, td).html(`${cellData} ° Tratta`);
+
+                                }
+                            }
+                        ],
+                        "drawCallback": function (settings) {
+                            PAVoli.onReloadDone();
+                        }
+                    });
+
+                    // Re-init functions on every table re-draw -- more info: https://datatables.net/reference/event/draw
+                    datatable.on('draw', function () {
+                        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+                        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+                    });
+
+                }
+
+
+                // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
+                var handleSearchDatatable = () => {
+                    const filterSearch = document.querySelector('#table_voli-search_filter');
+                    filterSearch.value = initialSearchValue;
+                    filterSearch.addEventListener('keyup', function (e) {
+                        if(timeoutSearchTyping) clearTimeout(timeoutSearchTyping);
+                        timeoutSearchTyping = setTimeout(function() { datatable.search(e.target.value).draw() }, 500);
+                    });
+                }
+
+
+                // Search Datatable --- official docs reference: https://datatables.net/reference/api/search()
+                var handleReloadTable = () => {
+                    const reloadButton = document.querySelector('#table_voli-reload_button');
+                    reloadButton.addEventListener('click', function (e) {
+                        datatable.ajax.reload();
+                    });
+                }
+
+                // Public methods
+                return {
+                    reloadTable: function () {
+                        datatable.ajax.reload();
+                    },
+                    onReloadDone: function () {
+                        reloadButton.blur();
+                    },
+                    init: function () {
+                        table = document.querySelector('#table_voli');
+                        reloadButton = document.querySelector('#table_voli-reload_button');
+                        add_button = document.querySelector('#table_voli-add_button');
+                        if (!table) {
+                            return;
+                        }
+
+                        initDatatable();
+                        handleSearchDatatable();
+                        handleReloadTable();
+                    },
+                    add: function() {
+                        jQuery.ajax({
+                            url: ajaxUrl + '?fun=voli&oper=add_from_json',
+                            type: 'POST',
+                            dataType: "json",
+                            data: {
+                                voli_json : JSON.stringify(PAVoliAddModal.collectData())
+                            },
+                            async: true,
+                            success: function (data) {
+                                errorModal.hide();
+
+                                var parsedResult = checkAjaxResponse(data, false);
+                                if (!parsedResult) {
+                                    var result = data;
+                                    PAVoli.reloadTable();
+                                    PAVoliAddModal.hideModal();
+                                    PAVoliDrawer.showModal();
+                                    showToast('Volo Aggiunto con successo.');
+
+                                } else {
+                                    setTimeout(()=>{
+                                        showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PAVoliDrawer.errorModal();" type="button">Chiudi</button>', true);
+                                    }, 500);
+
+                                }
+                            }
+                        });
+                    },
+                    showDeleteModal: function () {
+                        showError('Elimina Tratte', `Attenzione: Vuoi rimuovere definitivamente le tratte selezionate?`, '<button type="button" class="btn btn-outline " data-bs-dismiss="modal">Chiudi</button><button type="button" class="btn btn-outline btn-outline-primary" data-bs-dismiss="modal" id="confirm_button">Elimina</button>');
+                        $('#confirm_button').off('click');
+                        $('#confirm_button').on('click', ()=> {
+                            this.delete()
+                        })
+                    },
+                    delete: function () {
+                        jQuery.ajax({
+                            url: ajaxUrl + '?fun=voli&oper=delete_all',
+                            type: 'POST',
+                            data: {
+                                id_viaggio:id_viaggio
+                            },
+                            dataType: "json",
+                            async: true,
+                            success: function (data) {
+                                errorModal.hide();
+                                var parsedResult = checkAjaxResponse(data, false);
+                                if (!parsedResult) {
+                                    showToast('Tratte rimosse con susccesso.');
+                                    PAVoli.reloadTable()
+                                } else {
+                                    setTimeout(()=>{
+                                        showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PAVoliDrawer.errorModal();" type="button">Chiudi</button>', true);
+                                    }, 500);
+                                }
+                            }
+                        });
+                    },
+                    getById : function (id) {
+                        let result = null;
+                        jQuery.ajax({
+                            url: ajaxUrl + '?fun=voli&oper=getById',
+                            type: 'POST',
+                            data: {
+                                id_volo: id
+                            },
+                            async: false,
+                            success: function (data) {
+                                errorModal.hide();
+
+                                var parsedResult = checkAjaxResponse(data, false);
+                                if (!parsedResult) {
+                                    result = data
+                                }
+                            }
+                        });
+
+                        return result;
+                    },
+                    adjustColumns : function()
+                    {
+                        datatable.columns.adjust().draw();
+                    }
+                }
+            }();
+
+            return {
+                init: function () {
+                    drawer = new bootstrap.Offcanvas('#voli-offcanvas',{
+                        backdrop: false
+                    });
+                    button_header_add = $('#button_header_add');
+
+                    modal_title = $('#voli-title');
+
+                    $('#voli-offcanvas').on('shown.bs.offcanvas', function () {
+                        $('#table_voli').DataTable().columns.adjust().draw();
+                    });
+
+                    remove_all = $('#table_voli-remove_all_button');
+                    remove_all.on('click',()=>
+                    {
+                        PAVoli.showDeleteModal();
+                    });
+
+                    PAVoli.init()
+                    PAVoliAddModal.init();
+
+                },
+                showModal: function (id_viaggio_in) {
+                    id_viaggio = id_viaggio_in
+                    modal_title.html(`Lista Voli`)
+                    drawer.show();
+
+                    getViaggio();
+
+                    PAVoli.reloadTable();
+                    PAVoli.adjustColumns();
+                },
+                hideModal: function () {
+                    drawer.hide();
+                },
+                errorModal:function ()
+                {
+                    PAVoliAddModal.errorModal();
+                },
+
+            }
+        }();
+
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+            PACompagniaAerea.init()
+
+            PAAerei.init();
+            PAAereiAddModal.init();
+            PAAereiEditModal.init();
+
+            PAAereoporti.init()
+            PAAereoportiAddModal.init()
+            PAAereoportiEditModal.init()
+
+            PAViaggi.init();
+            PAViaggiAddModal.init();
+            PAViaggiEditModal.init();
+
+            PAVoliDrawer.init()
+
+        });
+
+    </script>
 
     <div class="modal fade" id="add-aerei-modal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered mw-650px">
@@ -936,16 +2121,6 @@
                                        type="number"
                                        class="form-control form-control-solid"
                                        placeholder="Dimensione (m²)"/>
-                            </div>
-
-                            <!-- Seleziona Compagnia -->
-                            <div class="fv-row mb-7">
-                                <label class="required fs-6 fw-semibold mb-2">Compagnia</label>
-                                <select id="add-aerei-id_compagnia"
-                                        name="id_compagnia"
-                                        class="form-control form-control-solid">
-                                    <!-- Opzioni da popolare dinamicamente -->
-                                </select>
                             </div>
 
                         </div>
@@ -1032,16 +2207,6 @@
                                        type="number"
                                        class="form-control form-control-solid"
                                        placeholder="Dimensione (m²)"/>
-                            </div>
-
-                            <!-- Seleziona Compagnia -->
-                            <div class="fv-row mb-7">
-                                <label class="required fs-6 fw-semibold mb-2">Compagnia</label>
-                                <select id="edit-aerei-id_compagnia"
-                                        name="id_compagnia"
-                                        class="form-control form-control-solid">
-                                    <!-- Opzioni da popolare dinamicamente -->
-                                </select>
                             </div>
 
                         </div>
@@ -1187,12 +2352,6 @@
 
 
                             <div class="fv-row mb-7">
-                                <label class="required fs-6 fw-semibold mb-2">Password</label>
-                                <input id="edit-dipendenti-password" name="add-dipendenti-user_password" type="password" class="form-control form-control-solid" placeholder="Password"/>
-                            </div>
-
-
-                            <div class="fv-row mb-7">
                                 <label class="required fs-6 fw-semibold mb-2">Telefono</label>
                                 <input id="edit-dipendenti-tel" name="add-dipendenti-user_tel" type="text" class="form-control form-control-solid" placeholder="Telefono"/>
                             </div>
@@ -1218,8 +2377,8 @@
                     <button type="reset" data-bs-dismiss="modal" class="btn btn-light me-3">Annulla</button>
                     <!--end::Button-->
                     <!--begin::Button-->
-                    <button type="submit" id="add-dipendenti-submit" class="btn btn-primary">
-                        <span class="indicator-label">Crea</span>
+                    <button type="submit" id="edit-dipendenti-submit" class="btn btn-primary">
+                        <span class="indicator-label">Modifica</span>
                         <span class="indicator-progress">Attendi...
                             <span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
                     </button>
@@ -1229,7 +2388,502 @@
         </div>
     </div>
 
-        <div class="offcanvas offcanvas-end" tabindex="-1" id="dipendenti-offcanvas" aria-labelledby="dipendenti-title" style="width: 800px;">
+    <div class="modal fade" id="add-aereoporti-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered mw-650px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <!--begin::Modal title-->
+                    <h2 id="add-aereoporti-title" class="fw-bold">-------</h2>
+                    <!--end::Modal title-->
+                    <!--begin::Close-->
+                    <div data-bs-dismiss="modal" class="btn btn-icon btn-sm btn-active-icon-primary">
+                        <i class="ki-duotone ki-cross fs-1">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                        </i>
+                    </div>
+                    <!--end::Close-->
+                </div>
+                <div id="add-aereoporti-body" class="modal-body py-10 px-lg-17">
+
+                    <form id="add-aereoporti-form">
+
+                        <div class="scroll-y me-n7 pe-7" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto"  data-kt-scroll-offset="300px">
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Codice Lata</label>
+                                <input id="add-aereoporti-id_aereporto" name="add-aereoporti-id_aereporto" type="text" class="form-control form-control-solid" placeholder="Codice Lata"/>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Nome Aereoporto</label>
+                                <input id="add-aereoporti-nome" name="add-aereoporti-nome" type="text" class="form-control form-control-solid" placeholder="Nome Aereoporto"/>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Civico</label>
+                                <input id="add-aereoporti-civico" name="add-aereoporti-civico" type="text" class="form-control form-control-solid" placeholder="Civico"/>
+                            </div>
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Via</label>
+                                <input id="add-aereoporti-via" name="add-aereoporti-via" type="text" class="form-control form-control-solid" placeholder="Via"/>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Città</label>
+                                <input id="add-aereoporti-citta" name="add-aereoporti-citta" type="text" class="form-control form-control-solid" placeholder="Città"/>
+                            </div>
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Codice Postale</label>
+                                <input id="add-aereoporti-cod_postale" name="add-aereoporti-cod_postale" type="number" class="form-control form-control-solid" placeholder="Codice Postale"/>
+                            </div>
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Paese</label>
+                                <input id="add-aereoporti-paese" name="add-aereoporti-paese" type="text" class="form-control form-control-solid" placeholder="Paese"/>
+                            </div>
+
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+
+                <div class="modal-footer flex-center">
+                    <!--begin::Button-->
+                    <button type="reset" data-bs-dismiss="modal" class="btn btn-light me-3">Annulla</button>
+                    <!--end::Button-->
+                    <!--begin::Button-->
+                    <button type="submit" id="add-aereoporti-submit" class="btn btn-primary">
+                        <span class="indicator-label">Crea</span>
+                        <span class="indicator-progress">Attendi...
+                            <span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
+                    </button>
+                    <!--end::Button-->
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="edit-aereoporti-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered mw-650px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <!--begin::Modal title-->
+                    <h2 id="edit-aereoporti-title" class="fw-bold">-------</h2>
+                    <!--end::Modal title-->
+                    <!--begin::Close-->
+                    <div data-bs-dismiss="modal" class="btn btn-icon btn-sm btn-active-icon-primary">
+                        <i class="ki-duotone ki-cross fs-1">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                        </i>
+                    </div>
+                    <!--end::Close-->
+                </div>
+                <div id="edit-aereoporti-body" class="modal-body py-10 px-lg-17">
+
+                    <form id="edit-aereoporti-form">
+
+                        <div class="scroll-y me-n7 pe-7" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto"  data-kt-scroll-offset="300px">
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Nome Aereoporto</label>
+                                <input id="edit-aereoporti-nome" name="edit-aereoporti-nome" type="text" class="form-control form-control-solid" placeholder="Nome Aereoporto"/>
+                            </div>
+
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Civico</label>
+                                <input id="edit-aereoporti-civico" name="edit-aereoporti-civico" type="text" class="form-control form-control-solid" placeholder="Civico"/>
+                            </div>
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Via</label>
+                                <input id="edit-aereoporti-via" name="edit-aereoporti-via" type="text" class="form-control form-control-solid" placeholder="Via"/>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Città</label>
+                                <input id="edit-aereoporti-citta" name="edit-aereoporti-citta" type="text" class="form-control form-control-solid" placeholder="Città"/>
+                            </div>
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Codice Postale</label>
+                                <input id="edit-aereoporti-cod_postale" name="edit-aereoporti-cod_postale" type="number" class="form-control form-control-solid" placeholder="Codice Postale"/>
+                            </div>
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Paese</label>
+                                <input id="edit-aereoporti-paese" name="edit-aereoporti-paese" type="text" class="form-control form-control-solid" placeholder="Paese"/>
+                            </div>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+
+                <div class="modal-footer flex-center">
+                    <!--begin::Button-->
+                    <button type="reset" data-bs-dismiss="modal" class="btn btn-light me-3">Annulla</button>
+                    <!--end::Button-->
+                    <!--begin::Button-->
+                    <button type="submit" id="edit-aereoporti-submit" class="btn btn-primary">
+                        <span class="indicator-label">Modifica</span>
+                        <span class="indicator-progress">Attendi...
+                            <span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
+                    </button>
+                    <!--end::Button-->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="add-viaggi-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered mw-650px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <!--begin::Modal title-->
+                    <h2 id="add-viaggi-title" class="fw-bold">-------</h2>
+                    <!--end::Modal title-->
+                    <!--begin::Close-->
+                    <div data-bs-dismiss="modal" class="btn btn-icon btn-sm btn-active-icon-primary">
+                        <i class="ki-duotone ki-cross fs-1">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                        </i>
+                    </div>
+                    <!--end::Close-->
+                </div>
+                <div id="add-viaggi-body" class="modal-body py-10 px-lg-17">
+
+                    <form id="add-viaggi-form">
+
+                        <div class="scroll-y me-n7 pe-7" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto"  data-kt-scroll-offset="300px">
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Aereoporto Partenza</label>
+                                <select id="add-viaggi-id_aereoporto_partenza" name="add-viaggi-id_aereoporto_partenza"
+                                        class="form-control form-control-solid" placeholder="Aereoporto Partenza">
+                                </select>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Aereoporto Arrivo</label>
+                                <select id="add-viaggi-id_aereoporto_arrivo" name="add-viaggi-id_aereoporto_arrivo"
+                                        class="form-control form-control-solid" placeholder="Aereoporto Arrivo">
+                                </select>
+                            </div>
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Sosta</label>
+                                <input id="add-viaggi-sosta" name="add-viaggi-sosta" type="number" min="0" class="form-control form-control-solid" placeholder="Sosta"/>
+                            </div>
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Durata</label>
+                                <input id="add-viaggi-durata" name="add-viaggi-durata" type="number" min="0" class="form-control form-control-solid" placeholder="Durata"/>
+                            </div>
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Sconto Biglietto</label>
+                                <select id="add-viaggi-sconto_biglietto" name="add-viaggi-sconto_biglietto" class="form-control form-control-solid" placeholder="Sconto Biglietto">
+                                    <option value="0.05">5%</option>
+                                    <option value="0.10">10%</option>
+                                    <option value="0.15">15%</option>
+                                </select>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Data Partenza</label>
+                                <input id="add-viaggi-data_partenza" name="add-viaggi-data_partenza" type="date" class="form-control form-control-solid" placeholder="Data Partenza"/>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Orario Partenza</label>
+                                <input id="add-viaggi-orario_partenza" name="add-viaggi-orario_partenza" type="time" class="form-control form-control-solid" placeholder="Orario Partenza"/>
+                            </div>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+
+                <div class="modal-footer flex-center">
+                    <!--begin::Button-->
+                    <button type="reset" data-bs-dismiss="modal" class="btn btn-light me-3">Annulla</button>
+                    <!--end::Button-->
+                    <!--begin::Button-->
+                    <button type="submit" id="add-viaggi-submit" class="btn btn-primary">
+                        <span class="indicator-label">Crea</span>
+                        <span class="indicator-progress">Attendi...
+                            <span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
+                    </button>
+                    <!--end::Button-->
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="edit-viaggi-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered mw-650px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <!--begin::Modal title-->
+                    <h2 id="edit-viaggi-title" class="fw-bold">-------</h2>
+                    <!--end::Modal title-->
+                    <!--begin::Close-->
+                    <div data-bs-dismiss="modal" class="btn btn-icon btn-sm btn-active-icon-primary">
+                        <i class="ki-duotone ki-cross fs-1">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                        </i>
+                    </div>
+                    <!--end::Close-->
+                </div>
+                <div id="edit-viaggi-body" class="modal-body py-10 px-lg-17">
+
+                    <form id="edit-viaggi-form">
+
+                        <div class="scroll-y me-n7 pe-7" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto"  data-kt-scroll-offset="300px">
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Aereoporto Partenza</label>
+                                <select id="edit-viaggi-id_aereoporto_partenza" name="edit-viaggi-id_aereoporto_partenza"
+                                        class="form-control form-control-solid" placeholder="Aereoporto Partenza">
+                                </select>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Aereoporto Arrivo</label>
+                                <select id="edit-viaggi-id_aereoporto_arrivo" name="edit-viaggi-id_aereoporto_arrivo"
+                                        class="form-control form-control-solid" placeholder="Aereoporto Arrivo">
+                                </select>
+                            </div>
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Sosta</label>
+                                <input id="edit-viaggi-sosta" name="edit-viaggi-sosta" type="number" min="0" class="form-control form-control-solid" placeholder="Sosta"/>
+                            </div>
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Durata</label>
+                                <input id="edit-viaggi-durata" name="edit-viaggi-durata" type="number" min="0" class="form-control form-control-solid" placeholder="Durata"/>
+                            </div>
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Sconto Biglietto</label>
+                                <select id="edit-viaggi-sconto_biglietto" name="edit-viaggi-sconto_biglietto" class="form-control form-control-solid" placeholder="Sconto Biglietto">
+                                    <option value="0">Nessuno Sconto</option>
+                                    <option value="0.05">5%</option>
+                                    <option value="0.10">10%</option>
+                                    <option value="0.15">15%</option>
+                                </select>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Data Partenza</label>
+                                <input id="edit-viaggi-data_partenza" name="edit-viaggi-data_partenza" type="date" class="form-control form-control-solid" placeholder="Data Partenza"/>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Orario Partenza</label>
+                                <input id="edit-viaggi-orario_partenza" name="edit-viaggi-orario_partenza" type="time" class="form-control form-control-solid" placeholder="Orario Partenza"/>
+                            </div>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+
+                <div class="modal-footer flex-center">
+                    <!--begin::Button-->
+                    <button type="reset" data-bs-dismiss="modal" class="btn btn-light me-3">Annulla</button>
+                    <!--end::Button-->
+                    <!--begin::Button-->
+                    <button type="submit" id="edit-viaggi-submit" class="btn btn-primary">
+                        <span class="indicator-label">Modifica</span>
+                        <span class="indicator-progress">Attendi...
+                            <span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
+                    </button>
+                    <!--end::Button-->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="add-voli-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered mw-800px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="add-voli-title" class="fw-bold">Crea Viaggio con Scali</h2>
+                    <div data-bs-dismiss="modal" class="btn btn-icon btn-sm btn-active-icon-primary">
+                        <i class="ki-duotone ki-cross fs-1"><span class="path1"></span><span class="path2"></span></i>
+                    </div>
+                </div>
+
+                <div id="add-voli-body" class="modal-body py-10 px-lg-17">
+                    <form id="add-voli-form">
+
+                        <div id="inserisci_tratte">
+                            <!-- Partenza fissa -->
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Aeroporto di Partenza</label>
+                                <select id="add-voli-partenza-fissa" class="form-control form-control-solid" disabled>
+                                    <option>Caricamento...</option>
+                                </select>
+                            </div>
+
+                            <!-- Scali dinamici -->
+                            <div class="fv-row mb-7">
+                                <label class="fs-6 fw-semibold mb-2">Scali intermedi</label>
+                                <div id="scali-container"></div>
+                                <button type="button" id="add-scalo-btn" class="btn btn-light btn-sm mt-3">
+                                    + Aggiungi Scalo
+                                </button>
+                            </div>
+
+                            <!-- Destinazione fissa -->
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Aeroporto di Destinazione</label>
+                                <select id="add-voli-destinazione-fissa" class="form-control form-control-solid" disabled>
+                                    <option>Caricamento...</option>
+                                </select>
+                            </div>
+
+                            <button type="button" id="confirm-tratte-btn" class="btn btn-secondary btn-sm mt-3">
+                                Conferma
+                            </button>
+
+                        </div>
+
+
+                        <div id="tratte_generate_div" class="d-none">
+
+                            <!-- TRATTE generate automaticamente -->
+                            <div class="fv-row mb-7">
+                                <label class="fs-6 fw-semibold mb-2">Tratte generate</label>
+                                <div id="tratte-container"></div>
+                                <button type="button" id="back_to-tratte-btn" class="btn btn-secondary btn-sm mt-3">
+                                    Indietro
+                                </button>
+                            </div>
+
+
+                        </div>
+
+
+
+                    </form>
+                </div>
+
+                <div class="modal-footer flex-center">
+                    <button type="reset" data-bs-dismiss="modal" class="btn btn-light me-3">Annulla</button>
+                    <button type="submit" id="add-voli-submit" class="btn btn-primary d-none">
+                        <span class="indicator-label">Crea Viaggio</span>
+                        <span class="indicator-progress">Attendi...
+            <span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="edit-voli-modal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered mw-650px">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <!--begin::Modal title-->
+                    <h2 id="edit-viaggi-title" class="fw-bold">-------</h2>
+                    <!--end::Modal title-->
+                    <!--begin::Close-->
+                    <div data-bs-dismiss="modal" class="btn btn-icon btn-sm btn-active-icon-primary">
+                        <i class="ki-duotone ki-cross fs-1">
+                            <span class="path1"></span>
+                            <span class="path2"></span>
+                        </i>
+                    </div>
+                    <!--end::Close-->
+                </div>
+                <div id="edit-viaggi-body" class="modal-body py-10 px-lg-17">
+
+                    <form id="edit-viaggi-form">
+
+                        <div class="scroll-y me-n7 pe-7" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto"  data-kt-scroll-offset="300px">
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Comandante</label>
+                                <input id="edit-voli-comandante" name="edit-voli-comandante" type="text" min="0" class="form-control form-control-solid" placeholder="Comandante"/>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Aereo</label>
+                                <select id="edit-voli-id_aereo" name="edit-voli-id_aereo"
+                                        class="form-control form-control-solid" placeholder="Aereo">
+                                </select>
+                            </div>
+
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Aereoporto Partenza</label>
+                                <select id="edit-voli-id_aereoporto_partenza" name="edit-voli-id_aereoporto_partenza"
+                                        class="form-control form-control-solid" placeholder="Aereoporto Partenza">
+                                </select>
+                            </div>
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Aereoporto Arrivo</label>
+                                <select id="edit-voli-id_aereoporto_arrivo" name="edit-voli-id_aereoporto_arrivo"
+                                        class="form-control form-control-solid" placeholder="Aereoporto Arrivo">
+                                </select>
+                            </div>
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Ritardo</label>
+                                <input id="edit-voli-sosta" name="edit-voli-sosta" type="number" min="0" class="form-control form-control-solid" placeholder="Sosta"/>
+                            </div>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+
+                <div class="modal-footer flex-center">
+                    <!--begin::Button-->
+                    <button type="reset" data-bs-dismiss="modal" class="btn btn-light me-3">Annulla</button>
+                    <!--end::Button-->
+                    <!--begin::Button-->
+                    <button type="submit" id="edit-voli-submit" class="btn btn-primary">
+                        <span class="indicator-label">Modifica</span>
+                        <span class="indicator-progress">Attendi...
+                            <span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
+                    </button>
+                    <!--end::Button-->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="dipendenti-offcanvas" aria-labelledby="dipendenti-title" style="width: 800px;">
         <div class="offcanvas-header bg-primary-dwave">
             <h3 id="dipendenti-title" class="offcanvas-title fw-bold text-white"></h3>
             <button type="button" class="btn btn-sm btn-icon btn-primary" data-bs-dismiss="offcanvas" aria-label="Close">
@@ -1276,12 +2930,11 @@
                             <thead>
                             <tr class="text-start text-white fw-bold text-uppercase bg-ryanair-blue">
                                 <th class="px-3">ID</th>
-                                <th>Compagnia</th>
                                 <th>Email</th>
                                 <th>Telefono</th>
-                                <th>Paese</th>
-                                <th>CAP</th>
-                                <th>Città</th>
+                                <th>Nome</th>
+                                <th>Cognome</th>
+                                <th>Compagnia</th>
                                 <th></th>
                             </tr>
                             </thead>
@@ -1294,162 +2947,366 @@
             </div>
         </div>
     </div>
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="voli-offcanvas" aria-labelledby="voli-title" style="width: 1300px;">
+        <div class="offcanvas-header bg-primary-dwave">
+            <h3 id="voli-title" class="offcanvas-title fw-bold text-white"></h3>
+            <button type="button" class="btn btn-sm btn-icon btn-primary" data-bs-dismiss="offcanvas" aria-label="Close">
+                <i class="ki-duotone ki-cross fs-1 text-white"></i>
+            </button>
+        </div>
+        <div class="offcanvas-body p-0">
+            <div class="card-body position-relative" id="voli_body">
+                <div id="voli_scroll" class="position-relative scroll-y me-n5 pe-5" style="height: 564px;">
 
+                    <div class="card-header border-0 pt-4 pb-4 bg-light">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center w-100">
+                            <!-- Left: Search & Filters -->
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                <!-- Search -->
+                                <div class="input-group w-auto">
+                                    <input type="text" id="table_voli-search_filter"
+                                           class="form-control form-control-solid rounded w-250px"
+                                           placeholder="Cerca..." />
+                                </div>
+                            </div>
+
+                            <!-- Right: Toolbar Buttons -->
+                            <div class="d-flex align-items-center gap-2">
+                                <!-- Reload Button -->
+                                <button id="table_voli-reload_button" type="button"
+                                        class="btn btn-light border btn-sm" data-kt-table-filter="reload">
+
+                                    <i class="fa-solid fa-rotate-right fs-2"></i>
+
+                                </button>
+
+                                <!-- Add Button -->
+                                <button id="table_voli-add_button" type="button"
+                                        class="btn btn-primary btn-sm px-4">
+                                    <i class="fa fa-plus me-2"></i> Aggiungi
+                                </button>
+
+
+                                <button id="table_voli-remove_all_button" type="button"
+                                        class="btn btn-primary btn-sm px-4">
+                                    <i class="fa fa-plus me-2"></i> Cancella Tutto
+                                </button>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle fs-6 gy-2 dataTable no-footer" id="table_voli">
+                            <thead>
+                            <tr class="text-start text-white fw-bold text-uppercase bg-ryanair-blue">
+                                <th class="px-3">ID</th>
+                                <th>Comandante</th>
+                                <th>Ritardo</th>
+                                <th>Aereo</th>
+                                <th>Aereoporto Partenza</th>
+                                <th>Aereoporto Arrivo</th>
+                                <th>Ordine</th>
+                            </tr>
+                            </thead>
+                            <tbody class="fw-semibold text-gray-700">
+                            <!-- Data will populate dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="gestisci_compagnie-tab" data-bs-toggle="pill" data-bs-target="#gestisci_compagnie" type="button" role="tab" aria-controls="gestisci_compagnie" aria-selected="true">Informazioni e Statistiche</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="aerei-tab" data-bs-toggle="pill" data-bs-target="#aerei" type="button" role="tab" aria-controls="pills-profile" aria-selected="false">Organizza Voli</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="pills-contact-tab" data-bs-toggle="pill" data-bs-target="#pills-contact" type="button" role="tab" aria-controls="pills-contact" aria-selected="false">Gestisci Aerei</button>
-                </li>
-            </ul>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="gestisci_compagnie-tab" data-bs-toggle="pill" data-bs-target="#gestisci_compagnie" type="button" role="tab" aria-controls="gestisci_compagnie" aria-selected="true">Compagnie Aeree</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="aerei-tab" data-bs-toggle="pill" data-bs-target="#aerei" type="button" role="tab" aria-controls="pills-profile" aria-selected="false">Aerei</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="aereoporto-tab" data-bs-toggle="pill" data-bs-target="#aereoporto" type="button" role="tab" aria-controls="pills-profile" aria-selected="false">Aereoporto</button>
+        </li>
+
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="viaggi-tab" data-bs-toggle="pill" data-bs-target="#viaggi" type="button" role="tab" aria-controls="pills-contact" aria-selected="false">Viaggi</button>
+        </li>
+
+    </ul>
     <div class="tab-content" id="pills-tabContent">
-                <div class="tab-pane fade show active" id="gestisci_compagnie" role="tabpanel" aria-labelledby="gestisci_compagnie-tab">
-                    <div class="card shadow-sm rounded-4 overflow-hidden">
-                        <!-- Card Header -->
-                        <div class="card-header border-0 pt-4 pb-4 bg-light">
-                            <div class="d-flex flex-wrap justify-content-between align-items-center w-100">
-                                <!-- Left: Search & Filters -->
-                                <div class="d-flex align-items-center gap-3 flex-wrap">
-                                    <!-- Search -->
-                                    <div class="input-group w-auto">
-                                        <input type="text" id="table_compagnie-search_filter"
-                                               class="form-control form-control-solid rounded w-250px"
-                                               placeholder="Cerca..." />
-                                    </div>
+        <div class="tab-pane fade show active" id="gestisci_compagnie" role="tabpanel" aria-labelledby="gestisci_compagnie-tab">
+            <div class="card shadow-sm rounded-4 overflow-hidden">
+                <!-- Card Header -->
+                <div class="card-header border-0 pt-4 pb-4 bg-light">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center w-100">
+                        <!-- Left: Search & Filters -->
+                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                            <!-- Search -->
+                            <div class="input-group w-auto">
+                                <input type="text" id="table_compagnie-search_filter"
+                                       class="form-control form-control-solid rounded w-250px"
+                                       placeholder="Cerca..." />
+                            </div>
 
-                                    <!-- Customer Filter (Hidden by default) -->
-                                    <div class="input-group w-auto d-none">
-                                        <select id="table_compagnie-customer_filter"
-                                                class="form-select form-select-solid"
-                                                data-allow-clear="true"
-                                                data-control="select2"
-                                                data-hide-search="true"
-                                                data-placeholder="Cliente">
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <!-- Right: Toolbar Buttons -->
-                                <div class="d-flex align-items-center gap-2">
-                                    <!-- Reload Button -->
-                                    <button id="table_compagnie-reload_button" type="button"
-                                            class="btn btn-light border btn-sm" data-kt-table-filter="reload">
-
-                                        <i class="fa-solid fa-rotate-right fs-2"></i>
-
-                                    </button>
-
-                                    <!-- Add Button -->
-                                    <button id="table_compagnie-add_button" type="button"
-                                            class="btn btn-primary btn-sm px-4">
-                                        <i class="fa fa-plus me-2"></i> Aggiungi
-                                    </button>
-                                </div>
+                            <!-- Customer Filter (Hidden by default) -->
+                            <div class="input-group w-auto d-none">
+                                <select id="table_compagnie-customer_filter"
+                                        class="form-select form-select-solid"
+                                        data-allow-clear="true"
+                                        data-control="select2"
+                                        data-hide-search="true"
+                                        data-placeholder="Cliente">
+                                </select>
                             </div>
                         </div>
 
-                        <!-- Card Body: Table -->
-                        <div class="card-body pt-0">
-                            <div class="table-responsive">
-                                <table class="table table-striped align-middle fs-6 gy-2 dataTable no-footer" id="table_compagnie">
-                                    <thead>
-                                    <tr class="text-start text-white fw-bold text-uppercase bg-ryanair-blue">
-                                        <th class="px-3">ID</th>
-                                        <th>Compagnia</th>
-                                        <th>Email</th>
-                                        <th>Telefono</th>
-                                        <th>Paese</th>
-                                        <th>CAP</th>
-                                        <th>Citta</th>
-                                        <th></th>
-                                        <th></th>
-                                    </tr>
-                                    </thead>
-                                    <tbody class="fw-semibold text-gray-700">
-                                    <!-- Data will populate dynamically -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+                        <!-- Right: Toolbar Buttons -->
+                        <div class="d-flex align-items-center gap-2">
+                            <!-- Reload Button -->
+                            <button id="table_compagnie-reload_button" type="button"
+                                    class="btn btn-light border btn-sm" data-kt-table-filter="reload">
 
-                </div>
-                <div class="tab-pane fade" id="aerei" role="tabpanel" aria-labelledby="aerei-tab">
-                    <div class="card shadow-sm rounded-4 overflow-hidden">
-                        <!-- Card Header -->
-                        <div class="card-header border-0 pt-4 pb-4">
-                            <div class="d-flex flex-wrap justify-content-between align-items-center w-100">
-                                <!-- Left: Search & Filters -->
-                                <div class="d-flex align-items-center gap-3 flex-wrap">
-                                    <!-- Search -->
-                                    <div class="input-group w-auto">
-                                        <input type="text" id="table_aerei-search_filter"
-                                               class="form-control form-control-solid rounded w-250px"
-                                               placeholder="Cerca..." />
-                                    </div>
+                                <i class="fa-solid fa-rotate-right fs-2"></i>
 
-                                    <!-- Customer Filter (Hidden by default) -->
-                                    <div class="input-group w-auto d-none">
-                                        <select id="table_aerei-customer_filter"
-                                                class="form-select form-select-solid"
-                                                data-allow-clear="true"
-                                                data-control="select2"
-                                                data-hide-search="true"
-                                                data-placeholder="Cliente">
-                                        </select>
-                                    </div>
-                                </div>
+                            </button>
 
-                                <!-- Right: Toolbar Buttons -->
-                                <div class="d-flex align-items-center gap-2">
-                                    <!-- Reload Button -->
-                                    <button id="table_aerei-reload_button" type="button"
-                                            class="btn btn-light border btn-sm" data-kt-table-filter="reload">
-
-                                        <i class="fa-solid fa-rotate-right fs-2"></i>
-
-                                    </button>
-
-                                    <!-- Add Button -->
-                                    <button id="table_aerei-add_button" type="button"
-                                            class="btn btn-primary btn-sm px-4">
-                                        <i class="fa fa-plus me-2"></i> Aggiungi
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Card Body: Table -->
-                        <div class="card-body pt-0">
-                            <div class="table-responsive">
-                                <table class="table table-striped align-middle fs-6 gy-2 dataTable no-footer" id="table_aerei">
-                                    <thead>
-
-                                    <tr class="text-start text-white fw-bold text-uppercase bg-ryanair-blue">
-                                        <th class="px-3">ID</th>
-                                        <th>Modello</th>
-                                        <th>Capacità</th>
-                                        <th>Consumo Medio</th>
-                                        <th>Dimensione</th>
-                                        <th>Nome Compagnia</th>
-                                        <th class="text-end pe-3"></th>
-                                    </tr>
-                                    </thead>
-                                    <tbody class="fw-semibold text-gray-700">
-                                    <!-- Data will populate dynamically -->
-                                    </tbody>
-                                </table>
-                            </div>
+                            <!-- Add Button -->
+                            <button id="table_compagnie-add_button" type="button"
+                                    class="btn btn-primary btn-sm px-4">
+                                <i class="fa fa-plus me-2"></i> Aggiungi
+                            </button>
                         </div>
                     </div>
                 </div>
-                <div class="tab-pane fade" id="pills-profile" role="tabpanel" aria-labelledby="pills-profile-tab">...</div>
-                <div class="tab-pane fade" id="pills-contact" role="tabpanel" aria-labelledby="pills-contact-tab">...</div>
+
+                <!-- Card Body: Table -->
+                <div class="card-body pt-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle fs-6 gy-2 dataTable no-footer" id="table_compagnie">
+                            <thead>
+                            <tr class="text-start text-white fw-bold text-uppercase bg-ryanair-blue">
+                                <th class="px-3">ID</th>
+                                <th>Compagnia</th>
+                                <th>Email</th>
+                                <th>Telefono</th>
+                                <th>Paese</th>
+                                <th>CAP</th>
+                                <th>Citta</th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                            </thead>
+                            <tbody class="fw-semibold text-gray-700">
+                            <!-- Data will populate dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <div class="tab-pane fade" id="aerei" role="tabpanel" aria-labelledby="aerei-tab">
+            <div class="card shadow-sm rounded-4 overflow-hidden">
+                <!-- Card Header -->
+                <div class="card-header border-0 pt-4 pb-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center w-100">
+                        <!-- Left: Search & Filters -->
+                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                            <!-- Search -->
+                            <div class="input-group w-auto">
+                                <input type="text" id="table_aerei-search_filter"
+                                       class="form-control form-control-solid rounded w-250px"
+                                       placeholder="Cerca..." />
+                            </div>
+
+                            <!-- Customer Filter (Hidden by default) -->
+                            <div class="input-group w-auto d-none">
+                                <select id="table_aerei-customer_filter"
+                                        class="form-select form-select-solid"
+                                        data-allow-clear="true"
+                                        data-control="select2"
+                                        data-hide-search="true"
+                                        data-placeholder="Cliente">
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Right: Toolbar Buttons -->
+                        <div class="d-flex align-items-center gap-2">
+                            <!-- Reload Button -->
+                            <button id="table_aerei-reload_button" type="button"
+                                    class="btn btn-light border btn-sm" data-kt-table-filter="reload">
+
+                                <i class="fa-solid fa-rotate-right fs-2"></i>
+
+                            </button>
+
+                            <!-- Add Button -->
+                            <button id="table_aerei-add_button" type="button"
+                                    class="btn btn-primary btn-sm px-4">
+                                <i class="fa fa-plus me-2"></i> Aggiungi
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Body: Table -->
+                <div class="card-body pt-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle fs-6 gy-2 dataTable no-footer" id="table_aerei">
+                            <thead>
+
+                            <tr class="text-start text-white fw-bold text-uppercase bg-ryanair-blue">
+                                <th class="px-3">ID</th>
+                                <th>Modello</th>
+                                <th>Capacità</th>
+                                <th>Consumo Medio</th>
+                                <th>Dimensione</th>
+                                <th>Nome Compagnia</th>
+                                <th class="text-end pe-3"></th>
+                            </tr>
+                            </thead>
+                            <tbody class="fw-semibold text-gray-700">
+                            <!-- Data will populate dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane fade" id="aereoporto" role="tabpanel" aria-labelledby="aereoporto-tab">
+            <div class="card shadow-sm rounded-4 overflow-hidden">
+                <!-- Card Header -->
+                <div class="card-header border-0 pt-4 pb-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center w-100">
+                        <!-- Left: Search & Filters -->
+                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                            <!-- Search -->
+                            <div class="input-group w-auto">
+                                <input type="text" id="table_aereoporto-search_filter"
+                                       class="form-control form-control-solid rounded w-250px"
+                                       placeholder="Cerca..." />
+                            </div>
+
+                        </div>
+
+                        <!-- Right: Toolbar Buttons -->
+                        <div class="d-flex align-items-center gap-2">
+                            <!-- Reload Button -->
+                            <button id="table_aereoporto-reload_button" type="button"
+                                    class="btn btn-light border btn-sm" data-kt-table-filter="reload">
+
+                                <i class="fa-solid fa-rotate-right fs-2"></i>
+
+                            </button>
+
+                            <!-- Add Button -->
+                            <button id="table_aereoporto-add_button" type="button"
+                                    class="btn btn-primary btn-sm px-4">
+                                <i class="fa fa-plus me-2"></i> Aggiungi
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Body: Table -->
+                <div class="card-body pt-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle fs-6 gy-2 dataTable no-footer" id="table_aereoporto">
+                            <thead>
+                            <tr class="text-start text-white fw-bold text-uppercase bg-ryanair-blue">
+                                <th class="px-3">ID</th>
+                                <th>Nome Aereoporto</th>
+                                <th>Paese</th>
+                                <th>Città</th>
+                                <th>Codice Postale</th>
+                                <th>Via</th>
+                                <th>Civico</th>
+                                <th class="text-end pe-3"></th>
+                            </tr>
+                            </thead>
+                            <tbody class="fw-semibold text-gray-700">
+                            <!-- Data will populate dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="tab-pane fade" id="viaggi" role="tabpanel" aria-labelledby="viaggi-tab">
+            <div class="card shadow-sm rounded-4 overflow-hidden">
+                <!-- Card Header -->
+                <div class="card-header border-0 pt-4 pb-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center w-100">
+                        <!-- Left: Search & Filters -->
+                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                            <!-- Search -->
+                            <div class="input-group w-auto">
+                                <input type="text" id="table_viaggi-search_filter"
+                                       class="form-control form-control-solid rounded w-250px"
+                                       placeholder="Cerca..." />
+                            </div>
+
+                            <!-- Customer Filter (Hidden by default) -->
+                            <div class="input-group w-auto d-none">
+                                <select id="table_viaggi-customer_filter"
+                                        class="form-select form-select-solid"
+                                        data-allow-clear="true"
+                                        data-control="select2"
+                                        data-hide-search="true"
+                                        data-placeholder="Cliente">
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Right: Toolbar Buttons -->
+                        <div class="d-flex align-items-center gap-2">
+                            <!-- Reload Button -->
+                            <button id="table_viaggi-reload_button" type="button"
+                                    class="btn btn-light border btn-sm" data-kt-table-filter="reload">
+
+                                <i class="fa-solid fa-rotate-right fs-2"></i>
+
+                            </button>
+
+                            <!-- Add Button -->
+                            <button id="table_viaggi-add_button" type="button"
+                                    class="btn btn-primary btn-sm px-4">
+                                <i class="fa fa-plus me-2"></i> Aggiungi
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Body: Table -->
+                <div class="card-body pt-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle fs-6 gy-2 dataTable no-footer" id="table_viaggi">
+                            <thead>
+
+                            <tr class="text-start text-white fw-bold text-uppercase bg-ryanair-blue">
+                                <th class="px-3">ID</th>
+                                <th>Aereoporto Partenza</th>
+                                <th>Aereoporto Arrivo</th>
+                                <th>Sconto Biglietto</th>
+                                <th>Data Partenza</th>
+                                <th>Orario Partenza</th>
+                                <th>Durata</th>
+                                <th>Sosta</th>
+                                <th class="text-end pe-3"></th>
+                                <th class="text-end pe-3"></th>
+                            </tr>
+                            </thead>
+                            <tbody class="fw-semibold text-gray-700">
+                            <!-- Data will populate dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
 

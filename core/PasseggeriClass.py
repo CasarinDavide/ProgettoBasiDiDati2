@@ -50,3 +50,14 @@ class PasseggeriClass(UserMixin, Base):
     
     def get_id(self):
         return str(self.id_passeggero)
+
+
+
+    def get_nome(self):
+        return self.nome
+
+    def get_email(self):
+        return self.email
+
+    def get_role(self):
+        return "compagnie"
