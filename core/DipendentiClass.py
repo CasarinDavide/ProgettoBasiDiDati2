@@ -1,7 +1,6 @@
-from System import Base
+from System import Base, BaseUser
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from flask_login import UserMixin
 
 """
 CREATE TABLE dev.Dipendenti (
@@ -15,7 +14,7 @@ CREATE TABLE dev.Dipendenti (
                                 id_compagnia INTEGER REFERENCES dev.Compagnie(id_compagnie) ON DELETE SET NULL
 );
 """
-class DipendentiClass(UserMixin, Base):
+class DipendentiClass(BaseUser, Base):
     __tablename__ = 'Dipendenti'
     __table_args__ = { 'schema': 'dev' }
 
@@ -41,4 +40,4 @@ class DipendentiClass(UserMixin, Base):
         return self.email
 
     def get_role(self):
-        return "compagnie"
+        return "dipendenti"

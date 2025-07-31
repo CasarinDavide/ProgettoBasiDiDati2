@@ -6,13 +6,6 @@ from flask import jsonify, Response
 from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from System import engine, Base
-
-from System import Base
-from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
-from flask_login import UserMixin
-
 from core.CompagnieClass import CompagnieClass
 from services.BaseRepository import BaseRepository, model_to_dict
 from core.CompagnieClass import CompagnieClass
@@ -50,11 +43,13 @@ class CompagnieRepository(BaseRepository[CompagnieClass]):
         """Fetch all compagnie records."""
         return jsonify([model_to_dict(compagnia) for compagnia in super().get_all()])
 
-    def get_by_id(self, compagnie_id: str) -> Response:
+    def get_by_id_json(self, compagnie_id: str) -> Response:
         """Fetch a single compagnie by ID."""
 
         return jsonify(model_to_dict(super().get_by_id(int(compagnie_id), pk_field=self.pk_field,joins=[]),backrefs = True))
-
+    
+    def get_by_id(self, id_compagnia: str) -> CompagnieClass | None:
+        return super().get_by_id(int(id_compagnia), pk_field=self.pk_field)
 
     def update(self, compagnie_id: int, email: str, tel: str, nome: str, civico: str, via: str, citta: str, cod_postale: str, paese: str) -> Response:
         """
@@ -85,13 +80,13 @@ class CompagnieRepository(BaseRepository[CompagnieClass]):
                                      length=length,
                                      search_value=search_value,
                                      search_fields=["email","nome","tel"])
+    
     def validate_password(self, email: str, password: str) -> bool:
         user = super().search_single_by_columns(email=email)
-        if user and check_password_hash(user.password, password):
-            return True  # Password is correct
-        return False  # Password is incorrect
+        
+        return user and check_password_hash(user.password, password)
 
-    def get_by_email(self, email: str):
+    def get_by_email(self, email: str) -> CompagnieClass | None:
         return super().search_single_by_columns(email=email)
 
 

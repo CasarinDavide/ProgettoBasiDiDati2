@@ -46,13 +46,13 @@ def load_user(user_id):
     elif role == "passeggeri":
         return PasseggeriRepository().get_by_id(real_id)
     elif role == "dipendenti":
-        return PasseggeriRepository().get_by_id(real_id)
+        return DipendentiRepository().get_by_id(real_id)
 
     return None
 
-def custom_login_user(user,remember):
-    if isinstance(user,PasseggeriClass) or isinstance(user,CompagnieClass) or isinstance(user,DipendentiClass):
-        login_user(System.BaseUser(id=user.get_id(),nome=user.get_nome(),email=user.get_email(),role= user.get_role()),remember=remember)
+def custom_login_user(user, remember):
+    if isinstance(user, PasseggeriClass) or isinstance(user, CompagnieClass) or isinstance(user, DipendentiClass):
+        login_user(System.BaseUser(id=user.get_id(), nome=user.get_nome(), email=user.get_email(), role= user.get_role()),remember=remember)
         session['role'] = user.__class__.__name__
 
     return None
@@ -88,8 +88,6 @@ def home():
     viaggi_repo = ViaggiRepository()
     partenze = viaggi_repo.get_list_partenze()
     arrivi = viaggi_repo.get_list_arrivi()
-    print(partenze)
-    print(arrivi)
 
     if nome != "":
         return render_template('./public_html/home.html', user=nome, partenze=partenze, arrivi=arrivi)
@@ -108,21 +106,28 @@ def trip():
         return function_actions()
 
 @app.route('/admin_settings', methods=['GET', 'POST'])
+@login_required
 def admin_settings():
     option = getParam("oper")
+    compagnie_repo = CompagnieRepository()
+    nome = compagnie_repo.get_by_id(current_user.get_id()).nome
     
     if option is None:
-        return render_template('./public_html/admin_settings.html')
+        return render_template('./public_html/admin_settings.html', compagnia=nome)
     else:
         return function_actions()
 
 
 
 @app.route('/gestione_compagnia', methods=['GET', 'POST'])
+@login_required
 def gestione_compagnia():
     option = getParam("oper")
+    compagnie_repo = CompagnieRepository()
+    nome = compagnie_repo.get_by_id(current_user.get_id()).nome
+
     if option is None:
-        return render_template('./public_html/gestione_compagnia.html')
+        return render_template('./public_html/gestione_compagnia.html', compagnia=nome)
     else:
         return function_actions()
 
@@ -200,6 +205,7 @@ def logout():
 
 
 @app.route('/mytriviaggi', methods=['GET', 'POST'])
+@login_required
 def personal_area():
     oper = getParam("oper")
     nome = PasseggeriRepository().get_by_id(current_user.get_id()).nome
@@ -366,37 +372,40 @@ def function_actions():
 
         if action == "update":
             element = getParam("element")
-            val = getParam("new_value")
+            val = getParam("value")
             id_passeggero = current_user.get_id()
             pk_field = passeggeri_repo.pk_field
+            res = False
             
             if element == "nome_cognome":
                 nome = val.split(" ")[0]
                 cognome = val.split(" ")[1]
-                return passeggeri_repo.update(id_passeggero, pk_field, nome=nome, cognome=cognome)
+                res = passeggeri_repo.update(id_passeggero, pk_field, nome=nome, cognome=cognome)
+            
             elif element == "email":
-                return passeggeri_repo.update(id_passeggero, pk_field, email=val)
+                res = passeggeri_repo.update(id_passeggero, pk_field, email=val)
             elif element == "password":
                 password = generate_password_hash(val)
-                return passeggeri_repo.update(id_passeggero, pk_field, password=password)
+                res = passeggeri_repo.update(id_passeggero, pk_field, password=password)
             elif element == "telefono":
                 tel = val.replace(' ', '')
-                return passeggeri_repo.update(id_passeggero, pk_field, tel=tel)
+                res = passeggeri_repo.update(id_passeggero, pk_field, tel=tel)
             elif element == "nascita":
-                return passeggeri_repo.update(id_passeggero, pk_field, nascita=val)
+                res = passeggeri_repo.update(id_passeggero, pk_field, nascita=val)
             elif element == "indirizzo":
                 civico = val.split(' ')[0]
                 via = val.split(' ')[1]
                 citta = val.split(' ')[2]
                 cod_postale = val.split(' ')[3]
                 paese = val.split(' ')[4]
-                return passeggeri_repo.update(id_passeggero, pk_field,  
+                res = passeggeri_repo.update(id_passeggero, pk_field,  
                                                 civico=civico,
                                                 via=via,
                                                 citta=citta,
                                                 cod_postale=cod_postale,
                                                 paese=paese
                                             )
+            return jsonify({ 'success': res })
 
     elif target == "tickets":
         biglietti_repo = BigliettiRepository()
