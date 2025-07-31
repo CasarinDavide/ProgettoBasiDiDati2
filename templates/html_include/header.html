@@ -118,7 +118,7 @@
                     <a href="#" class="text-white text-decoration-none d-flex align-items-center">
                         <i class="fas fa-plane fa-lg me-2"></i> Pianifica
                     </a>
-                    {% if user %}
+                    {% if current_user.is_authenticated %}
                     <a href="#" class="text-white text-decoration-none d-flex align-items-center">
                         <i class="fas fa-ticket fa-lg me-2"></i> I Miei Biglietti
                     </a>
@@ -131,20 +131,24 @@
 
             <!-- Right: User Menu & Auth -->
             <div class="d-flex align-items-center gap-10 fs-3">
-                {% if not user %}
+                {% if not current_user.is_authenticated %}
                     <a href="/user_login" class="text-white text-decoration-none">
                         <i class="fas fa-sign-in fa-2x me-2"></i>
                         Accedi</a>
                 {% else %}
-                    <a href="/mytriviaggi" class="text-white text-decoration-none"> Area Personale - {{ user }}</a>
+                    <a href="/mytriviaggi" class="text-white text-decoration-none"> Area Personale - {{ current_user.get_name() }}</a>
                     <a href="/logout" class="text-white text-decoration-none d-flex align-items-center">
                         <i class="fas fa-sign-out fa-2x me-2"></i>Logout
                     </a>
                 {% endif %}
 
-                <a href="#" class="btn btn-primary fw-semibold rounded-pill px-3 text-dark">
+
+                {% if not current_user.is_authenticated %}
+                    <a href="/authorized_user_login" class="btn btn-primary fw-semibold rounded-pill px-3 text-dark">
                     Portale Autorizzati
-                </a>
+                    </a>
+                {% endif %}
+
             </div>
             {% endif %}
 

@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, url_for, redirect, flash, ses
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash
 
+import System
 from System import getParam
 from core.AereiClass import AereiClass
 from core.AereoportiClass import AereoportiClass
@@ -31,11 +32,39 @@ app.config['SECRET_KEY'] = os.getenv('FLASK-LOGIN-KEY')
 login_manager = LoginManager(app)
 login_manager.init_app(app)
 
+
 # CALLBACK OBBLIGATORIO
 @login_manager.user_loader
+#def load_user(user_id):
+#    passeggeri_repo = PasseggeriRepository()
+#    return passeggeri_repo.get_by_id(user_id)
 def load_user(user_id):
-    passeggeri_repo = PasseggeriRepository()
-    return passeggeri_repo.get_by_id(user_id)
+    # user_id stored like "company-123" or "passenger-456"
+    role, real_id = user_id.split("-", 1)
+    if role == "compagnia":
+        return CompagnieRepository().get_by_id(real_id)
+    elif role == "passeggeri":
+        return PasseggeriRepository().get_by_id(real_id)
+    elif role == "dipendenti":
+        return PasseggeriRepository().get_by_id(real_id)
+
+    return None
+
+def custom_login_user(user,remember):
+    if isinstance(user,PasseggeriClass) or isinstance(user,CompagnieClass) or isinstance(user,DipendentiClass):
+        login_user(System.BaseUser(id=user.get_id(),nome=user.get_nome(),email=user.get_email(),role= user.get_role()),remember=remember)
+        session['role'] = user.__class__.__name__
+
+    return None
+
+@login_required
+def check_permissions(class_name:list):
+    if session['role'] in class_name:
+        return True
+
+    flash("Permission denied. You have been logged out.", "danger")
+    logout_user()
+    return redirect("/home")
 
 # Home Page
 @app.route('/', methods = ["GET", "POST"])
@@ -94,6 +123,15 @@ def admin_settings():
 
 
 
+@app.route('/gestione_compagnia', methods=['GET', 'POST'])
+def gestione_compagnia():
+    option = getParam("oper")
+    if option is None:
+        return render_template('./public_html/gestione_compagnia.html')
+    else:
+        return function_actions()
+
+
 @app.route('/user_login', methods=['GET', 'POST'])
 def user_login():
     if current_user.is_authenticated:
@@ -108,13 +146,26 @@ def user_login():
         
         if passeggeri_repo.validate_password(email, password):
             user = passeggeri_repo.get_by_email(email)
-            login_user(user, remember = remind )
+            custom_login_user(user, remember = remind )
             return redirect('/')
         else:
             flash('Login Unsuccessful. Please check email and password.', 'danger')
             return redirect('/user_login')
         
     return render_template('public_html/login.html')
+
+
+@app.route('/authorized_user_login', methods=['GET', 'POST'])
+def authorized_user_login():
+    if current_user.is_authenticated and ( isinstance(current_user,CompagnieRepository) or isinstance(current_user,DipendentiClass)):
+        return 'You are already authenticated'
+
+    option = getParam("oper")
+
+    if option is None:
+        return render_template('public_html/authorized_user_login.html')
+    else:
+        return function_actions()
 
 @app.route('/user_registration', methods=['GET', 'POST'])
 def user_registration():
@@ -212,6 +263,17 @@ def function_actions():
                                          citta=getParam("citta"),
                                          cod_postale=getParam("cod_postale"),
                                          paese=getParam("paese"),)
+        elif action == "login":
+
+            if compagnie_repo.validate_password(email=getParam("email"),
+                                                password=getParam("password")):
+                user = compagnie_repo.get_by_email(email=getParam("email"))
+                custom_login_user(user, remember = getParam("remind_me") )
+
+                return jsonify(success=True, next_url=url_for("gestione_compagnia"))
+            else:
+                return jsonify(success=False, message="Invalid credentials")
+
     elif target == "aerei":
         aerei_repo = AereiRepository()
 
@@ -238,7 +300,12 @@ def function_actions():
                 id_compagnia=getParam("id_compagnia")
             )
         elif action == "get_for_select":
+            # permessi admin TODO
             return aerei_repo.get_all()
+        elif action == "get_for_select_compagnia":
+            check_permissions([CompagnieClass])
+            return aerei_repo.get_all(id_compagnia = current_user.get_id())
+
 
     elif target == "dipendenti":
 

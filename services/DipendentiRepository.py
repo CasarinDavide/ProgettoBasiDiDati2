@@ -4,6 +4,8 @@ from typing import Optional, List
 
 from flask import jsonify, Response
 from sqlalchemy.exc import SQLAlchemyError
+from werkzeug.security import generate_password_hash
+
 from System import engine, Base
 
 from System import Base
@@ -28,7 +30,7 @@ class DipendentiRepository(BaseRepository[DipendentiClass]):
 
         rec = super().add(
             email=email,
-            password=password,
+            password=generate_password_hash(password),
             tel=tel,
             nome=nome,
             cognome=cognome,

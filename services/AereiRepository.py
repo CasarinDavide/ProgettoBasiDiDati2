@@ -41,9 +41,9 @@ class AereiRepository(BaseRepository[AereiClass]):
 
         return jsonify({"success":True})
 
-    def get_all(self) -> List["AereiClass"]:
+    def get_all(self,**kwargs) -> List["AereiClass"]:
         """Fetch all compagnie records."""
-        return jsonify([model_to_dict(aereo,backrefs=True) for aereo in super().get_all(joins=[AereiClass.compagnia_rel])])
+        return jsonify([model_to_dict(aereo,backrefs=True) for aereo in super().get_all(joins=[AereiClass.compagnia_rel],**kwargs)])
 
 
     def get_by_id(self, id_aereo: str) -> Response:
