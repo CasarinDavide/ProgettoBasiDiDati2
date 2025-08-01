@@ -1,4 +1,4 @@
-from services.BaseRepository import BaseRepository
+from services.BaseRepository import BaseRepository, model_to_dict
 from services.BigliettiRepository import json
 from core.ViaggiClass import ViaggiClass
 
@@ -136,23 +136,28 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
             + Aereoporto di Arrivo
             + Orario di partenza
             + numero di Voli
-            - dove arrivano i singoli voli, se ci sono
+            + dove arrivano i singoli voli, se ci sono
             + Prezzo del singolo viaggio (quello totale sarà andata + ritorno se c'è)
         '''
         #informazioni sui viaggi ricercati
         query_info_viaggi = text('''
                                 WITH viaggi_dettagli AS (
-                                    SELECT 
+                                    SELECT
+                                        cmp.nome AS compagnia,
                                         v.id_viaggio AS id_viaggio,
                                         v.durata AS durata, 
-                                        prt.citta AS citta_partenza, 
+                                        prt.citta AS citta_partenza,
+                                        v.id_aereoporto_partenza AS aereoporto_partenza,
                                         dst.citta AS citta_destinazione,
+                                        v.id_aereoporto_arrivo AS aereoporto_destinazione,
                                         v.data_partenza AS data_partenza,
                                         v.orario_partenza AS orario_partenza
 
                                     FROM dev."Viaggi" v 
                                         JOIN dev."Aereoporti" prt ON v.id_aereoporto_partenza = prt.id_aereoporto     
-                                        JOIN dev."Aereoporti" dst ON v.id_aereoporto_arrivo = dst.id_aereoporto                                    
+                                        JOIN dev."Aereoporti" dst ON v.id_aereoporto_arrivo = dst.id_aereoporto
+                                        JOIN dev."Effettuano" e USING(id_viaggio)
+                                        JOIN dev."Compagnie" cmp USING(id_compagnia)                                
                                     WHERE prt.citta = :partenza AND dst.citta = :destinazione AND v.data_partenza = :dataP
                                 ),
 
@@ -173,40 +178,32 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                                         v.id_viaggio AS id_viaggio, 
                                         COUNT(*) AS numero_scali
                                     
-                                    FROM dev."Voli" voli 
+                                    FROM dev."Voli" voli
                                         JOIN viaggi_dettagli v USING(id_viaggio)
                                     
                                     GROUP BY v.id_viaggio
-                                ),
-                                 
-                                info_scali AS (
-                                    SELECT 
-                                        vo.id_viaggio AS id_viaggio,
-                                        vo.ordine AS ordine, 
-                                        a.citta AS citta
-                                    FROM dev."Viaggi" vi 
-                                        JOIN dev."Voli" vo USING(id_viaggio)
-                                        JOIN dev."Aereoporti" a ON vo.id_aereoporto_arrivo = a.id_aereoporto
-                                    WHERE vo.ordine <> 1
-                                    ORDER BY vo.ordine
                                 ),
 
                                 info_scali_aggregati AS (
                                     SELECT
                                         vo.id_viaggio AS id_viaggio,
-                                        STRING_AGG(a.citta, ', ' ORDER BY vo.ordine) AS scali
+                                        STRING_AGG(a.citta, ',' ORDER BY vo.ordine) AS scali
                                     FROM dev."Viaggi" vi
                                         JOIN dev."Voli" vo USING(id_viaggio)
                                         JOIN dev."Aereoporti" a ON vo.id_aereoporto_arrivo = a.id_aereoporto
-                                    WHERE vo.ordine <> 1
                                     GROUP BY vo.id_viaggio
                                 )
+
                                 SELECT
+                                    vd.compagnia AS compagnia,
                                     vd.id_viaggio AS id_viaggio,
                                     vd.durata AS durata,
                                     vd.citta_partenza AS citta_partenza,
+                                    vd.aereoporto_partenza AS aereoporto_partenza,
                                     vd.citta_destinazione AS citta_destinazione,
+                                    vd.aereoporto_destinazione AS aereoporto_destinazione,
                                     vd.data_partenza AS data_partenza,
+                                    vd.orario_partenza AS orario_partenza,
                                     cb.prezzo AS prezzo_biglietto,
                                     si.numero_scali AS numero_scali,
                                     COALESCE(isa.scali, 'Nessuno scalo') AS scali
@@ -243,12 +240,12 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
             '''
                 Raggruppo i risultati della query in modo che risulti il seguente oggetto:
                 {
-                    trip1: {
+                    1: {
                         'andata': {},
                         'ritorno: {}
                     },
 
-                    trip2: {
+                    2: {
                         'andata': {...},
                         'ritorno': {...}
                     },
@@ -257,12 +254,12 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
 
                 se il viaggio richiesto è di sola andata:
                 {
-                    trip1: {
+                    1: {
                         'andata': {...}
                         'ritorno: ''
                     },
 
-                    trip2: {
+                    2: {
                         'andata': {...}
                         'ritorno: ''
                     }
@@ -272,14 +269,14 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
             if ritorni:
                 for andata in andate:
                     for ritorno in ritorni:
-                        res[f'trip{trip_counter}'] = {
+                        res[f'{trip_counter}'] = {
                             'andata': andata,
                             'ritorno': ritorno
                         }
                         trip_counter += 1
             else:
                 for andata in andate:
-                    res[f'trip{trip_counter}'] = {
+                    res[f'{trip_counter}'] = {
                         'andata': andata,
                         'ritorno': ''
                     }

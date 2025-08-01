@@ -56,4 +56,4 @@ class PasseggeriClass(BaseUser, Base):
         return self.email
 
     def get_role(self):
-        return "passeggeri"
+        return "passeggero"

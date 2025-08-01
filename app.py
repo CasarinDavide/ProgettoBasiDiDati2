@@ -43,9 +43,9 @@ def load_user(user_id):
     role, real_id = user_id.split("-", 1)
     if role == "compagnia":
         return CompagnieRepository().get_by_id(real_id)
-    elif role == "passeggeri":
+    elif role == "passeggero":
         return PasseggeriRepository().get_by_id(real_id)
-    elif role == "dipendenti":
+    elif role == "dipendente":
         return DipendentiRepository().get_by_id(real_id)
 
     return None
@@ -96,8 +96,10 @@ def home():
 @app.route('/trip', methods=['GET', 'POST'])
 def trip():
     oper = getParam('oper')
-    passeggeri_repo = PasseggeriRepository()
-    nome = passeggeri_repo.get_by_id(current_user.get_id()).nome
+    nome = ""
+    if current_user.is_authenticated:
+        passeggeri_repo = PasseggeriRepository()
+        nome = passeggeri_repo.get_by_id(current_user.get_id()).nome
     
     function_actions()
     if oper is None:
@@ -139,7 +141,7 @@ def user_login():
 
     passeggeri_repo = PasseggeriRepository()
 
-    if request.method == 'POST':
+    if request.method == 'POST':    
         email = request.form['email']
         password = request.form['password']
         remind = request.form.get('remind_me') != None

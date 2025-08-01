@@ -40,4 +40,4 @@ class DipendentiClass(BaseUser, Base):
         return self.email
 
     def get_role(self):
-        return "dipendenti"
+        return "dipendente"

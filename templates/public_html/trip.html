@@ -10,6 +10,10 @@ Home
 
 {% block extra_jquery %}
 <script>
+    function showTime(date) {
+        return date.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+    }
+
     function getUrlParameter(name) {
         let urlParams = new URLSearchParams(window.location.search);
         return urlParams.get(name);
@@ -26,97 +30,154 @@ Home
             'url': ajaxUrl + `&fun=trips&oper=getSelectedTrips`,
             'method': 'POST',
             success: (data) => {
-                if(!data[0])
+                if (!data)
                     return;
 
                 console.log(data)
-                
-                for (trip in data) {
+
+                for (i in data) {
                     let main = document.createElement('div');
 
-                    let andata = trip[0];
-                    let ritorno = trip[1];
+                    let andata = data[i].andata;
+                    let ritorno = data[i].ritorno;
 
-                    trip.innerHTML = `
-                        <div class="d-flex justify-content-between align-items-stretch p-5 shadow-sm rounded" style="margin-bottom: 3%">
+                    //calcolo l'orario di partenza e di arrivo
+                    let andata_durata = new Date(andata.durata * 60000)
+                    let andata_orarioPartenza = new Date(andata.data_partenza + " " + andata.orario_partenza)
+                    let andata_orarioArrivo = new Date( andata_orarioPartenza.getTime() + andata_durata.getTime() );
 
-                            <!-- Informazioni voli -->
-                            <div class="flex-grow-1 me-4">
-
-                                <!-- Andata -->
-                                <div class="mb-3">
-                                    <div class="text-muted fw-semibold small mb-2">
-                                        Andata
+                    //controllo se il volo è diretto o meno, diretto: ha solamente un volo
+                    let andata_nScali = andata.numero_scali-1;
+                    let andata_scali = andata.scali.split(',');
+                    if (andata_nScali != 0) {
+                        andata_scali.pop()
+                    }
+                    
+                    let andata_aereoportoPart = andata.aereoporto_partenza
+                    let andata_aereoportoDest = andata.aereoporto_destinazione
+                    let andata_prezzoBiglietto = andata.prezzo_biglietto
+                    
+                    let card_ritorno = "";
+                    let card_andata = `
+                            <!-- Begin Andata -->
+                                <div class="d-flex justify-content-between">
+                                    <div class="text-center">
+                                        <div class="fw-semibold fs-5">${showTime(andata_orarioPartenza)}</div>
+                                        <small>${andata_aereoportoPart}</small>
                                     </div>
-                                    <div class="d-flex align-items-center">
-                                        <div class="text-start me-3">
-                                            <div name="orario_partenza_andata" class="fw-semibold fs-5">
-                                                ${andata.orario_partenza}
-                                            </div>
-                                            <div name="aereoporto_partenza class="text-muted">
-                                                trip[0].aereoporto_partenza
-                                            </div>
-                                        </div>
-                                        <div class="flex-grow-1 text-center">
-                                            <div class="text-muted"> ${andata.voli.durata} </div>
-                                            <div><span class="text-primary">✈️</span></div>
-                                            <div class="small">
-                                                ${ andata.numero_voli == 1 ? 'Diretto' : String(andata.numero_voli - 1) + 'scalo/i' }
-                                            </div>
-                                        </div>
-                                        <div class="ms-3">
-                                            <div class="fw-semibold fs-5">
-                                                ${andata.orario_partenza + andata.durata}
-                                            </div>
-                                            <div class="text-muted">
-                                                ${andata.aereoporto_arrivo}
-                                            </div>
-                                        </div>
+                                    <div class="text-center">
+                                        <i class="fas fa-plane text-primary"></i>
+                                        <div class="text-muted small">${andata_durata.getUTCHours()}h ${andata_durata.getUTCMinutes()}min</div>
+                                        <div class="small">${andata_nScali == 0 ? "Diretto" : "Scali: " + andata_scali.toString() }</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="fw-semibold fs-5">${showTime(andata_orarioArrivo)}</div>
+                                        <small>${andata_aereoportoDest}</small>
                                     </div>
                                 </div>
+                                <div class="text-center mt-2 text-primary small">Andata</div>
+                            <!-- End Andata -->`;
 
-                                <!-- Divisore -->
-                                <hr class="my-3">
 
-                            <!-- Ritorno -->
-                                <div class="mb-3">
-                                    <div class="text-muted fw-semibold small mb-2">
-                                        Andata
+                    if (ritorno !== "") {
+                        let ritorno_durata = new Date(ritorno.durata * 60000)
+                        let ritorno_orarioPartenza = new Date(ritorno.data_partenza + " " + ritorno.orario_partenza)
+                        let ritorno_orarioArrivo = new Date( ritorno_orarioPartenza.getTime() + ritorno_durata.getTime() );
+
+                        //controllo se il volo è diretto o meno, diretto: ha solamente un volo
+                        let ritorno_nScali = ritorno.numero_scali-1;
+                        let ritorno_scali = ritorno.scali.split(',');
+                        if (ritorno_nScali != 0) {
+                            ritorno_scali.pop()
+                        }
+                        
+                        let ritorno_aereoportoPart = ritorno.aereoporto_partenza
+                        let ritorno_aereoportoDest = ritorno.aereoporto_destinazione
+                        let ritorno_prezzoBiglietto = ritorno.prezzoBiglietto
+                        
+                        card_ritorno = `
+                                <!-- Begin Ritorno -->
+                                    <div class="d-flex justify-content-between">
+                                        <div class="text-center">
+                                            <div class="fw-semibold fs-5">${showTime(ritorno_orarioPartenza)}</div>
+                                            <small>${ritorno_aereoportoPart}</small>
+                                        </div>
+                                        <div class="text-center">
+                                            <i class="fas fa-plane text-primary"></i>
+                                            <div class="text-muted small">${ritorno_durata.getUTCHours()}h ${ritorno_durata.getUTCMinutes()}min</div>
+                                            <div class="text-success small">${ritorno_nScali == 0 ? "Diretto" : "Scali: " + ritorno_scali.toString() }</div>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="fw-semibold fs-5">${showTime(ritorno_orarioArrivo)}</div>
+                                            <small>${ritorno_aereoportoDest}</small>
+                                        </div>
                                     </div>
-                                    <div class="d-flex align-items-center">
-                                        <div class="text-start me-3">
-                                            <div name="orario_partenza_andata" class="fw-semibold fs-5">
-                                                ${ritorno.orario_partenza}
-                                            </div>
-                                            <div name="aereoporto_partenza class="text-muted">
-                                                trip[0].aereoporto_partenza
-                                            </div>
+                                    <div class="text-center mt-2 text-primary small">Ritorno</div>
+                                <!-- End Ritorno -->`;
+                    }
+
+                    if (ritorno === "") {
+                        main.innerHTML = `
+                        <!-- Scheda Volo Andata -->
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-body py-3">
+                                <div class="row">
+                                    <div class="col-md-2 d-flex flex-column justify-content-center align-items-center text-center">
+                                        <div class="mb-3">
+                                            <span class="text medium mt-1"> Compagnia: </span>
+                                            <span class="badge bg-primary fs-6 p-2">${andata.compagnia}</span>
                                         </div>
-                                        <div class="flex-grow-1 text-center">
-                                            <div class="text-muted"> ${ritorno.volo[0].durata} </div>
-                                            <div><span class="text-primary">✈️</span></div>
-                                            <div class="small">
-                                                ${ritorno.numero_voli == 1 ? 'Diretto' : String(ritorno.numero_voli - 1) + 'scalo/i'}
-                                            </div>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <div class="bg-light border rounded p-2">
+                                            ${card_andata}
                                         </div>
-                                        <div class="ms-3">
-                                            <div class="fw-semibold fs-5">
-                                                ${ritorno.orario_partenza + ritorno.durata}
-                                            </div>
-                                            <div class="text-muted">
-                                                ${ritorno.aereoporto_arrivo}
-                                            </div>
-                                        </div>
+                                    </div>
+                                    <div class="col-md-3 d-flex flex-column justify-content-center align-items-center">
+                                        <h4 class="text-success mb-3">€${andata_prezzoBiglietto} </h4>
+                                        <button onclick"" class="btn btn-primary w-100">Prenota</button>
                                     </div>
                                 </div>
-
-                            <!-- Prezzo e selezione -->
-                            <div class="d-flex flex-column justify-content-center text-end">
-                                <div name="prezzo" id="prezzo" class="fs-4 fw-semibold mb-2"> Totale ${ andata.prezzo + (ritorno ? ritorno.prezzo : 0) }}</div>
-                                <button class="btn btn-dark btn-sm px-4"> Seleziona <i class="fa-solid fa-arrow-right-long"></i></button>
                             </div>
-                        </div>
-                        </div>`
+                        </div>`;
+                    } else {
+                        main.innerHTML = `
+                        <!-- Scheda Volo Andata e Ritorno -->
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-body py-3">
+                                <div class="row">
+                                        <div class="col-md-2 d-flex flex-column justify-content-center align-items-center text-center">
+                                            <div class="mb-3">
+                                                <span class="text medium mt-1"> Compagnia: </span>
+                                                <span class="badge bg-primary fs-6 p-2">${andata.compagnia}</span>
+                                                <div class="text-primary small mt-1">Andata</div>
+                                            </div>
+
+                                            <div>
+                                                <span class="text medium mt-1"> Compagnia: </span>
+                                                <span class="badge bg-secondary fs-6 p-2">${ritorno.compagnia}</span>
+                                                <div class="text-primary small mt-1">Ritorno</div>
+                                            </div>
+                                        </div>
+                                    <div class="col-md-7">
+                                        <div class="bg-light border rounded p-2">
+                                            ${card_andata}
+                                        </div>
+
+                                        <div class="bg-light border rounded p-2">
+                                            ${card_ritorno}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 d-flex flex-column justify-content-center align-items-center">
+                                        <h4 class="text-success mb-3">€${andata_prezzoBiglietto + ritorno_prezzoBiglietto}</h4>
+                                        <button class="btn btn-primary w-100">Prenota</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>`;
+                    }
+
+                    document.getElementById('main').appendChild(main);
                 }
             }
         })
@@ -131,5 +192,6 @@ Home
 
 </div>
 
+<!-- Compagnie -->
 
 {% endblock main_content %}
