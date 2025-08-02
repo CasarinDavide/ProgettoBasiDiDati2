@@ -241,8 +241,8 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                 Raggruppo i risultati della query in modo che risulti il seguente oggetto:
                 {
                     1: {
-                        'andata': {},
-                        'ritorno: {}
+                        'andata': {...},
+                        'ritorno: {...}
                     },
 
                     2: {
@@ -256,12 +256,12 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                 {
                     1: {
                         'andata': {...}
-                        'ritorno: ''
+                        'ritorno: null
                     },
 
                     2: {
                         'andata': {...}
-                        'ritorno: ''
+                        'ritorno: null
                     }
                 }
             '''
@@ -278,7 +278,7 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                 for andata in andate:
                     res[f'{trip_counter}'] = {
                         'andata': andata,
-                        'ritorno': ''
+                        'ritorno': None
                     }
                     trip_counter += 1
 

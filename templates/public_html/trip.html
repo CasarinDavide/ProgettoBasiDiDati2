@@ -19,177 +19,178 @@ Home
         return urlParams.get(name);
     }
 
-    let da = getUrlParameter('da')
-    let a = getUrlParameter('a')
-    let dataP = getUrlParameter('dataP')
-    let dataR = getUrlParameter('dataR')
-    let biglietto = getUrlParameter('biglietto')
+    function prenota(id_andata, id_ritorno) {
+        document.location.href = `/prenota?id_andata=${id_andata}&id_ritorno=${id_ritorno}`;
+    }
+
+    function getFlightDetail(flight) {
+        const durata = new Date(flight.durata * 60000);
+        const partenza = new Date(`${flight.data_partenza} ${flight.orario_partenza}`);
+        const arrivo = new Date(partenza.getTime() + durata.getTime());
+
+        const scali = flight.numero_scali - 1;
+        const scaliList = (scali > 0) ? flight.scali.split(',').slice(0, -1) : [];
+
+        return {
+            partenza,
+            arrivo,
+            durata,
+            scali,
+            scaliList,
+            aereoportoPartenza: flight.aereoporto_partenza,
+            aereoportoDestinazione: flight.aereoporto_destinazione,
+            prezzo: flight.prezzo_biglietto,
+            compagnia: flight.compagnia,
+            id_viaggio: flight.id_viaggio
+        };
+    }
+
+    function createFlightSection(details, tipo) {
+        const {partenza, arrivo, durata, scali, scaliList, aereoportoPartenza, aereoportoDestinazione, prezzo, compagnia, id_viaggio} = details;
+
+        return `
+            <div class="d-flex justify-content-between">
+                <div class="text-center">
+                    <div class="fw-semibold fs-5">${showTime(partenza)}</div>
+                    <small>${aereoportoPartenza}</small>
+                </div>
+                <div class="text-center">
+                    <i class="fas fa-plane text-primary"></i>
+                    <div class="text-muted small">${durata.getUTCHours()}h ${durata.getUTCMinutes()}min</div>
+                    <div class="small">${scali === 0 ? "Diretto" : "Scali: " + scaliList.toString() }</div>
+                </div>
+                <div class="text-center">
+                    <div class="fw-semibold fs-5">${showTime(arrivo)}</div>
+                    <small>${aereoportoDestinazione}</small>
+                </div>
+            </div>
+            <div class="text-center mt-2 text-primary small">${tipo}</div>
+        `;
+    }
+
+    function createCompagniaSection(compagnia = "") {
+        return `
+            <div class="mb-3">
+                <span class="text medium mt-1">Compagnia:</span>
+                <span class="badge bg-primary fs-6 p-2">${compagnia}</span>
+            </div>
+        `;
+    }
+
+    function createFlightTicket(andata, ritorno = null) {
+        const andataDetails = getFlightDetail(andata);
+        console.log(andataDetails)
+        const andataTemplate = createFlightSection(andataDetails, "Andata");
+
+        let prezzo = andataDetails.prezzo;
+        let ritornoTemplate = "";
+        let ritornoDetails = "";
+
+        let compagnieInfo = createCompagniaSection(andataDetails.compagnia);
+
+        if(ritorno) {
+            ritornoDetails = getFlightDetail(ritorno);
+            ritornoTemplate = createFlightSection(ritornoDetails, "Ritorno");
+            prezzo += ritornoDetails.prezzo;
+
+            compagnieInfo += createCompagniaSection(ritornoDetails.compagnia);
+        }
+
+        return `
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body py-3">
+                    <div class="row">
+                        <div class="col-md-2 d-flex flex-column justify-content-center align-items-center text-center">
+                            ${compagnieInfo}
+                        </div>
+                        <div class="col-md-7">
+                            <div class="bg-light border rounded p-2">
+                                ${andataTemplate}
+                            </div>
+                            ${ritornoTemplate}
+                        </div>
+                        <div class="col-md-3 d-flex flex-column justify-content-center align-items-center">
+                            <h4 class="text-success mb-3">€${prezzo}</h4>
+                            <button class="btn btn-primary w-100" onclick="prenota(${andataDetails.id_viaggio}, ${ritorno ? ritornoDetails.id_viaggio : null})">Prenota</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    let global_data;
+    function render_page(data) {
+        const container = document.getElementById('main');
+        global_data = data;
+        for(i in data) {
+            const ticket = document.createElement('div');
+            ticket.innerHTML = createFlightTicket(data[i].andata, data[i].ritorno || null);
+
+            container.appendChild(ticket);
+        }
+
+    }
+
 
     $(document).ready(
         $.ajax({
             'url': ajaxUrl + `&fun=trips&oper=getSelectedTrips`,
             'method': 'POST',
             success: (data) => {
-                if (!data)
-                    return;
+                if (!data) return;
 
-                console.log(data)
-
-                for (i in data) {
-                    let main = document.createElement('div');
-
-                    let andata = data[i].andata;
-                    let ritorno = data[i].ritorno;
-
-                    //calcolo l'orario di partenza e di arrivo
-                    let andata_durata = new Date(andata.durata * 60000)
-                    let andata_orarioPartenza = new Date(andata.data_partenza + " " + andata.orario_partenza)
-                    let andata_orarioArrivo = new Date( andata_orarioPartenza.getTime() + andata_durata.getTime() );
-
-                    //controllo se il volo è diretto o meno, diretto: ha solamente un volo
-                    let andata_nScali = andata.numero_scali-1;
-                    let andata_scali = andata.scali.split(',');
-                    if (andata_nScali != 0) {
-                        andata_scali.pop()
-                    }
-                    
-                    let andata_aereoportoPart = andata.aereoporto_partenza
-                    let andata_aereoportoDest = andata.aereoporto_destinazione
-                    let andata_prezzoBiglietto = andata.prezzo_biglietto
-                    
-                    let card_ritorno = "";
-                    let card_andata = `
-                            <!-- Begin Andata -->
-                                <div class="d-flex justify-content-between">
-                                    <div class="text-center">
-                                        <div class="fw-semibold fs-5">${showTime(andata_orarioPartenza)}</div>
-                                        <small>${andata_aereoportoPart}</small>
-                                    </div>
-                                    <div class="text-center">
-                                        <i class="fas fa-plane text-primary"></i>
-                                        <div class="text-muted small">${andata_durata.getUTCHours()}h ${andata_durata.getUTCMinutes()}min</div>
-                                        <div class="small">${andata_nScali == 0 ? "Diretto" : "Scali: " + andata_scali.toString() }</div>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="fw-semibold fs-5">${showTime(andata_orarioArrivo)}</div>
-                                        <small>${andata_aereoportoDest}</small>
-                                    </div>
-                                </div>
-                                <div class="text-center mt-2 text-primary small">Andata</div>
-                            <!-- End Andata -->`;
-
-
-                    if (ritorno !== "") {
-                        let ritorno_durata = new Date(ritorno.durata * 60000)
-                        let ritorno_orarioPartenza = new Date(ritorno.data_partenza + " " + ritorno.orario_partenza)
-                        let ritorno_orarioArrivo = new Date( ritorno_orarioPartenza.getTime() + ritorno_durata.getTime() );
-
-                        //controllo se il volo è diretto o meno, diretto: ha solamente un volo
-                        let ritorno_nScali = ritorno.numero_scali-1;
-                        let ritorno_scali = ritorno.scali.split(',');
-                        if (ritorno_nScali != 0) {
-                            ritorno_scali.pop()
-                        }
-                        
-                        let ritorno_aereoportoPart = ritorno.aereoporto_partenza
-                        let ritorno_aereoportoDest = ritorno.aereoporto_destinazione
-                        let ritorno_prezzoBiglietto = ritorno.prezzoBiglietto
-                        
-                        card_ritorno = `
-                                <!-- Begin Ritorno -->
-                                    <div class="d-flex justify-content-between">
-                                        <div class="text-center">
-                                            <div class="fw-semibold fs-5">${showTime(ritorno_orarioPartenza)}</div>
-                                            <small>${ritorno_aereoportoPart}</small>
-                                        </div>
-                                        <div class="text-center">
-                                            <i class="fas fa-plane text-primary"></i>
-                                            <div class="text-muted small">${ritorno_durata.getUTCHours()}h ${ritorno_durata.getUTCMinutes()}min</div>
-                                            <div class="text-success small">${ritorno_nScali == 0 ? "Diretto" : "Scali: " + ritorno_scali.toString() }</div>
-                                        </div>
-                                        <div class="text-center">
-                                            <div class="fw-semibold fs-5">${showTime(ritorno_orarioArrivo)}</div>
-                                            <small>${ritorno_aereoportoDest}</small>
-                                        </div>
-                                    </div>
-                                    <div class="text-center mt-2 text-primary small">Ritorno</div>
-                                <!-- End Ritorno -->`;
-                    }
-
-                    if (ritorno === "") {
-                        main.innerHTML = `
-                        <!-- Scheda Volo Andata -->
-                        <div class="card mb-4 shadow-sm">
-                            <div class="card-body py-3">
-                                <div class="row">
-                                    <div class="col-md-2 d-flex flex-column justify-content-center align-items-center text-center">
-                                        <div class="mb-3">
-                                            <span class="text medium mt-1"> Compagnia: </span>
-                                            <span class="badge bg-primary fs-6 p-2">${andata.compagnia}</span>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-7">
-                                        <div class="bg-light border rounded p-2">
-                                            ${card_andata}
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 d-flex flex-column justify-content-center align-items-center">
-                                        <h4 class="text-success mb-3">€${andata_prezzoBiglietto} </h4>
-                                        <button onclick"" class="btn btn-primary w-100">Prenota</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>`;
-                    } else {
-                        main.innerHTML = `
-                        <!-- Scheda Volo Andata e Ritorno -->
-                        <div class="card mb-4 shadow-sm">
-                            <div class="card-body py-3">
-                                <div class="row">
-                                        <div class="col-md-2 d-flex flex-column justify-content-center align-items-center text-center">
-                                            <div class="mb-3">
-                                                <span class="text medium mt-1"> Compagnia: </span>
-                                                <span class="badge bg-primary fs-6 p-2">${andata.compagnia}</span>
-                                                <div class="text-primary small mt-1">Andata</div>
-                                            </div>
-
-                                            <div>
-                                                <span class="text medium mt-1"> Compagnia: </span>
-                                                <span class="badge bg-secondary fs-6 p-2">${ritorno.compagnia}</span>
-                                                <div class="text-primary small mt-1">Ritorno</div>
-                                            </div>
-                                        </div>
-                                    <div class="col-md-7">
-                                        <div class="bg-light border rounded p-2">
-                                            ${card_andata}
-                                        </div>
-
-                                        <div class="bg-light border rounded p-2">
-                                            ${card_ritorno}
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 d-flex flex-column justify-content-center align-items-center">
-                                        <h4 class="text-success mb-3">€${andata_prezzoBiglietto + ritorno_prezzoBiglietto}</h4>
-                                        <button class="btn btn-primary w-100">Prenota</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>`;
-                    }
-
-                    document.getElementById('main').appendChild(main);
-                }
+                render_page(Object.values(data));
             }
         })
-    )
+    );
+
+    function orderBy(method) {
+        switch(method) {
+            case "prezzo":
+                global_data.sort( (a, b) => {
+                    if(a.ritorno && b.ritorno) {
+                        return (a.andata.prezzo + a.ritorno.prezzo) < (b.andata.prezzo + b.ritorno.prezzo); 
+                    } else {
+                        return a.andata.prezzo < b.andata.prezzo;
+                    }
+                })
+                break;
+            case "durata":
+                global_data.sort( (a, b) =>
+                    a.andata.durata < b.andata.durata
+                );
+                break;
+            case "partenza":
+                global_data.sort( (a, b) => 
+                    a.andata.orario_partenza < b.andata.orario_partenza
+                );
+                break;
+        }
+
+        document.getElementById('main').innerHTML = ""
+        render_page(global_data);
+    }
 
 </script>
 {% endblock extra_jquery %}
 
 {% block main_content %}
 
-<div id='main' class="container my-5">
+<div class="d-flex justify-content-end mb-4">
+    <div class="dropdown">
+        <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            Ordina Per:
+        </button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" onclick="orderBy('prezzo')">Prezzo (crescente)</a></li>
+            <li><a class="dropdown-item" onclick="orderBy('durata')">Durata</a></li>
+            <li><a class="dropdown-item" onclick="orderBy('partenza')">Orario partenza</a></li>
+        </ul>
+    </div>
+</div>
 
+<div id='main' class="container my-5">
 </div>
 
 <!-- Compagnie -->

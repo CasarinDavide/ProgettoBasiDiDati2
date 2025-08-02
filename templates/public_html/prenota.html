@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if user %}
+Home - {{ user }}
+{% else %}
+Home
+{% endif %}
+{% endblock title %}
+
+{% block extra_jquery %}
+<script>
+    function showTime(date) {
+        return date.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+    }
+
+    function getUrlParameter(name) {
+        let urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
+
+</script>
+{% endblock extra_jquery %}
+
+{% block main_content %}
+
+<div id='main' class="container my-5">
+</div>
+
+<!-- Compagnie -->
+
+{% endblock main_content %}

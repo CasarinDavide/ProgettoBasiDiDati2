@@ -198,6 +198,25 @@ def user_registration():
             return redirect(url_for('home'))
     return render_template('public_html/register.html')
 
+@app.route('/prenota', methods=['GET', 'POST'])
+@login_required
+def prenota():
+    viaggi_repo = ViaggiRepository()
+    nome = ""
+
+    id_andata = getParam("id_andata")
+    id_ritorno = getParam("id_ritorno")
+
+    if current_user.is_authenticated:
+        passeggeri_repo = PasseggeriRepository()
+        nome = passeggeri_repo.get_by_id(current_user.get_id()).nome
+
+        return render_template('public_html/prenota.html', user=nome, andata=id_andata, ritorno=id_ritorno)
+    else:
+        return 'Per acquistare il biglietto devi prima essere Loggato'
+    
+
+
 
 @app.route('/logout')
 @login_required
