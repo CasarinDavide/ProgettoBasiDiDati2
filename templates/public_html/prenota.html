@@ -19,13 +19,133 @@ Home
         return urlParams.get(name);
     }
 
+    class Seat {
+        constructor(seat, price, category) {
+            this._seat = seat;
+            this._price = price;
+            this._category = category;
+        }
+
+        get seat() {
+            return this._seat;
+        }
+
+        set seat(s) {
+            this._seat = s;
+        }
+
+        get price() {
+            return this._price;
+        }
+
+        set price(p) {
+            this._price = p;
+        }
+
+        get category() {
+            return this._category;
+        }
+
+        set category(c) {
+            this._category = c;
+        }
+
+        toString() {
+            return `${this._seat}+${this._category}+${this._price}`
+        }
+    }
+
+    quantity = getUrlParameter('quantita')
+    seats = new Array();
+    for(i=0; i < quantity; i++) {
+        seats.push(new Seat())
+    }
+
+    $(document).ready(
+        $.ajax( {
+            'url': ajaxUrl + "&fun=tickets&oper=getByViaggio&idViaggio={{andata}}",
+            'method': "POST",
+            success: (data) => {
+                if(!data)
+                    return;
+
+                
+                document.getElementById('quantita').innerText = quantity;
+
+                build_selection_seat(data)
+            },
+
+            error: (error) => error
+        })
+    );
+
 </script>
 {% endblock extra_jquery %}
 
 {% block main_content %}
 
-<div id='main' class="container my-5">
+<div class="container py-4">
+    <!-- Header -->
+    <div class="mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-airplane"></i> Seleziona il tuo posto</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label class="form-label">Numero Biglietti</label>
+                        <div class="input-group">
+                            <span id="quantita" class="form-control text-center">  </span>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label class="form-label">Riepilogo</label>
+                        <p class="mb-1">Posto: <strong id="selectedSeatDisplay">Nessuno</strong></p>
+                        <p class="mb-1">Totale: <strong id="totalPriceDisplay">€0</strong></p>
+                        <button class="btn btn-success w-100 mt-2" id="confirmBtn" disabled>Conferma</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mappa posti -->
+    <div id="seatMap"></div>
 </div>
+
+<!-- Modal conferma -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title"><i class="bi bi-check-circle"></i> Conferma Selezione</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Hai selezionato il posto <strong id="modalSeat"></strong>.</p>
+                <p>Prezzo totale: <strong id="modalPrice"></strong></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button class="btn btn-success" id="finalConfirm">Conferma</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('finalConfirm').addEventListener('click', () => {
+        
+        s = seats.toString();
+        
+        $.ajax({
+            'url': ajaxUrl + `&fun=tickets&oper=buy&seats=${seats.toString()}`
+        })
+    })
+</script>
+
 
 <!-- Compagnie -->
 

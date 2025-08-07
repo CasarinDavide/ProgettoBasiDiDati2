@@ -127,7 +127,7 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
         return None
     
     """ select all trips with given parameters and all their informations """
-    def get_viaggi(self, partenza: str, destinazione: str, dataP: datetime, dataR: datetime, biglietto: str) -> List[Response]:
+    def get_viaggi(self, partenza: str, destinazione: str, dataP: datetime, dataR: datetime) -> List[Response]:
         '''
         collection di oggetti json che devono contenere:
             + id_viaggio
@@ -168,8 +168,6 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                                     
                                     FROM dev."Biglietti" b 
                                         JOIN viaggi_dettagli v USING(id_viaggio)
-                                    
-                                    WHERE b.categoria = :biglietto 
                                     GROUP BY v.id_viaggio
                                 ),
 
@@ -218,8 +216,7 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
             rows_andata = session.execute( query_info_viaggi, {
                 'partenza': partenza,
                 'destinazione': destinazione,
-                'dataP': dataP,
-                'biglietto': biglietto
+                'dataP': dataP
             }).fetchall()
 
             rows_ritorno = ''
@@ -227,8 +224,7 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                 rows_ritorno = session.execute( query_info_viaggi, {
                     'partenza': destinazione,
                     'destinazione': partenza,
-                    'dataP': dataR,
-                    'biglietto': biglietto
+                    'dataP': dataR
                 }).fetchall()
             
             andate = json_data(rows_andata)

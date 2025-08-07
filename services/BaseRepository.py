@@ -1,6 +1,6 @@
 import datetime
 from typing import Optional, List, Type, TypeVar, Generic, Any, Dict
-from flask import jsonify
+from flask import jsonify, Response
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import or_, and_, inspect
@@ -12,6 +12,9 @@ from sqlalchemy.inspection import inspect
 
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm.state import InstanceState
+
+def connection_err() -> Response:
+    return jsonify({'error': 'Errore di connessione'})
 
 def model_to_dict(obj, include_relationships=True, backrefs=False):
     """Convert SQLAlchemy model instance to dict, avoiding DetachedInstanceError"""

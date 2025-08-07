@@ -20,7 +20,7 @@ Home
     }
 
     function prenota(id_andata, id_ritorno) {
-        document.location.href = `/prenota?id_andata=${id_andata}&id_ritorno=${id_ritorno}`;
+        document.location.href = `/prenota?id_andata=${id_andata}&id_ritorno=${id_ritorno}&quantita=${getUrlParameter('quantita')}`;
     }
 
     function getFlightDetail(flight) {

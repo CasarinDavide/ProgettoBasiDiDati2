@@ -78,12 +78,12 @@ def home():
         tipo_viaggio = request.form.get('tipo', '')
         partenza = request.form.get('partenza', '')
         arrivo = request.form.get('arrivo', '')
-        biglietto = request.form.get('biglietto', '')
+        quantita = request.form.get('quantita', '')
 
         data_partenza = request.form.get('dataPartenza', '')
         data_ritorno = request.form.get('dataRitorno') if tipo_viaggio == 'andata-ritorno' else ''
 
-        return redirect(url_for('trip', da=partenza, a=arrivo, dataP=data_partenza, dataR=data_ritorno, biglietto=biglietto))
+        return redirect(url_for('trip', da=partenza, a=arrivo, dataP=data_partenza, dataR=data_ritorno, quantita=quantita))
     
     viaggi_repo = ViaggiRepository()
     partenze = viaggi_repo.get_list_partenze()
@@ -96,6 +96,8 @@ def home():
 @app.route('/trip', methods=['GET', 'POST'])
 def trip():
     oper = getParam('oper')
+    quantita = getParam('quantita')
+
     nome = ""
     if current_user.is_authenticated:
         passeggeri_repo = PasseggeriRepository()
@@ -204,14 +206,16 @@ def prenota():
     viaggi_repo = ViaggiRepository()
     nome = ""
 
-    id_andata = getParam("id_andata")
-    id_ritorno = getParam("id_ritorno")
+    oper = getParam("oper")
 
     if current_user.is_authenticated:
         passeggeri_repo = PasseggeriRepository()
         nome = passeggeri_repo.get_by_id(current_user.get_id()).nome
 
-        return render_template('public_html/prenota.html', user=nome, andata=id_andata, ritorno=id_ritorno)
+        if oper is None:
+            return render_template('public_html/prenota.html', user=nome)
+        else:
+            return function_actions()
     else:
         return 'Per acquistare il biglietto devi prima essere Loggato'
     
@@ -431,8 +435,15 @@ def function_actions():
     elif target == "tickets":
         biglietti_repo = BigliettiRepository()
 
-        if action == "getTickets":
+        if action == "getByUser":
             return biglietti_repo.get_by_user(current_user.get_id())
+        if action == "getByViaggio":
+            id_andata = getParam("id_andata")
+            id_ritorno = getParam("id_ritorno")
+            return biglietti_repo.get_by_viaggio(id_andata)
+        if action == "buy":
+            pass
+
     elif target == "viaggi":
         viaggi_repo = ViaggiRepository()
         if action == "add":
@@ -498,9 +509,8 @@ def function_actions():
             destinazione = getParam('a')
             dataP = getParam('dataP')
             dataR = getParam('dataR')
-            biglietto = getParam('biglietto')
 
-            return viaggi_repo.get_viaggi(partenza=partenza, destinazione=destinazione, dataP=dataP, dataR=dataR, biglietto=biglietto)
+            return viaggi_repo.get_viaggi(partenza=partenza, destinazione=destinazione, dataP=dataP, dataR=dataR)
 
     return jsonify({"error": "Invalid action"}), 400
 
