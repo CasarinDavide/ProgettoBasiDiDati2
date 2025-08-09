@@ -131,3 +131,22 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
             return json(res, 'Errore nell\'elaborazione dei biglietti')
         
         return connection_err()
+    
+    def get_occupied_seats(self, id_viaggio: str) -> Response:
+        '''
+            Return all occupied seats of a given trip
+        '''
+
+        query = text('''
+            SELECT b.posto AS posto
+            FROM dev."Biglietti" b
+            WHERE b.id_viaggio = :id_viaggio AND b.id_passeggero IS NOT NULL
+        ''')
+
+        with Session(engine()) as session:
+            res = session.execute(query, {
+                'id_viaggio': id_viaggio
+            }).fetchall()
+            return json(res, 'Errore nell\'elaborazione dei biglietti')
+        
+        return connection_err()

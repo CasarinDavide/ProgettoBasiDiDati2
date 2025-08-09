@@ -434,13 +434,23 @@ def function_actions():
 
     elif target == "tickets":
         biglietti_repo = BigliettiRepository()
+        id_andata = getParam("id_andata")
+        id_ritorno = getParam("id_ritorno")
 
         if action == "getByUser":
             return biglietti_repo.get_by_user(current_user.get_id())
         if action == "getByViaggio":
-            id_andata = getParam("id_andata")
-            id_ritorno = getParam("id_ritorno")
-            return biglietti_repo.get_by_viaggio(id_andata)
+            viaggio = getParam("viaggio")
+            if viaggio == "andata":
+                return biglietti_repo.get_by_viaggio(id_andata)
+            else:
+                return biglietti_repo.get_by_viaggio(id_ritorno)
+        if action == "occupiedSeats":
+            viaggio = getParam("viaggio")
+            if viaggio == "andata":
+                return biglietti_repo.get_occupied_seats(id_andata)
+            else:
+                return biglietti_repo.get_occupied_seats(id_ritorno)
         if action == "buy":
             pass
 
