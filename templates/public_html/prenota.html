@@ -45,11 +45,17 @@ Home
         });
     }
 
+    function isDefined(param) {
+        return param !== '' && param !== 'null' && param !== null && param !== undefined;
+    }
+
     class Seat {
-        constructor(seat, price, category) {
+        constructor(seat, price, category, name, surname) {
             this._seat = seat;
             this._price = price;
             this._category = category;
+            this._name = name;
+            this._surname = surname;
         }
 
         get seat() {
@@ -76,14 +82,36 @@ Home
             this._category = c;
         }
 
+        get name() {
+            return this._name;
+        }
+
+        set name(n) {
+            this._name = n;
+        }
+        
+        get surname() {
+            return this._surname;
+        }
+
+        set surname(s) {
+            this._surname = s;
+        }
+
         nullify() {
             this._seat = undefined;
             this._price = undefined;
             this._category = undefined;
+            this._name = undefined;
+            this._surname = undefined;
+        }
+
+        isUndefined() {
+            return this._seat === undefined && this._price === undefined && this._category === undefined;
         }
 
         toString() {
-            return this._seat ? this._seat : "";
+            return this._seat ? `${this._seat}:${this._name} ${this._surname}` : "";
         }
     }
 
@@ -96,8 +124,9 @@ Home
         })
         return number;
     }
-
-    quantity = getUrlParameter('quantita')
+    let id_andata = getUrlParameter('id_andata');
+    let id_ritorno = getUrlParameter('id_ritorno');
+    let quantity = getUrlParameter('quantita');
     globalSeats = undefined;
     seats = new Array();
     for (i = 0; i < quantity; i++) {
@@ -160,6 +189,10 @@ Home
                         <small>Totale</small>
                         <div id="totalPriceDisplay" class="h5 text-warning">-</div>
                     </div>
+                </div>
+
+                <div id="names" class="row">
+
                 </div>
 
                 <button class="btn btn-success" id="confirmBtn">
@@ -483,7 +516,7 @@ Home
     }
 
     function updateDisplayPrice(selectedSeats) {
-        tot = 0;
+        let tot = 0;
         selectedSeats.forEach(obj => {
             if (obj.price) {
                 tot += obj.price;
@@ -492,6 +525,42 @@ Home
 
         document.getElementById('totalPriceDisplay').innerText = "€" + tot.toFixed(2);
     }
+
+    function updateDisplayNames(selectedSeats) {
+        let namesDiv = document.getElementById('names');
+        namesDiv.innerHTML = '';
+
+        selectedSeats.forEach(obj => {
+            if (!obj.isUndefined()) {
+                
+                let label = document.createElement('label');
+                label.innerText = obj.seat;
+                label.classList.add('form-label', 'me-2', 'fw-bold');
+
+                // Campo Nome
+                let inputNome = document.createElement('input');
+                inputNome.type = 'text';
+                inputNome.placeholder = 'Nome';
+                inputNome.required = true;
+                inputNome.classList.add('form-control', 'd-inline-block', 'w-auto', 'me-2');
+                inputNome.addEventListener('input', () => { obj.surname = inputNome.value });
+
+                // Campo Cognome
+                let inputCognome = document.createElement('input');
+                inputCognome.type = 'text';
+                inputCognome.placeholder = 'Cognome';
+                inputCognome.required = true;
+                inputCognome.classList.add('form-control', 'd-inline-block', 'w-auto', 'me-3');
+                inputCognome.addEventListener('input', () => { obj.surname = inputCognome.value });
+
+                
+                namesDiv.appendChild(label);
+                namesDiv.appendChild(inputNome);
+                namesDiv.appendChild(inputCognome);
+            }
+        });
+    }
+
 
     function actionButton(button, selectedSeats) {
         if (button.classList.contains('btn-success')) {
@@ -507,6 +576,7 @@ Home
         seat.nullify();
         updateDisplaySeats(selectedSeats);
         updateDisplayPrice(selectedSeats);
+        updateDisplayNames(selectedSeats);
     }
 
     function selectSeat(button, selectedSeats) {
@@ -526,8 +596,11 @@ Home
             button.classList.add('btn-success');
             updateDisplaySeats(selectedSeats);
             updateDisplayPrice(selectedSeats);
+            updateDisplayNames(selectedSeats);
         }
     }
+
+
 
     let buttons = document.getElementsByClassName('seat');
     Array.from(buttons).forEach(button => {
@@ -537,26 +610,42 @@ Home
     let seatsAndata;
     let seatsRitorno;
 
-    function andataConfirm() {
+    function ritornoConfirm() {
         let s = seats.toString();
         let count = 0;
-        s.split(',').forEach( obj => obj !== "" ? count += 1 : count);
+        s.split(',').forEach(obj => obj !== "" ? count += 1 : count)
 
         if (count.toString() !== quantity) {
-            document.getElementById('totalPriceDisplay').innerText = `Devi selezionare ${quantity} posti`
+            document.getElementById('totalPriceDisplay').innerText = `Devi selezionare ${quantity} posti per il ritorno`;
             return;
         }
         else {
-            console.log("asdig");
+            seatsRitorno = seats;
+            document.location.href = `/checkout?id_andata=${id_andata}&id_ritorno=${id_ritorno}&quantita=${quantity}&seats_andata=${seatsAndata}&seats_ritorno=${seatsRitorno}`
+        }
+
+    }
+
+    function andataConfirm() {
+        let s = seats.toString();
+        let count = 0;
+        s.split(',').forEach(obj => obj !== "" ? count += 1 : count);
+
+        if (count.toString() !== quantity) {
+            document.getElementById('totalPriceDisplay').innerText = `Devi selezionare ${quantity} posti per l'andata`;
+            return;
+        }
+
+        if (!isDefined(id_ritorno)) {
+            document.location.href = `/checkout?id_andata=${id_andata}&id_ritorno=${id_ritorno}&quantita=${quantity}&seats_andata=${s}&seats_ritorno=`;
+        }
+        else {
             seatsAndata = s;
             Array.from(document.getElementsByClassName('btn-success')).forEach(el => el.classList.remove('btn-success'))
             document.getElementById('confirmBtn').classList.add('btn-success');
+
             seats.forEach(obj => obj.nullify());
 
-            let ritorno = getUrlParameter('id_ritorno');
-            if(!ritorno)
-                checkout(seatsAndata);
-            
             $.ajax({
                 'url': ajaxUrl + "&fun=tickets&oper=getByViaggio&idViaggio={{ritorno}}&viaggio=ritorno",
                 'method': 'POST',
@@ -572,7 +661,7 @@ Home
                 'url': ajaxUrl + "&fun=tickets&oper=occupiedSeats&idViaggio={{ritorno}}&viaggio=ritorno",
                 'method': 'POST',
                 success: (data) => {
-                    if(!data)
+                    if (!data)
                         return;
 
                     setSeatOccupied(data);
@@ -580,6 +669,7 @@ Home
             })
 
             document.getElementById('confirmBtn').removeEventListener('click', andataConfirm);
+            document.getElementById('confirmBtn').addEventListener('click', ritornoConfirm);
         }
     }
 

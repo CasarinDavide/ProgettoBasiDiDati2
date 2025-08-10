@@ -243,6 +243,49 @@ def personal_area():
     else:
         return function_actions()
 
+def isDefined(param):
+    return param != '' and param != 'null' and param != 'none' and param != None and param != ['']
+    
+@app.route('/checkout')
+@login_required
+def checkout():
+    id_andata = getParam('id_andata')
+    id_ritorno = getParam('id_ritorno')
+    quantita = getParam('quantita')
+    posti_andata = getParam('seats_andata').split(',')
+    posti_ritorno = getParam('seats_ritorno').split(',')
+
+    correct_params = True
+
+    print(id_andata)
+    print(id_ritorno)
+    print(posti_andata)
+    print(posti_ritorno)
+    print(quantita)
+
+    if not isDefined(id_andata):
+        correct_params = False
+    print(correct_params)
+    if isDefined(id_andata) and not isDefined(posti_andata):
+        correct_params = False
+    print(correct_params)
+    
+    if isDefined(id_ritorno) and not isDefined(posti_ritorno):
+        correct_params = False
+    
+    print(correct_params)
+    
+    if len(posti_andata) != int(quantita) or (isDefined(id_ritorno) and (len(posti_ritorno) != quantita)):
+        correct_params = False
+    print(correct_params)
+    
+    if correct_params:
+        passeggeri_repo = PasseggeriRepository()
+        return passeggeri_repo.buy_tickets(current_user.get_id(), id_andata, id_ritorno, posti_andata, posti_ritorno, quantita)
+    else:
+        return render_template('public_html/error.html')
+
+
 def function_actions():
     target = getParam("fun")
     action = getParam("oper")
@@ -443,14 +486,16 @@ def function_actions():
             viaggio = getParam("viaggio")
             if viaggio == "andata":
                 return biglietti_repo.get_by_viaggio(id_andata)
-            else:
+            elif id_ritorno:
                 return biglietti_repo.get_by_viaggio(id_ritorno)
+            return
         if action == "occupiedSeats":
             viaggio = getParam("viaggio")
             if viaggio == "andata":
                 return biglietti_repo.get_occupied_seats(id_andata)
-            else:
+            elif id_ritorno:
                 return biglietti_repo.get_occupied_seats(id_ritorno)
+            return
         if action == "buy":
             pass
 

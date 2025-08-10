@@ -1,9 +1,11 @@
 from core.PasseggeriClass import PasseggeriClass
-from services.BaseRepository import BaseRepository, model_to_dict
+from services.BaseRepository import BaseRepository, model_to_dict, connection_err
 from datetime import datetime
 
 from flask import jsonify, Response
 from werkzeug.security import check_password_hash
+from System import engine
+from sqlalchemy.orm import SessionTransaction
 
 
 
@@ -65,3 +67,14 @@ class PasseggeriRepository(BaseRepository[PasseggeriClass]):
         if user and check_password_hash(user.password, password):
             return True  # Password is correct
         return False  # Password is incorrect
+    
+    def buy_tickets(self, id_utente: str, id_andata: str, id_ritorno: str, posti_andata: list[str], posti_ritorno: list[str], quantita: int):
+        
+        #per info, i posti sono passati come: ['4C:Nome Cognome', '3E:Riccardo Pasinato']
+
+        #TODO implementare la transazione. Ad alto livello bisogna:
+        #controllare il credito dell'utente
+        #sottrarre il credito e aggiungerlo alla compagnia aerea (bisogna aggiungere un campo alla compagnia aerea dove mettere i soldi)
+        #assegnare i biglietti all'utente che ha effettuato l'acquisto
+        #assegnare ad ogni biglietto il nominativo inserito dall'utente che ha effettuato gli acquisti
+        return
