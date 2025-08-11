@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 from core.BigliettiClass import BigliettiClass
-from core.ViaggiClass import ViaggiClass
-from services.BaseRepository import BaseRepository, model_to_dict
+from services.BaseRepository import BaseRepository, model_to_dict, connection_err
 
 from flask import jsonify, Response
 from sqlalchemy import text, Row
 from System import engine
 from sqlalchemy.orm import Session
-from typing import Sequence
+from typing import Sequence, Any
 from datetime import date, time, datetime
 
-def json(rows: Sequence[Row], error: str):
+def json(rows: Sequence[Row[Any]], error: str) -> Response:
     data = []
     for row in rows:
         row_dict = dict(row._mapping)
@@ -43,8 +42,7 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
             id_passeggero = id_passeggero
         )
         
-        if record is None:
-            return jsonify({ "success": False })
+        return jsonify({'succes': (record is not None) })
 
     def get_by_user(self, id_passeggero: int) -> Response:
         '''
@@ -52,7 +50,7 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
         '''
         
         query = text('''
-                SELECT * 
+                SELECT *    
                     FROM dev."Biglietti" b 
                     JOIN dev."Viaggi" v USING(id_viaggio)
                 WHERE b.id_passeggero = :user
@@ -65,7 +63,7 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
 
             return json(res, 'Biglietti non trovati')
         
-        return jsonify({ 'error': 'Errore di connessione '})
+        return connection_err()
         
 
     def get_by_destination(self, id_passeggero: int, destinazione: str) -> Response:
@@ -85,23 +83,23 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
             res = session.execute(query, {
                 'destinazione': destinazione,
                 'user': id_passeggero
-            })
+            }).fetchall()
 
             json(res, 'Luogo non trovato')
 
-        return jsonify({ 'error': 'Errore di connessione' })
+        return connection_err()
     
     def get_by_departure(self, id_passeggero: str, partenza: str) -> Response:
         '''
-            Return sll the tickets of the given passenger that depart from a given airport's city
+            Return all the tickets of the given passenger that depart from a given airport's city
             Example: get_by_departure(1, 'Milano')
         '''
         
         query = text('''
                 SELECT *
-                FROM dev.Biglietti b
-                    JOIN dev.Viaggi v USING(id_viaggio)
-                    JOIN dev.Aereoporti a ON v.aereoporto_partenza = a.id_aereoporto
+                FROM dev."Biglietti" b
+                    JOIN dev."Viaggi" v USING(id_viaggio)
+                    JOIN dev."Aereoporti" a ON v.aereoporto_partenza = a.id_aereoporto
                 WHERE a.citta = :partenza AND b.id_passeggero = :user
         ''')
         
@@ -109,8 +107,46 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
             res = session.execute(query, {
                 'partenza': partenza,
                 'user': id_passeggero
-            })
+            }).fetchall()
 
             return json(res, 'Luogo non trovato')
         
-        return jsonify({ 'error': 'Errore di connessione' })
+        return connection_err()
+    
+    def get_by_viaggio(self, id_viaggio: str) -> Response:
+        '''
+            Return all the tickets of the given trip that are not already taken
+        '''
+        query = text('''
+            SELECT b.categoria AS categoria, b.prezzo AS prezzo, b.posto AS posto
+            FROM dev."Biglietti" b
+            WHERE b.id_viaggio = :id_viaggio AND b.id_passeggero IS NULL
+        ''')
+
+        with Session(engine()) as session:
+            res = session.execute(query, {
+                'id_viaggio': id_viaggio
+            }).fetchall()
+
+            return json(res, 'Errore nell\'elaborazione dei biglietti')
+        
+        return connection_err()
+    
+    def get_occupied_seats(self, id_viaggio: str) -> Response:
+        '''
+            Return all occupied seats of a given trip
+        '''
+
+        query = text('''
+            SELECT b.posto AS posto
+            FROM dev."Biglietti" b
+            WHERE b.id_viaggio = :id_viaggio AND b.id_passeggero IS NOT NULL
+        ''')
+
+        with Session(engine()) as session:
+            res = session.execute(query, {
+                'id_viaggio': id_viaggio
+            }).fetchall()
+            return json(res, 'Errore nell\'elaborazione dei biglietti')
+        
+        return connection_err()

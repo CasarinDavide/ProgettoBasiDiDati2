@@ -43,16 +43,16 @@ def load_user(user_id):
     role, real_id = user_id.split("-", 1)
     if role == "compagnia":
         return CompagnieRepository().get_by_id(real_id)
-    elif role == "passeggeri":
+    elif role == "passeggero":
         return PasseggeriRepository().get_by_id(real_id)
-    elif role == "dipendenti":
-        return PasseggeriRepository().get_by_id(real_id)
+    elif role == "dipendente":
+        return DipendentiRepository().get_by_id(real_id)
 
     return None
 
-def custom_login_user(user,remember):
-    if isinstance(user,PasseggeriClass) or isinstance(user,CompagnieClass) or isinstance(user,DipendentiClass):
-        login_user(System.BaseUser(id=user.get_id(),nome=user.get_nome(),email=user.get_email(),role= user.get_role()),remember=remember)
+def custom_login_user(user, remember):
+    if isinstance(user, PasseggeriClass) or isinstance(user, CompagnieClass) or isinstance(user, DipendentiClass):
+        login_user(System.BaseUser(id=user.get_id(), nome=user.get_nome(), email=user.get_email(), role= user.get_role()),remember=remember)
         session['role'] = user.__class__.__name__
 
     return None
@@ -78,19 +78,16 @@ def home():
         tipo_viaggio = request.form.get('tipo', '')
         partenza = request.form.get('partenza', '')
         arrivo = request.form.get('arrivo', '')
-        biglietto = request.form.get('biglietto', '')
+        quantita = request.form.get('quantita', '')
 
         data_partenza = request.form.get('dataPartenza', '')
         data_ritorno = request.form.get('dataRitorno') if tipo_viaggio == 'andata-ritorno' else ''
 
-        return redirect(url_for('trip', da=partenza, a=arrivo, dataP=data_partenza, dataR=data_ritorno, biglietto=biglietto))
+        return redirect(url_for('trip', da=partenza, a=arrivo, dataP=data_partenza, dataR=data_ritorno, quantita=quantita))
     
     viaggi_repo = ViaggiRepository()
     partenze = viaggi_repo.get_list_partenze()
     arrivi = viaggi_repo.get_list_arrivi()
-
-    partenze = ['Barcellona', 'Buenos Aires']
-    arrivi = ['Galliera Veneta', 'Noale-Scorzè']
 
     if nome != "":
         return render_template('./public_html/home.html', user=nome, partenze=partenze, arrivi=arrivi)
@@ -98,36 +95,43 @@ def home():
 
 @app.route('/trip', methods=['GET', 'POST'])
 def trip():
-    viaggi_repo = ViaggiRepository()
-    nome = PasseggeriRepository().get_by_id(current_user.get_id()).nome
+    oper = getParam('oper')
+    quantita = getParam('quantita')
+
+    nome = ""
+    if current_user.is_authenticated:
+        passeggeri_repo = PasseggeriRepository()
+        nome = passeggeri_repo.get_by_id(current_user.get_id()).nome
     
-    partenza = request.args.get('da')
-    destinazione = request.args.get('a')
-    dataP = request.args.get('dataP')
-    dataR = request.args.get('dataR')
-    biglietto = request.args.get('biglietto')
-
-    voli = viaggi_repo.get_viaggi(partenza=partenza, destinazione=destinazione, dataP=dataP, dataR=dataR, biglietto=biglietto)
-
-    return render_template('./public_html/trip.html', user=nome, voli=voli)
-
+    function_actions()
+    if oper is None:
+        return render_template('./public_html/trip.html', user=nome)
+    else:
+        return function_actions()
 
 @app.route('/admin_settings', methods=['GET', 'POST'])
+@login_required
 def admin_settings():
     option = getParam("oper")
+    compagnie_repo = CompagnieRepository()
+    nome = compagnie_repo.get_by_id(current_user.get_id()).nome
     
     if option is None:
-        return render_template('./public_html/admin_settings.html')
+        return render_template('./public_html/admin_settings.html', compagnia=nome)
     else:
         return function_actions()
 
 
 
 @app.route('/gestione_compagnia', methods=['GET', 'POST'])
+@login_required
 def gestione_compagnia():
     option = getParam("oper")
+    compagnie_repo = CompagnieRepository()
+    nome = compagnie_repo.get_by_id(current_user.get_id()).nome
+
     if option is None:
-        return render_template('./public_html/gestione_compagnia.html')
+        return render_template('./public_html/gestione_compagnia.html', compagnia=nome)
     else:
         return function_actions()
 
@@ -139,7 +143,7 @@ def user_login():
 
     passeggeri_repo = PasseggeriRepository()
 
-    if request.method == 'POST':
+    if request.method == 'POST':    
         email = request.form['email']
         password = request.form['password']
         remind = request.form.get('remind_me') != None
@@ -196,6 +200,27 @@ def user_registration():
             return redirect(url_for('home'))
     return render_template('public_html/register.html')
 
+@app.route('/prenota', methods=['GET', 'POST'])
+@login_required
+def prenota():
+    viaggi_repo = ViaggiRepository()
+    nome = ""
+
+    oper = getParam("oper")
+
+    if current_user.is_authenticated:
+        passeggeri_repo = PasseggeriRepository()
+        nome = passeggeri_repo.get_by_id(current_user.get_id()).nome
+
+        if oper is None:
+            return render_template('public_html/prenota.html', user=nome)
+        else:
+            return function_actions()
+    else:
+        return 'Per acquistare il biglietto devi prima essere Loggato'
+    
+
+
 
 @app.route('/logout')
 @login_required
@@ -205,6 +230,7 @@ def logout():
 
 
 @app.route('/mytriviaggi', methods=['GET', 'POST'])
+@login_required
 def personal_area():
     oper = getParam("oper")
     nome = PasseggeriRepository().get_by_id(current_user.get_id()).nome
@@ -216,6 +242,49 @@ def personal_area():
         return render_template("public_html/personal_area.html", user=nome)
     else:
         return function_actions()
+
+def isDefined(param):
+    return param != '' and param != 'null' and param != 'none' and param != None and param != ['']
+    
+@app.route('/checkout')
+@login_required
+def checkout():
+    id_andata = getParam('id_andata')
+    id_ritorno = getParam('id_ritorno')
+    quantita = getParam('quantita')
+    posti_andata = getParam('seats_andata').split(',')
+    posti_ritorno = getParam('seats_ritorno').split(',')
+
+    correct_params = True
+
+    print(id_andata)
+    print(id_ritorno)
+    print(posti_andata)
+    print(posti_ritorno)
+    print(quantita)
+
+    if not isDefined(id_andata):
+        correct_params = False
+    print(correct_params)
+    if isDefined(id_andata) and not isDefined(posti_andata):
+        correct_params = False
+    print(correct_params)
+    
+    if isDefined(id_ritorno) and not isDefined(posti_ritorno):
+        correct_params = False
+    
+    print(correct_params)
+    
+    if len(posti_andata) != int(quantita) or (isDefined(id_ritorno) and (len(posti_ritorno) != quantita)):
+        correct_params = False
+    print(correct_params)
+    
+    if correct_params:
+        passeggeri_repo = PasseggeriRepository()
+        return passeggeri_repo.buy_tickets(current_user.get_id(), id_andata, id_ritorno, posti_andata, posti_ritorno, quantita)
+    else:
+        return render_template('public_html/error.html')
+
 
 def function_actions():
     target = getParam("fun")
@@ -371,42 +440,65 @@ def function_actions():
 
         if action == "update":
             element = getParam("element")
-            val = getParam("new_value")
+            val = getParam("value")
             id_passeggero = current_user.get_id()
             pk_field = passeggeri_repo.pk_field
+            res = False
             
             if element == "nome_cognome":
                 nome = val.split(" ")[0]
                 cognome = val.split(" ")[1]
-                return passeggeri_repo.update(id_passeggero, pk_field, nome=nome, cognome=cognome)
+                res = passeggeri_repo.update(id_passeggero, pk_field, nome=nome, cognome=cognome)
+            
             elif element == "email":
-                return passeggeri_repo.update(id_passeggero, pk_field, email=val)
+                res = passeggeri_repo.update(id_passeggero, pk_field, email=val)
             elif element == "password":
                 password = generate_password_hash(val)
-                return passeggeri_repo.update(id_passeggero, pk_field, password=password)
+                res = passeggeri_repo.update(id_passeggero, pk_field, password=password)
             elif element == "telefono":
                 tel = val.replace(' ', '')
-                return passeggeri_repo.update(id_passeggero, pk_field, tel=tel)
+                res = passeggeri_repo.update(id_passeggero, pk_field, tel=tel)
             elif element == "nascita":
-                return passeggeri_repo.update(id_passeggero, pk_field, nascita=val)
+                res = passeggeri_repo.update(id_passeggero, pk_field, nascita=val)
             elif element == "indirizzo":
                 civico = val.split(' ')[0]
                 via = val.split(' ')[1]
                 citta = val.split(' ')[2]
                 cod_postale = val.split(' ')[3]
                 paese = val.split(' ')[4]
-                return passeggeri_repo.update(id_passeggero, pk_field,  
+                res = passeggeri_repo.update(id_passeggero, pk_field,  
                                                 civico=civico,
                                                 via=via,
                                                 citta=citta,
                                                 cod_postale=cod_postale,
                                                 paese=paese
                                             )
+            return jsonify({ 'success': res })
+
     elif target == "tickets":
         biglietti_repo = BigliettiRepository()
+        id_andata = getParam("id_andata")
+        id_ritorno = getParam("id_ritorno")
 
-        if action == "getTickets":
+        if action == "getByUser":
             return biglietti_repo.get_by_user(current_user.get_id())
+        if action == "getByViaggio":
+            viaggio = getParam("viaggio")
+            if viaggio == "andata":
+                return biglietti_repo.get_by_viaggio(id_andata)
+            elif id_ritorno:
+                return biglietti_repo.get_by_viaggio(id_ritorno)
+            return
+        if action == "occupiedSeats":
+            viaggio = getParam("viaggio")
+            if viaggio == "andata":
+                return biglietti_repo.get_occupied_seats(id_andata)
+            elif id_ritorno:
+                return biglietti_repo.get_occupied_seats(id_ritorno)
+            return
+        if action == "buy":
+            pass
+
     elif target == "viaggi":
         viaggi_repo = ViaggiRepository()
         if action == "add":
@@ -464,6 +556,16 @@ def function_actions():
             return voli_repo.add_from_json(getParam("voli_json"))
         elif action == "delete_all":
             return voli_repo.delete_all(getParam("id_viaggio"))
+    elif target == "trips":
+        viaggi_repo = ViaggiRepository()
+
+        if action == "getSelectedTrips":
+            partenza = getParam('da')
+            destinazione = getParam('a')
+            dataP = getParam('dataP')
+            dataR = getParam('dataR')
+
+            return viaggi_repo.get_viaggi(partenza=partenza, destinazione=destinazione, dataP=dataP, dataR=dataR)
 
     return jsonify({"error": "Invalid action"}), 400
 

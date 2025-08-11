@@ -115,13 +115,13 @@
                 {% if request.path != '/user_login' %}
                 <!-- Navigation -->
                 <nav class="d-flex gap-10 fs-3 fw-semibold">
-                    <a href="#" class="text-white text-decoration-none d-flex align-items-center">
-                        <i class="fas fa-plane fa-lg me-2"></i> Pianifica
-                    </a>
-                    {% if current_user.is_authenticated %}
-                    <a href="#" class="text-white text-decoration-none d-flex align-items-center">
-                        <i class="fas fa-ticket fa-lg me-2"></i> I Miei Biglietti
-                    </a>
+                    {% if current_user.is_authenticated and user %}
+                        <a href="#" class="text-white text-decoration-none d-flex align-items-center">
+                            <i class="fas fa-plane fa-lg me-2"></i> Pianifica
+                        </a>
+                        <a href="/mytriviaggi" class="text-white text-decoration-none d-flex align-items-center">
+                            <i class="fas fa-ticket fa-lg me-2"></i> I Miei Biglietti
+                        </a>
                     {% endif %}
                 </nav>
                 {% endif %}
@@ -136,10 +136,17 @@
                         <i class="fas fa-sign-in fa-2x me-2"></i>
                         Accedi</a>
                 {% else %}
-                    <a href="/mytriviaggi" class="text-white text-decoration-none"> Area Personale - {{ current_user.get_name() }}</a>
-                    <a href="/logout" class="text-white text-decoration-none d-flex align-items-center">
-                        <i class="fas fa-sign-out fa-2x me-2"></i>Logout
-                    </a>
+                    {% if user %}
+                        <a href="/mytriviaggi" class="text-white text-decoration-none"> Area Personale - {{ current_user.get_nome() }}</a>
+                        <a href="/logout" class="text-white text-decoration-none d-flex align-items-center">
+                            <i class="fas fa-sign-out fa-2x me-2"></i>Logout
+                        </a>
+                    {% elif compagnia %}
+                        <a href="" class="text-white text-decoration-none"> {{ compagnia }}</a>
+                        <a href="/logout" class="text-white text-decoration-none d-flex align-items-center me-5">
+                            <i class="fas fa-sign-out fa-2x me-2"></i> Logout
+                        </a>
+                    {% endif %}
                 {% endif %}
 
 

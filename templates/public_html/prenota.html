@@ -1,0 +1,682 @@
+{% extends "base.html" %}
+
+{% block title %}
+{% if user %}
+Home - {{ user }}
+{% else %}
+Home
+{% endif %}
+{% endblock title %}
+
+{% block extra_css %}
+<style>
+    .first-class {
+        width: 60px;
+    }
+
+    .other {
+        width: 53px;
+    }
+
+    .row-label {
+        width: 30px;
+    }
+</style>
+{% endblock extra_css %}
+
+{% block extra_jquery %}
+<script>
+    function showTime(date) {
+        return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function getUrlParameter(name) {
+        let urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
+
+    function setSeatOccupied(data) {
+        data.forEach((element) => {
+            let posto = element.posto;
+            let btn = document.getElementById(posto);
+            btn.classList.add('disabled');
+            btn.classList.add('btn-danger')
+
+        });
+    }
+
+    function isDefined(param) {
+        return param !== '' && param !== 'null' && param !== null && param !== undefined;
+    }
+
+    class Seat {
+        constructor(seat, price, category, name, surname) {
+            this._seat = seat;
+            this._price = price;
+            this._category = category;
+            this._name = name;
+            this._surname = surname;
+        }
+
+        get seat() {
+            return this._seat;
+        }
+
+        set seat(s) {
+            this._seat = s;
+        }
+
+        get price() {
+            return this._price;
+        }
+
+        set price(p) {
+            this._price = p;
+        }
+
+        get category() {
+            return this._category;
+        }
+
+        set category(c) {
+            this._category = c;
+        }
+
+        get name() {
+            return this._name;
+        }
+
+        set name(n) {
+            this._name = n;
+        }
+        
+        get surname() {
+            return this._surname;
+        }
+
+        set surname(s) {
+            this._surname = s;
+        }
+
+        nullify() {
+            this._seat = undefined;
+            this._price = undefined;
+            this._category = undefined;
+            this._name = undefined;
+            this._surname = undefined;
+        }
+
+        isUndefined() {
+            return this._seat === undefined && this._price === undefined && this._category === undefined;
+        }
+
+        toString() {
+            return this._seat ? `${this._seat}:${this._name} ${this._surname}` : "";
+        }
+    }
+
+    function getRow(posto) {
+        number = "";
+        Array.from(posto).forEach((char) => {
+            if ('0' <= char && char <= '9') {
+                number = number + char;
+            }
+        })
+        return number;
+    }
+    let id_andata = getUrlParameter('id_andata');
+    let id_ritorno = getUrlParameter('id_ritorno');
+    let quantity = getUrlParameter('quantita');
+    globalSeats = undefined;
+    seats = new Array();
+    for (i = 0; i < quantity; i++) {
+        seats.push(new Seat())
+    }
+
+    $(document).ready(
+        $.ajax({
+            'url': ajaxUrl + "&fun=tickets&oper=getByViaggio&idViaggio={{andata}}&viaggio=andata",
+            'method': "POST",
+            success: (data) => {
+                if (!data)
+                    return;
+
+                document.getElementById('quantita').innerText = quantity;
+                globalSeats = data;
+                data.forEach((element) => {
+                    let row = getRow(element.posto);
+                    document.getElementsByClassName(`seat-row-${row}`)[0].style.display = "";
+                })
+            },
+
+            error: (error) => error
+        }),
+
+        //check occupied seats, remove the option to select them
+        $.ajax({
+            'url': ajaxUrl + "&fun=tickets&oper=occupiedSeats&idViaggio={{andata}}&viaggio=andata",
+            'method': "POST",
+            success: (data) => {
+                if (!data)
+                    return;
+
+                setSeatOccupied(data);
+            }
+        })
+    );
+
+</script>
+{% endblock extra_jquery %}
+
+{% block main_content %}
+
+<div class="container py-4">
+    <div class="mb-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="text-primary mb-3">Riepilogo Andata</h5>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <small>Biglietti</small>
+                        <div id="quantita" class="h6">-</div>
+                    </div>
+                    <div class="col-md-4">
+                        <small>Posti Selezionati</small>
+                        <div id="selectedSeatDisplay" class="h6 text-success">-</div>
+                    </div>
+                    <div class="col-md-4">
+                        <small>Totale</small>
+                        <div id="totalPriceDisplay" class="h5 text-warning">-</div>
+                    </div>
+                </div>
+
+                <div id="names" class="row">
+
+                </div>
+
+                <button class="btn btn-success" id="confirmBtn">
+                    <i class="fa-solid fa-circle-check"></i>Conferma
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mappa posti -->
+    <div id="seatMap" class="text-center">
+        <div>
+            <h6 class="text-primary">First Class</h6>
+            <div
+                class="seat-row seat-row-1 position-relative d-flex justify-content-center align-items-center mb-2 gap-10 w-100">
+                <div class="text-muted position-absolute start-0 row-label">1</div>
+
+                <button id="1A" class="seat btn btn-outline btn-sm first-class" data-seat="1A">A</button>
+                <button id="1B" class="seat btn btn-outline btn-sm first-class" data-seat="1B">B</button>
+
+                <div class="text-center text-muted">|</div>
+
+                <button id="1C" class="seat btn btn-outline btn-sm first-class" data-seat="1C">C</button>
+                <button id="1D" class="seat btn btn-outline btn-sm first-class" data-seat="1D">D</button>
+            </div>
+            <div
+                class="seat-row seat-row-2 position-relative d-flex justify-content-center align-items-center mb-2 gap-10 w-100">
+                <div class="text-muted position-absolute start-0 row-label">2</div>
+
+                <button id="2A" class="seat btn btn-outline btn-sm first-class" data-seat="2A">A</button>
+                <button id="2B" class="seat btn btn-outline btn-sm first-class" data-seat="2B">B</button>
+
+                <div class="text-center text-muted">|</div>
+
+                <button id="2C" class="seat btn btn-outline btn-sm first-class" data-seat="2C">C</button>
+                <button id="2D" class="seat btn btn-outline btn-sm first-class" data-seat="2D">D</button>
+            </div>
+            <div
+                class="seat-row seat-row-3 position-relative d-flex justify-content-center align-items-center mb-2 gap-10 w-100">
+                <div class="text-muted position-absolute start-0 row-label">3</div>
+
+                <button id="3A" class="seat btn btn-outline btn-sm first-class" data-seat="3A">A</button>
+                <button id="3B" class="seat btn btn-outline btn-sm first-class" data-seat="3B">B</button>
+
+                <div class="text-center text-muted">|</div>
+
+                <button id="3C" class="seat btn btn-outline btn-sm first-class" data-seat="3C">C</button>
+                <button id="3D" class="seat btn btn-outline btn-sm first-class" data-seat="3D">D</button>
+            </div>
+        </div>
+
+        <div>
+            <h6 class="text-primary">Business Class</h6>
+            <div
+                class="seat-row seat-row-4 position-relative d-flex justify-content-center align-items-center mb-2 gap-1 w-100">
+                <div class="text-muted position-absolute start-0 row-label">4</div>
+
+                <button id="4A" class="seat btn btn-outline btn-sm other" data-seat="4A">A</button>
+                <button id="4B" class="seat btn btn-outline btn-sm other" data-seat="4B">B</button>
+                <button id="4C" class="seat btn btn-outline btn-sm other" data-seat="4C">C</button>
+
+                <div class="text-center text-muted ms-5 me-5">|</div>
+
+                <button id="4D" class="seat btn btn-outline btn-sm other" data-seat="4D">D</button>
+                <button id="4E" class="seat btn btn-outline btn-sm other" data-seat="4E">E</button>
+                <button id="4F" class="seat btn btn-outline btn-sm other" data-seat="4F">F</button>
+            </div>
+
+            <div
+                class="seat-row seat-row-5 position-relative d-flex justify-content-center align-items-center mb-2 gap-1 w-100">
+                <div class="text-muted position-absolute start-0 row-label">5</div>
+
+                <button id="5A" class="seat btn btn-outline btn-sm other" data-seat="5A">A</button>
+                <button id="5B" class="seat btn btn-outline btn-sm other" data-seat="5B">B</button>
+                <button id="5C" class="seat btn btn-outline btn-sm other" data-seat="5C">C</button>
+
+                <div class="text-center text-muted ms-5 me-5">|</div>
+
+                <button id="5D" class="seat btn btn-outline btn-sm other" data-seat="5D">D</button>
+                <button id="5E" class="seat btn btn-outline btn-sm other" data-seat="5E">E</button>
+                <button id="5F" class="seat btn btn-outline btn-sm other" data-seat="5F">F</button>
+            </div>
+
+            <div
+                class="seat-row seat-row-6 position-relative d-flex justify-content-center align-items-center mb-2 gap-1 w-100">
+                <div class="text-muted position-absolute start-0 row-label">6</div>
+
+                <div class="text-muted position-absolute start-0 row-label">6</div>
+
+                <button id="6A" class="seat btn btn-outline btn-sm other" data-seat="6A">A</button>
+                <button id="6B" class="seat btn btn-outline btn-sm other" data-seat="6B">B</button>
+                <button id="6C" class="seat btn btn-outline btn-sm other" data-seat="6C">C</button>
+
+                <div class="text-center text-muted ms-5 me-5">|</div>
+
+                <button id="6D" class="seat btn btn-outline btn-sm other" data-seat="6D">D</button>
+                <button id="6E" class="seat btn btn-outline btn-sm other" data-seat="6E">E</button>
+                <button id="6F" class="seat btn btn-outline btn-sm other" data-seat="6F">F</button>
+            </div>
+        </div>
+
+        <div>
+            <h6 class="text-primary">Economy</h6>
+            <div
+                class="seat-row seat-row-7 position-relative d-flex justify-content-center align-items-center mb-2 gap-1 w-100">
+                <div class="text-muted position-absolute start-0 row-label">7</div>
+
+                <button id="7A" class="seat btn btn-outline btn-sm other" data-seat="7A">A</button>
+                <button id="7B" class="seat btn btn-outline btn-sm other" data-seat="7B">B</button>
+                <button id="7C" class="seat btn btn-outline btn-sm other" data-seat="7C">C</button>
+
+                <div class="text-center text-muted ms-5 me-5">|</div>
+
+                <button id="7D" class="seat btn btn-outline btn-sm other" data-seat="7D">D</button>
+                <button id="7E" class="seat btn btn-outline btn-sm other" data-seat="7E">E</button>
+                <button id="7F" class="seat btn btn-outline btn-sm other" data-seat="7F">F</button>
+            </div>
+            <div
+                class="seat-row seat-row-8 position-relative d-flex justify-content-center align-items-center mb-2 gap-1 w-100">
+                <div class="text-muted position-absolute start-0 row-label">8</div>
+
+                <button id="8A" class="seat btn btn-outline btn-sm other" data-seat="8A">A</button>
+                <button id="8B" class="seat btn btn-outline btn-sm other" data-seat="8B">B</button>
+                <button id="8C" class="seat btn btn-outline btn-sm other" data-seat="8C">C</button>
+
+                <div class="text-center text-muted ms-5 me-5">|</div>
+
+                <button id="8D" class="seat btn btn-outline btn-sm other" data-seat="8D">D</button>
+                <button id="8E" class="seat btn btn-outline btn-sm other" data-seat="8E">E</button>
+                <button id="8F" class="seat btn btn-outline btn-sm other" data-seat="8F">F</button>
+            </div>
+            <div
+                class="seat-row seat-row-9 position-relative d-flex justify-content-center align-items-center mb-2 gap-1 w-100">
+                <div class="text-muted position-absolute start-0 row-label">9</div>
+
+                <button id="9A" class="seat btn btn-outline btn-sm other" data-seat="9A">A</button>
+                <button id="9B" class="seat btn btn-outline btn-sm other" data-seat="9B">B</button>
+                <button id="9C" class="seat btn btn-outline btn-sm other" data-seat="9C">C</button>
+
+                <div class="text-center text-muted ms-5 me-5">|</div>
+
+                <button id="9D" class="seat btn btn-outline btn-sm other" data-seat="9D">D</button>
+                <button id="9E" class="seat btn btn-outline btn-sm other" data-seat="9E">E</button>
+                <button id="9F" class="seat btn btn-outline btn-sm other" data-seat="9F">F</button>
+            </div>
+            <div
+                class="seat-row seat-row-10 position-relative d-flex justify-content-center align-items-center mb-2 gap-1 w-100">
+                <div class="text-muted position-absolute start-0 row-label">10</div>
+
+                <button id="10A" class="seat btn btn-outline btn-sm other" data-seat="10A">A</button>
+                <button id="10B" class="seat btn btn-outline btn-sm other" data-seat="10B">B</button>
+                <button id="10C" class="seat btn btn-outline btn-sm other" data-seat="10C">C</button>
+
+                <div class="text-center text-muted ms-5 me-5">|</div>
+
+                <button id="10D" class="seat btn btn-outline btn-sm other" data-seat="10D">D</button>
+                <button id="10E" class="seat btn btn-outline btn-sm other" data-seat="10E">E</button>
+                <button id="10F" class="seat btn btn-outline btn-sm other" data-seat="10F">F</button>
+            </div>
+            <div
+                class="seat-row seat-row-11 position-relative d-flex justify-content-center align-items-center mb-2 gap-1 w-100">
+                <div class="text-muted position-absolute start-0 row-label">11</div>
+
+                <button id="11A" class="seat btn btn-outline btn-sm other" data-seat="11A">A</button>
+                <button id="11B" class="seat btn btn-outline btn-sm other" data-seat="11B">B</button>
+                <button id="11C" class="seat btn btn-outline btn-sm other" data-seat="11C">C</button>
+
+                <div class="text-center text-muted ms-5 me-5">|</div>
+
+                <button id="11D" class="seat btn btn-outline btn-sm other" data-seat="11D">D</button>
+                <button id="11E" class="seat btn btn-outline btn-sm other" data-seat="11E">E</button>
+                <button id="11F" class="seat btn btn-outline btn-sm other" data-seat="11F">F</button>
+            </div>
+            <div
+                class="seat-row seat-row-12 position-relative d-flex justify-content-center align-items-center mb-2 gap-1 w-100">
+                <div class="text-muted position-absolute start-0 row-label">12</div>
+
+                <button id="12A" class="seat btn btn-outline btn-sm other" data-seat="12A">A</button>
+                <button id="12B" class="seat btn btn-outline btn-sm other" data-seat="12B">B</button>
+                <button id="12C" class="seat btn btn-outline btn-sm other" data-seat="12C">C</button>
+
+                <div class="text-center text-muted ms-5 me-5">|</div>
+
+                <button id="12D" class="seat btn btn-outline btn-sm other" data-seat="12D">D</button>
+                <button id="12E" class="seat btn btn-outline btn-sm other" data-seat="12E">E</button>
+                <button id="12F" class="seat btn btn-outline btn-sm other" data-seat="12F">F</button>
+            </div>
+            <div
+                class="seat-row seat-row-13 position-relative d-flex justify-content-center align-items-center mb-2 gap-1 w-100">
+                <div class="text-muted position-absolute start-0 row-label">13</div>
+
+                <button id="13A" class="seat btn btn-outline btn-sm other" data-seat="13A">A</button>
+                <button id="13B" class="seat btn btn-outline btn-sm other" data-seat="13B">B</button>
+                <button id="13C" class="seat btn btn-outline btn-sm other" data-seat="13C">C</button>
+
+                <div class="text-center text-muted ms-5 me-5">|</div>
+
+                <button id="13D" class="seat btn btn-outline btn-sm other" data-seat="13D">D</button>
+                <button id="13E" class="seat btn btn-outline btn-sm other" data-seat="13E">E</button>
+                <button id="13F" class="seat btn btn-outline btn-sm other" data-seat="13F">F</button>
+            </div>
+            <div
+                class="seat-row seat-row-14 position-relative d-flex justify-content-center align-items-center mb-2 gap-1 w-100">
+                <div class="text-muted position-absolute start-0 row-label">14</div>
+
+                <button id="14A" class="seat btn btn-outline btn-sm other" data-seat="14A">A</button>
+                <button id="14B" class="seat btn btn-outline btn-sm other" data-seat="14B">B</button>
+                <button id="14C" class="seat btn btn-outline btn-sm other" data-seat="14C">C</button>
+
+                <div class="text-center text-muted ms-5 me-5">|</div>
+
+                <button id="14D" class="seat btn btn-outline btn-sm other" data-seat="14D">D</button>
+                <button id="14E" class="seat btn btn-outline btn-sm other" data-seat="14E">E</button>
+                <button id="14F" class="seat btn btn-outline btn-sm other" data-seat="14F">F</button>
+            </div>
+            <div
+                class="seat-row seat-row-15 position-relative d-flex justify-content-center align-items-center mb-2 gap-1 w-100">
+                <div class="text-muted position-absolute start-0 row-label">15</div>
+
+                <button id="15A" class="seat btn btn-outline btn-sm other" data-seat="15A">A</button>
+                <button id="15B" class="seat btn btn-outline btn-sm other" data-seat="15B">B</button>
+                <button id="15C" class="seat btn btn-outline btn-sm other" data-seat="15C">C</button>
+
+                <div class="text-center text-muted ms-5 me-5">|</div>
+
+                <button id="15D" class="seat btn btn-outline btn-sm other" data-seat="15D">D</button>
+                <button id="15E" class="seat btn btn-outline btn-sm other" data-seat="15E">E</button>
+                <button id="15F" class="seat btn btn-outline btn-sm other" data-seat="15F">F</button>
+            </div>
+            <div
+                class="seat-row seat-row-16 position-relative d-flex justify-content-center align-items-center mb-2 gap-1 w-100">
+                <div class="text-muted position-absolute start-0 row-label">16</div>
+
+                <button id="16A" class="seat btn btn-outline btn-sm other" data-seat="16A">A</button>
+                <button id="16B" class="seat btn btn-outline btn-sm other" data-seat="16B">B</button>
+                <button id="16C" class="seat btn btn-outline btn-sm other" data-seat="16C">C</button>
+
+                <div class="text-center text-muted ms-5 me-5">|</div>
+
+                <button id="16D" class="seat btn btn-outline btn-sm other" data-seat="16D">D</button>
+                <button id="16E" class="seat btn btn-outline btn-sm other" data-seat="16E">E</button>
+                <button id="16F" class="seat btn btn-outline btn-sm other" data-seat="16F">F</button>
+            </div>
+            <div
+                class="seat-row seat-row-17 position-relative d-flex justify-content-center align-items-center mb-2 gap-1 w-100">
+                <div class="text-muted position-absolute start-0 row-label">17</div>
+
+                <button id="17A" class="seat btn btn-outline btn-sm other" data-seat="17A">A</button>
+                <button id="17B" class="seat btn btn-outline btn-sm other" data-seat="17B">B</button>
+                <button id="17C" class="seat btn btn-outline btn-sm other" data-seat="17C">C</button>
+
+                <div class="text-center text-muted ms-5 me-5">|</div>
+
+                <button id="17D" class="seat btn btn-outline btn-sm other" data-seat="17D">D</button>
+                <button id="17E" class="seat btn btn-outline btn-sm other" data-seat="17E">E</button>
+                <button id="17F" class="seat btn btn-outline btn-sm other" data-seat="17F">F</button>
+            </div>
+            <div
+                class="seat-row seat-row-18 position-relative d-flex justify-content-center align-items-center mb-2 gap-1 w-100">
+                <div class="text-muted position-absolute start-0 row-label">18</div>
+
+                <button id="18A" class="seat btn btn-outline btn-sm other" data-seat="18A">A</button>
+                <button id="18B" class="seat btn btn-outline btn-sm other" data-seat="18B">B</button>
+                <button id="18C" class="seat btn btn-outline btn-sm other" data-seat="18C">C</button>
+
+                <div class="text-center text-muted ms-5 me-5">|</div>
+
+                <button id="18D" class="seat btn btn-outline btn-sm other" data-seat="18D">D</button>
+                <button id="18E" class="seat btn btn-outline btn-sm other" data-seat="18E">E</button>
+                <button id="18F" class="seat btn btn-outline btn-sm other" data-seat="18F">F</button>
+            </div>
+            <div
+                class="seat-row seat-row-19 position-relative d-flex justify-content-center align-items-center mb-2 gap-1 w-100">
+                <div class="text-muted position-absolute start-0 row-label">19</div>
+
+                <button id="19A" class="seat btn btn-outline btn-sm other" data-seat="19A">A</button>
+                <button id="19B" class="seat btn btn-outline btn-sm other" data-seat="19B">B</button>
+                <button id="19C" class="seat btn btn-outline btn-sm other" data-seat="19C">C</button>
+
+                <div class="text-center text-muted ms-5 me-5">|</div>
+
+                <button id="19D" class="seat btn btn-outline btn-sm other" data-seat="19D">D</button>
+                <button id="19E" class="seat btn btn-outline btn-sm other" data-seat="19E">E</button>
+                <button id="19F" class="seat btn btn-outline btn-sm other" data-seat="19F">F</button>
+            </div>
+            <div
+                class="seat-row seat-row-20 position-relative d-flex justify-content-center align-items-center mb-2 gap-1 w-100">
+                <div class="text-muted position-absolute start-0 row-label">20</div>
+
+                <button id="20A" class="seat btn btn-outline btn-sm other" data-seat="20A">A</button>
+                <button id="20B" class="seat btn btn-outline btn-sm other" data-seat="20B">B</button>
+                <button id="20C" class="seat btn btn-outline btn-sm other" data-seat="20C">C</button>
+
+                <div class="text-center text-muted ms-5 me-5">|</div>
+
+                <button id="20D" class="seat btn btn-outline btn-sm other" data-seat="20D">D</button>
+                <button id="20E" class="seat btn btn-outline btn-sm other" data-seat="20E">E</button>
+                <button id="20F" class="seat btn btn-outline btn-sm other" data-seat="20F">F</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<script>
+
+    let rows = document.getElementsByClassName('seat-row');
+    Array.from(rows).forEach(row => {
+        row.style.setProperty('display', 'none', 'important');
+    });
+
+    function updateDisplaySeats(selectedSeats) {
+        let seats = []
+        selectedSeats.forEach(obj => {
+            if (obj.seat)
+                seats.push(obj.seat);
+        });
+
+        document.getElementById('selectedSeatDisplay').innerText = seats.toString();
+    }
+
+    function updateDisplayPrice(selectedSeats) {
+        let tot = 0;
+        selectedSeats.forEach(obj => {
+            if (obj.price) {
+                tot += obj.price;
+            }
+        });
+
+        document.getElementById('totalPriceDisplay').innerText = "€" + tot.toFixed(2);
+    }
+
+    function updateDisplayNames(selectedSeats) {
+        let namesDiv = document.getElementById('names');
+        namesDiv.innerHTML = '';
+
+        selectedSeats.forEach(obj => {
+            if (!obj.isUndefined()) {
+                
+                let label = document.createElement('label');
+                label.innerText = obj.seat;
+                label.classList.add('form-label', 'me-2', 'fw-bold');
+
+                // Campo Nome
+                let inputNome = document.createElement('input');
+                inputNome.type = 'text';
+                inputNome.placeholder = 'Nome';
+                inputNome.required = true;
+                inputNome.classList.add('form-control', 'd-inline-block', 'w-auto', 'me-2');
+                inputNome.addEventListener('input', () => { obj.surname = inputNome.value });
+
+                // Campo Cognome
+                let inputCognome = document.createElement('input');
+                inputCognome.type = 'text';
+                inputCognome.placeholder = 'Cognome';
+                inputCognome.required = true;
+                inputCognome.classList.add('form-control', 'd-inline-block', 'w-auto', 'me-3');
+                inputCognome.addEventListener('input', () => { obj.surname = inputCognome.value });
+
+                
+                namesDiv.appendChild(label);
+                namesDiv.appendChild(inputNome);
+                namesDiv.appendChild(inputCognome);
+            }
+        });
+    }
+
+
+    function actionButton(button, selectedSeats) {
+        if (button.classList.contains('btn-success')) {
+            return unselectSeat(button, selectedSeats);
+        } else {
+            return selectSeat(button, selectedSeats);
+        }
+    }
+
+    function unselectSeat(button, selectedSeats) {
+        button.classList.remove('btn-success');
+        let seat = selectedSeats.find(obj => obj.seat === button.dataset.seat);
+        seat.nullify();
+        updateDisplaySeats(selectedSeats);
+        updateDisplayPrice(selectedSeats);
+        updateDisplayNames(selectedSeats);
+    }
+
+    function selectSeat(button, selectedSeats) {
+        let emptySeat = undefined;
+        for (seat of selectedSeats) {
+            if (seat.toString() === "") {
+                emptySeat = seat;
+                break;
+            }
+        }
+
+        if (emptySeat !== undefined) {
+            let selectedSeat = globalSeats.find(obj => obj.posto === button.dataset.seat);
+            emptySeat.seat = selectedSeat.posto;
+            emptySeat.price = selectedSeat.prezzo;
+            emptySeat.category = selectedSeat.categoria;
+            button.classList.add('btn-success');
+            updateDisplaySeats(selectedSeats);
+            updateDisplayPrice(selectedSeats);
+            updateDisplayNames(selectedSeats);
+        }
+    }
+
+
+
+    let buttons = document.getElementsByClassName('seat');
+    Array.from(buttons).forEach(button => {
+        button.addEventListener('click', () => { actionButton(button, seats) });
+    });
+
+    let seatsAndata;
+    let seatsRitorno;
+
+    function ritornoConfirm() {
+        let s = seats.toString();
+        let count = 0;
+        s.split(',').forEach(obj => obj !== "" ? count += 1 : count)
+
+        if (count.toString() !== quantity) {
+            document.getElementById('totalPriceDisplay').innerText = `Devi selezionare ${quantity} posti per il ritorno`;
+            return;
+        }
+        else {
+            seatsRitorno = seats;
+            document.location.href = `/checkout?id_andata=${id_andata}&id_ritorno=${id_ritorno}&quantita=${quantity}&seats_andata=${seatsAndata}&seats_ritorno=${seatsRitorno}`
+        }
+
+    }
+
+    function andataConfirm() {
+        let s = seats.toString();
+        let count = 0;
+        s.split(',').forEach(obj => obj !== "" ? count += 1 : count);
+
+        if (count.toString() !== quantity) {
+            document.getElementById('totalPriceDisplay').innerText = `Devi selezionare ${quantity} posti per l'andata`;
+            return;
+        }
+
+        if (!isDefined(id_ritorno)) {
+            document.location.href = `/checkout?id_andata=${id_andata}&id_ritorno=${id_ritorno}&quantita=${quantity}&seats_andata=${s}&seats_ritorno=`;
+        }
+        else {
+            seatsAndata = s;
+            Array.from(document.getElementsByClassName('btn-success')).forEach(el => el.classList.remove('btn-success'))
+            document.getElementById('confirmBtn').classList.add('btn-success');
+
+            seats.forEach(obj => obj.nullify());
+
+            $.ajax({
+                'url': ajaxUrl + "&fun=tickets&oper=getByViaggio&idViaggio={{ritorno}}&viaggio=ritorno",
+                'method': 'POST',
+                success: (data) => {
+                    if (!data)
+                        return;
+
+                    globalSeats = data;
+                }
+            });
+
+            $.ajax({
+                'url': ajaxUrl + "&fun=tickets&oper=occupiedSeats&idViaggio={{ritorno}}&viaggio=ritorno",
+                'method': 'POST',
+                success: (data) => {
+                    if (!data)
+                        return;
+
+                    setSeatOccupied(data);
+                }
+            })
+
+            document.getElementById('confirmBtn').removeEventListener('click', andataConfirm);
+            document.getElementById('confirmBtn').addEventListener('click', ritornoConfirm);
+        }
+    }
+
+    document.getElementById('confirmBtn').addEventListener('click', andataConfirm);
+
+    function checkout() {
+        return;
+    }
+</script>
+{% endblock main_content %}

@@ -3,10 +3,8 @@ from typing import Optional, List
 from sqlalchemy.exc import SQLAlchemyError
 from System import engine, Base
 
-from System import Base
-from sqlalchemy import ForeignKey
+from System import Base, BaseUser
 from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
-from flask_login import UserMixin
 """
 CREATE TABLE dev.Compagnie (
                                id_compagnia SERIAL PRIMARY KEY,
@@ -24,7 +22,7 @@ CREATE TABLE dev.Compagnie (
 
 
 
-class CompagnieClass(UserMixin, Base):
+class CompagnieClass(BaseUser, Base):
     __tablename__ = 'Compagnie'
     __table_args__ = { 'schema': 'dev' }
 
@@ -61,4 +59,4 @@ class CompagnieClass(UserMixin, Base):
         return self.email
 
     def get_role(self):
-        return "compagnie"
+        return "compagnia"

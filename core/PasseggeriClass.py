@@ -1,8 +1,6 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship, Session
-from sqlalchemy import ForeignKey
 from datetime import datetime
-from System import engine, Base
-from flask_login import UserMixin
+from System import Base, BaseUser
 """
 CREATE TABLE dev.Passeggeri (
                                 id_passeggero SERIAL PRIMARY KEY,
@@ -21,7 +19,7 @@ CREATE TABLE dev.Passeggeri (
 );
 """
 #UserMixin è la classe da ereditare per Flask-Login
-class PasseggeriClass(UserMixin, Base):
+class PasseggeriClass(BaseUser, Base):
     __tablename__ = 'Passeggeri'
     __table_args__ = { 'schema': 'dev' }
 
@@ -51,8 +49,6 @@ class PasseggeriClass(UserMixin, Base):
     def get_id(self):
         return str(self.id_passeggero)
 
-
-
     def get_nome(self):
         return self.nome
 
@@ -60,4 +56,4 @@ class PasseggeriClass(UserMixin, Base):
         return self.email
 
     def get_role(self):
-        return "compagnie"
+        return "passeggero"
