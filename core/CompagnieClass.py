@@ -66,3 +66,6 @@ class CompagnieClass(BaseUser, Base):
 
     def get_role(self):
         return "compagnia"
+
+    def get_saldo(self):
+        return self.saldo

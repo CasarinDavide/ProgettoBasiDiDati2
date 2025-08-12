@@ -57,3 +57,7 @@ class PasseggeriClass(BaseUser, Base):
 
     def get_role(self):
         return "passeggero"
+
+    def get_saldo(self):
+        return self.saldo
+

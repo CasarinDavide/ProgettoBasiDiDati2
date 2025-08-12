@@ -88,7 +88,7 @@ class PasseggeriRepository(BaseRepository[PasseggeriClass]):
                 with session.begin():
                     biglietto = BigliettiRepository.get_biglietto(id_volo=id_andata,seat=posti_andata,session = session)
 
-                    passeggiero = PasseggeriRepository.get_by_id(id_utente,session = session)
+                    passeggero = PasseggeriRepository.get_by_id(id_utente,session = session)
 
                     compagnia_andata = CompagnieRepository.get_by_volo(id_volo=id_andata,session = session)
 
@@ -105,17 +105,17 @@ class PasseggeriRepository(BaseRepository[PasseggeriClass]):
 
                     total_cost = costo_andata + costo_ritorno
 
-                    if passeggiero.saldo < total_cost:
+                    if passeggero.saldo < total_cost:
                         raise ValueError("Insufficient credit")
 
-                    passeggiero.saldo -= total_cost
+                    passeggero.saldo -= total_cost
 
                     compagnia_andata.saldo += costo_andata
 
                     if compagnia_ritorno is not None:
                         compagnia_ritorno.saldo += costo_ritorno
 
-                    biglietto.id_passeggiero = id_utente
+                    biglietto.id_passeggero = id_utente
                     # after this all obj that has reference to internal db will be pushed
 
         except ValueError as e:

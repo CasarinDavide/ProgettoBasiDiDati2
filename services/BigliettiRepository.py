@@ -172,6 +172,6 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
     def get_biglietto(self,id_volo,seat,**kwargs):
         return self.search_by_columns(joins=[joinedload(BigliettiClass.viaggio_rel).joinedload(ViaggiClass.voli_rel)],id_volo = id_volo,posto = seat,**kwargs)
 
-    def set_seat(self,id_biglietto,id_passeggiero):
+    def set_seat(self,id_biglietto,id_passeggero):
         # it cannot fail must assume existing biglietto is passed
-        super().update(obj_id=id_biglietto,pk_field=self.pk_field,id_passeggiero = id_passeggiero)
+        super().update(obj_id=id_biglietto,pk_field=self.pk_field,id_passeggero = id_passeggero)

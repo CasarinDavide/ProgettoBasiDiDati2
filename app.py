@@ -109,7 +109,7 @@ def home():
 
     nome = ""
 
-    if is_passeggero() or not current_user.is_authenticated:
+    if not current_user.is_authenticated or is_passeggero():
         passeggeri_repo = PasseggeriRepository()
         if current_user.is_authenticated:
             nome = passeggeri_repo.get_by_id(current_user.get_id()).nome
