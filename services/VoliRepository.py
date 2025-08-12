@@ -103,3 +103,4 @@ class VoliRepository(BaseRepository[VoliClass]):
         except Exception as e:
             print("Error in delete_all:", e)
             return jsonify({"success": False, "error": str(e)})
+

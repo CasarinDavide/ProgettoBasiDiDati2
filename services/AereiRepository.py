@@ -71,10 +71,10 @@ class AereiRepository(BaseRepository[AereiClass]):
         res = super().delete(id_aereo, self.pk_field)
         return jsonify({"success":res})
 
-    def get_datatable(self, draw: int, start: int, length: int, search_value: str):
+    def get_datatable(self, draw: int, start: int, length: int, search_value: str,**kwargs):
 
         return super().get_datatable(draw=draw,
                                      start=start,
                                      length=length,
                                      search_value=search_value,
-                                     search_fields=["email","nome","tel"],joins=[AereiClass.compagnia_rel])
+                                     search_fields=["email","nome","tel"],joins=[AereiClass.compagnia_rel],id_compagnia = kwargs.get('id_compagnia'))

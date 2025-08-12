@@ -1,3 +1,5 @@
+from sqlalchemy.exc import IntegrityError
+
 from core.PasseggeriClass import PasseggeriClass
 from services.BaseRepository import BaseRepository, model_to_dict, connection_err
 from datetime import datetime
@@ -5,8 +7,11 @@ from datetime import datetime
 from flask import jsonify, Response
 from werkzeug.security import check_password_hash
 from System import engine
-from sqlalchemy.orm import SessionTransaction
+from sqlalchemy.orm import SessionTransaction, Session
 
+from services.BigliettiRepository import BigliettiRepository
+from services.CompagnieRepository import CompagnieRepository
+from services.ViaggiRepository import ViaggiRepository
 
 
 class PasseggeriRepository(BaseRepository[PasseggeriClass]):
@@ -16,7 +21,7 @@ class PasseggeriRepository(BaseRepository[PasseggeriClass]):
         self.pk_field = "id_passeggero"
         
 
-    def add(self, email: str, password:str , nome: str, cognome: str, tel: str, nascita: datetime, saldo: float, via: str, civico: str, cod_postale: int, citta: str, paese: str) -> Response:
+    def add(self, email: str, password:str , nome: str, cognome: str, tel: str, nascita: datetime, via: str, civico: str, cod_postale: int, citta: str, paese: str, saldo: float=0) -> Response:
         
         record = super().add(
             email = email,
@@ -41,8 +46,8 @@ class PasseggeriRepository(BaseRepository[PasseggeriClass]):
     def get_all(self) -> Response:
         return jsonify( [model_to_dict(passeggero) for passeggero in super().get_all()] )
 
-    def get_by_id(self, id: str):
-        return super().search_single_by_columns(id_passeggero=id)
+    def get_by_id(self, id: str,**kwargs):
+        return super().search_single_by_columns(id_passeggero=id,**kwargs)
     
     def get_by_email(self, email: str):
         return super().search_single_by_columns(email=email)
@@ -77,4 +82,46 @@ class PasseggeriRepository(BaseRepository[PasseggeriClass]):
         #sottrarre il credito e aggiungerlo alla compagnia aerea (bisogna aggiungere un campo alla compagnia aerea dove mettere i soldi)
         #assegnare i biglietti all'utente che ha effettuato l'acquisto
         #assegnare ad ogni biglietto il nominativo inserito dall'utente che ha effettuato gli acquisti
-        return
+
+        try:
+            with Session(engine()) as session:
+                with session.begin():
+                    biglietto = BigliettiRepository.get_biglietto(id_volo=id_andata,seat=posti_andata,session = session)
+
+                    passeggiero = PasseggeriRepository.get_by_id(id_utente,session = session)
+
+                    compagnia_andata = CompagnieRepository.get_by_volo(id_volo=id_andata,session = session)
+
+
+                    costo_andata = BigliettiRepository.evaluate_price_by_biglietto(biglietto)
+
+                    costo_ritorno = 0
+                    compagnia_ritorno = None
+                    biglietto_ritorno = None
+                    if id_ritorno is not None:
+                        compagnia_ritorno = CompagnieRepository.get_by_volo(id_volo=id_ritorno,session = session)
+                        biglietto_ritorno = BigliettiRepository.get_biglietto(id_volo=id_andata,seat=posti_andata,session = session)
+                        costo_ritorno = BigliettiRepository.evaluate_price_by_biglietto(biglietto_ritorno)
+
+                    total_cost = costo_andata + costo_ritorno
+
+                    if passeggiero.saldo < total_cost:
+                        raise ValueError("Insufficient credit")
+
+                    passeggiero.saldo -= total_cost
+
+                    compagnia_andata.saldo += costo_andata
+
+                    if compagnia_ritorno is not None:
+                        compagnia_ritorno.saldo += costo_ritorno
+
+                    biglietto.id_passeggiero = id_utente
+                    # after this all obj that has reference to internal db will be pushed
+
+        except ValueError as e:
+            session.rollback()
+            return {"status": "error", "message": str(e)}
+        except IntegrityError:
+            session.rollback()
+            return {"status": "error", "message": "Database integrity error"}
+        return {"status": "success", "message": "Tickets purchased successfully"}

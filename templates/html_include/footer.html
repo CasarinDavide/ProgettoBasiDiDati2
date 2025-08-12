@@ -6,6 +6,17 @@
 <!--end::Content-->
 </div>
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% set last_message = messages[-1] %}
+        {% if last_message[0] == 'danger' %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ last_message[1] }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endif %}
+    {% endif %}
+{% endwith %}
 
 </div>
 <!--end::Content wrapper-->

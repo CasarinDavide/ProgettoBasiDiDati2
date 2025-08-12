@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 from core.BigliettiClass import BigliettiClass
+from core.ViaggiClass import ViaggiClass
 from services.BaseRepository import BaseRepository, model_to_dict, connection_err
 
 from flask import jsonify, Response
 from sqlalchemy import text, Row
 from System import engine
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import Sequence, Any
 from datetime import date, time, datetime
+
+
 
 def json(rows: Sequence[Row[Any]], error: str) -> Response:
     data = []
@@ -150,3 +153,25 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
             return json(res, 'Errore nell\'elaborazione dei biglietti')
         
         return connection_err()
+
+    def get_price(self,id_volo,seat):
+        biglietto = self.search_by_columns(joins=[joinedload(BigliettiClass.viaggio_rel).joinedload(ViaggiClass.voli_rel)],id_volo = id_volo,posto = seat)
+        if biglietto is not None:
+            return biglietto.prezzo * biglietto.viaggio_rel.sconto
+        else:
+            return -100
+
+    def evaluate_price_by_biglietto(self,biglietto:BigliettiClass):
+
+        if biglietto.viaggio_rel is not None:
+            return biglietto.prezzo * biglietto.viaggio_rel.sconto
+        else:
+            # should not be used, I expect to have viaggio_rel not null
+            return biglietto.prezzo
+
+    def get_biglietto(self,id_volo,seat,**kwargs):
+        return self.search_by_columns(joins=[joinedload(BigliettiClass.viaggio_rel).joinedload(ViaggiClass.voli_rel)],id_volo = id_volo,posto = seat,**kwargs)
+
+    def set_seat(self,id_biglietto,id_passeggiero):
+        # it cannot fail must assume existing biglietto is passed
+        super().update(obj_id=id_biglietto,pk_field=self.pk_field,id_passeggiero = id_passeggiero)

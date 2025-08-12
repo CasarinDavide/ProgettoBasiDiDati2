@@ -113,6 +113,8 @@ Home
         toString() {
             return this._seat ? `${this._seat}:${this._name} ${this._surname}` : "";
         }
+
+
     }
 
     function getRow(posto) {
@@ -610,6 +612,36 @@ Home
     let seatsAndata;
     let seatsRitorno;
 
+    function checkout() {
+        jQuery.ajax({
+            url: ajaxUrl + '?fun=checkout',
+            type: 'POST',
+            dataType: "json",
+            data: {
+                id_andata: id_andata,
+                id_ritorno: id_ritorno,
+                quantita: quantity,
+                seats_andata: seatsAndata,
+                seats_ritorno: seatsRitorno,
+            },
+            async: true,
+            success: function (data) {
+                errorModal.hide();
+
+                var parsedResult = checkAjaxResponse(data, false);
+                if (!parsedResult) {
+                    var result = data;
+                    showToast('Pagamento Effettuato, verrete rediretti alla home!.');
+                } else {
+                    setTimeout(function () {
+                        showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
+                    }, 500);
+
+                }
+            }
+        });
+    }
+
     function ritornoConfirm() {
         let s = seats.toString();
         let count = 0;
@@ -621,7 +653,9 @@ Home
         }
         else {
             seatsRitorno = seats;
-            document.location.href = `/checkout?id_andata=${id_andata}&id_ritorno=${id_ritorno}&quantita=${quantity}&seats_andata=${seatsAndata}&seats_ritorno=${seatsRitorno}`
+
+                checkout();
+
         }
 
     }
@@ -637,7 +671,8 @@ Home
         }
 
         if (!isDefined(id_ritorno)) {
-            document.location.href = `/checkout?id_andata=${id_andata}&id_ritorno=${id_ritorno}&quantita=${quantity}&seats_andata=${s}&seats_ritorno=`;
+            checkout()
+            //document.location.href = `/checkout?id_andata=${id_andata}&id_ritorno=${id_ritorno}&quantita=${quantity}&seats_andata=${s}&seats_ritorno=`;
         }
         else {
             seatsAndata = s;
@@ -675,8 +710,5 @@ Home
 
     document.getElementById('confirmBtn').addEventListener('click', andataConfirm);
 
-    function checkout() {
-        return;
-    }
 </script>
 {% endblock main_content %}
