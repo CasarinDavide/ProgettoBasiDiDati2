@@ -42,7 +42,7 @@ class CompagnieClass(BaseUser, Base):
     cod_postale: Mapped[int] = mapped_column(nullable=False)
     citta: Mapped[str] = mapped_column(nullable=False)
     paese: Mapped[str] = mapped_column(nullable=False)
-    saldo: Mapped[float] = mapped_column(Float, nullable=False, default=0)
+    saldo: Mapped[float] = mapped_column(nullable=False, default=0)
 
 
     #Dipendenti della compagnia
