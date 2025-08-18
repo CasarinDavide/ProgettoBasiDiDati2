@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% block title %}
 {% if user %}
 Home - {{ user }}
@@ -9,7 +8,12 @@ Home
 {% endblock title %}
 
 {% block extra_jquery %}
+
+
 <script>
+
+
+
     function showTime(date) {
         return date.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
     }
@@ -19,36 +23,56 @@ Home
         return urlParams.get(name);
     }
 
-    function prenota(id_andata, id_ritorno) {
-        document.location.href = `/prenota?id_andata=${id_andata}&id_ritorno=${id_ritorno}&quantita=${getUrlParameter('quantita')}`;
+    function prenota(id_andata, id_ritorno,seq_andata,seq_ritorno) {
+        document.location.href = `/prenota?id_andata=${id_andata}&id_ritorno=${id_ritorno}&quantita=${getUrlParameter('quantita')}&seq_andata=${seq_andata}&seq_ritorno=${seq_ritorno}`;
     }
 
-    function getFlightDetail(flight) {
-        const durata = new Date(flight.durata * 60000);
-        const partenza = new Date(`${flight.data_partenza} ${flight.orario_partenza}`);
-        const arrivo = new Date(partenza.getTime() + durata.getTime());
 
-        const scali = flight.numero_scali - 1;
-        const scaliList = (scali > 0) ? flight.scali.split(',').slice(0, -1) : [];
+    let TripClass = function (){
+        let global_data;
+        let container;
+        let params;
+        let da;
+        let a;
+        let dataP;
+        let dataR;
+        let quantita;
 
-        return {
-            partenza,
-            arrivo,
-            durata,
-            scali,
-            scaliList,
-            aereoportoPartenza: flight.aereoporto_partenza,
-            aereoportoDestinazione: flight.aereoporto_destinazione,
-            prezzo: flight.prezzo_biglietto,
-            compagnia: flight.compagnia,
-            id_viaggio: flight.id_viaggio
-        };
-    }
+        let getFlightDetail = function (flight) {
 
-    function createFlightSection(details, tipo) {
-        const {partenza, arrivo, durata, scali, scaliList, aereoportoPartenza, aereoportoDestinazione, prezzo, compagnia, id_viaggio} = details;
+            const durata = new Date(flight.durata * 60000);
+            const partenza = new Date(`${flight.data_partenza} ${flight.orario_partenza}`);
+            const arrivo = new Date(partenza.getTime() + durata.getTime());
+            const scali = flight.numero_scali - 1;
+            const scaliList = flight.scali;
 
-        return `
+            return {
+                partenza,
+                arrivo,
+                durata,
+                scali,
+                scaliList,
+                aereoportoPartenza: flight.aereoporto_partenza,
+                aereoportoDestinazione: flight.aereoporto_destinazione,
+                prezzo: flight.prezzo_biglietto,
+                compagnia: flight.compagnia,
+                id_viaggio: flight.id_viaggio
+            };
+        }
+
+        let createCompagniaSection = function (compagnia = "") {
+            return `
+            <div class="mb-3">
+                <span class="text medium mt-1">Compagnia:</span>
+                <span class="badge bg-primary fs-6 p-2">${compagnia}</span>
+            </div>
+        `;
+        }
+
+        let createFlightSection = function(details, tipo) {
+            const {partenza, arrivo, durata, scali, scaliList, aereoportoPartenza, aereoportoDestinazione, prezzo, compagnia, id_viaggio} = details;
+
+            return `
             <div class="d-flex justify-content-between">
                 <div class="text-center">
                     <div class="fw-semibold fs-5">${showTime(partenza)}</div>
@@ -66,37 +90,28 @@ Home
             </div>
             <div class="text-center mt-2 text-primary small">${tipo}</div>
         `;
-    }
-
-    function createCompagniaSection(compagnia = "") {
-        return `
-            <div class="mb-3">
-                <span class="text medium mt-1">Compagnia:</span>
-                <span class="badge bg-primary fs-6 p-2">${compagnia}</span>
-            </div>
-        `;
-    }
-
-    function createFlightTicket(andata, ritorno = null) {
-        const andataDetails = getFlightDetail(andata);
-        console.log(andataDetails)
-        const andataTemplate = createFlightSection(andataDetails, "Andata");
-
-        let prezzo = andataDetails.prezzo;
-        let ritornoTemplate = "";
-        let ritornoDetails = "";
-
-        let compagnieInfo = createCompagniaSection(andataDetails.compagnia);
-
-        if(ritorno) {
-            ritornoDetails = getFlightDetail(ritorno);
-            ritornoTemplate = createFlightSection(ritornoDetails, "Ritorno");
-            prezzo += ritornoDetails.prezzo;
-
-            compagnieInfo += createCompagniaSection(ritornoDetails.compagnia);
         }
 
-        return `
+        let createFlightTicket = function (andata, ritorno = null) {
+
+            const andataDetails = getFlightDetail(andata);
+            const andataTemplate = createFlightSection(andataDetails, "Andata");
+
+            let prezzo = andataDetails.prezzo;
+            let ritornoTemplate = "";
+            let ritornoDetails = "";
+
+            let compagnieInfo = createCompagniaSection(andataDetails.compagnia);
+
+            if(ritorno) {
+                ritornoDetails = getFlightDetail(ritorno);
+                ritornoTemplate = createFlightSection(ritornoDetails, "Ritorno");
+                prezzo += ritornoDetails.prezzo;
+
+                compagnieInfo += createCompagniaSection(ritornoDetails.compagnia);
+            }
+
+            return `
             <div class="card mb-4 shadow-sm">
                 <div class="card-body py-3">
                     <div class="row">
@@ -111,66 +126,115 @@ Home
                         </div>
                         <div class="col-md-3 d-flex flex-column justify-content-center align-items-center">
                             <h4 class="text-success mb-3">€${prezzo}</h4>
-                            <button class="btn btn-primary w-100" onclick="prenota(${andataDetails.id_viaggio}, ${ritorno ? ritornoDetails.id_viaggio : null})">Prenota</button>
+                            <button class="btn btn-primary w-100" onclick="prenota(${andataDetails.id_viaggio}, ${ritorno ? ritornoDetails.id_viaggio : null},${andata?andata.sequence_identifier:null},${ritorno ? ritorno.sequence_identifier:null})">Prenota</button>
                         </div>
                     </div>
                 </div>
             </div>
         `;
-    }
-
-    let global_data;
-    function render_page(data) {
-        const container = document.getElementById('main');
-        global_data = data;
-        for(i in data) {
-            const ticket = document.createElement('div');
-            ticket.innerHTML = createFlightTicket(data[i].andata, data[i].ritorno || null);
-
-            container.appendChild(ticket);
         }
 
-    }
+        let render_page = function (data) {
 
-
-    $(document).ready(
-        $.ajax({
-            'url': ajaxUrl + `&fun=trips&oper=getSelectedTrips`,
-            'method': 'POST',
-            success: (data) => {
-                if (!data) return;
-
-                render_page(Object.values(data));
+            global_data = data;
+            for(let i in data) {
+                const ticket = document.createElement('div');
+                ticket.innerHTML = createFlightTicket(data[i].andata, data[i].ritorno || null);
+                container.appendChild(ticket);
             }
-        })
-    );
 
-    function orderBy(method) {
-        switch(method) {
-            case "prezzo":
-                global_data.sort( (a, b) => {
-                    if(a.ritorno && b.ritorno) {
-                        return (a.andata.prezzo + a.ritorno.prezzo) < (b.andata.prezzo + b.ritorno.prezzo); 
-                    } else {
-                        return a.andata.prezzo < b.andata.prezzo;
-                    }
-                })
-                break;
-            case "durata":
-                global_data.sort( (a, b) =>
-                    a.andata.durata < b.andata.durata
-                );
-                break;
-            case "partenza":
-                global_data.sort( (a, b) => 
-                    a.andata.orario_partenza < b.andata.orario_partenza
-                );
-                break;
         }
 
-        document.getElementById('main').innerHTML = ""
-        render_page(global_data);
-    }
+        let getSelectTrip= function () {
+            jQuery.ajax({
+                url: ajaxUrl + '?fun=trips&oper=getSelectedTrips',
+                type: 'POST',
+                dataType: "json",
+                data: {
+                    da:da,
+                    a:a,
+                    dataP : dataP,
+                    dataR :dataR
+                },
+                async: true,
+                success: function (data) {
+                    errorModal.hide();
+
+                    var parsedResult = checkAjaxResponse(data, false);
+                    if (!parsedResult) {
+                        render_page(Object.values(data));
+                    } else {
+                        setTimeout(function () {
+                            showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
+                        }, 500);
+
+                    }
+                }
+            })
+        }
+
+
+
+        return {
+            init()
+            {
+                params = new URLSearchParams(window.location.search);
+                container= document.getElementById('main');
+                da = params.get("da");
+                a = params.get("a");
+                dataP = params.get("dataP");
+                dataR = params.get("dataR");
+                quantita = params.get("quantita");
+                getSelectTrip();
+
+            },
+            getFields()
+            {
+                return {
+                    global_data : global_data,
+                    a:a,
+                    da:da,
+                    dataP:dataP,
+                    dataR:dataR,
+                    quantita:quantita
+                }
+            },
+            orderBy(method) {
+                switch(method) {
+                    case "prezzo":
+                        global_data.sort( (a, b) => {
+                            if(a.ritorno && b.ritorno) {
+                                return (a.andata.prezzo + a.ritorno.prezzo) < (b.andata.prezzo + b.ritorno.prezzo);
+                            } else {
+                                return a.andata.prezzo < b.andata.prezzo;
+                            }
+                        })
+                        break;
+                    case "durata":
+                        global_data.sort( (a, b) =>
+                            a.andata.durata < b.andata.durata
+                        );
+                        break;
+                    case "partenza":
+                        global_data.sort( (a, b) =>
+                            a.andata.orario_partenza < b.andata.orario_partenza
+                        );
+                        break;
+                }
+
+                document.getElementById('main').innerHTML = ""
+                render_page(global_data);
+            }
+        }
+    }();
+
+
+    $(document).ready(function () {
+        TripClass.init();
+    });
+
+
+
 
 </script>
 {% endblock extra_jquery %}
@@ -183,9 +247,9 @@ Home
             Ordina Per:
         </button>
         <ul class="dropdown-menu">
-            <li><a class="dropdown-item" onclick="orderBy('prezzo')">Prezzo (crescente)</a></li>
-            <li><a class="dropdown-item" onclick="orderBy('durata')">Durata</a></li>
-            <li><a class="dropdown-item" onclick="orderBy('partenza')">Orario partenza</a></li>
+            <li><a class="dropdown-item" onclick="TripClass.orderBy('prezzo')">Prezzo (crescente)</a></li>
+            <li><a class="dropdown-item" onclick="TripClass.orderBy('durata')">Durata</a></li>
+            <li><a class="dropdown-item" onclick="TripClass.orderBy('partenza')">Orario partenza</a></li>
         </ul>
     </div>
 </div>

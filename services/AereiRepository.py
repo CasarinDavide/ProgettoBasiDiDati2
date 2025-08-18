@@ -24,7 +24,14 @@ class AereiRepository(BaseRepository[AereiClass]):
         super().__init__(AereiClass)
         self.pk_field = "id_aereo"
 
-    def add(self, capacita: str, modello: str, consumoMedio: str, dimensione: str,id_compagnia:Optional[None] | Optional[str]) -> Response:
+    def add(self, capacita: str, modello: str, consumoMedio: str, dimensione: str,id_compagnia:Optional[None] | Optional[str],
+                        seat_row_number_first:int = 1,
+                        seat_column_number_first:int = 1,
+                        seat_row_number_business:int = 1,
+                        seat_column_number_business:int = 1,
+                        seat_row_number_economy:int = 1,
+                        seat_column_number_economy:int = 1) -> Response:
+
         """Create a new Compagnie record (custom wrapper)."""
 
         
@@ -33,7 +40,13 @@ class AereiRepository(BaseRepository[AereiClass]):
             modello = modello,
             consumoMedio = consumoMedio,
             dimensione = dimensione,
-            id_compagnia = id_compagnia
+            id_compagnia = id_compagnia,
+            seat_row_number_first = seat_row_number_first,
+            seat_column_number_first = seat_column_number_first,
+            seat_row_number_business= seat_row_number_business,
+            seat_column_number_business= seat_column_number_business,
+            seat_row_number_economy= seat_row_number_economy,
+            seat_column_number_economy=seat_column_number_economy
         )
 
         if rec is None:
@@ -52,7 +65,13 @@ class AereiRepository(BaseRepository[AereiClass]):
         return jsonify(model_to_dict(super().get_by_id(int(id_aereo), pk_field=self.pk_field,joins=[AereiClass.compagnia_rel]),backrefs = True))
 
 
-    def update(self, id_aereo: int, capacita: str, modello: str, consumoMedio: str, dimensione: str,id_compagnia:Optional[None] | Optional[str]) -> Response:
+    def update(self, id_aereo: int, capacita: str, modello: str, consumoMedio: str, dimensione: str,id_compagnia:Optional[None] | Optional[str],
+               seat_row_number_first:int = 1,
+               seat_column_number_first:int = 1,
+               seat_row_number_business:int = 1,
+               seat_column_number_business:int = 1,
+               seat_row_number_economy:int = 1,
+               seat_column_number_economy:int = 1) -> Response:
         """
         Update a compagnie.
         kwargs can include email, password, tel, nome, address_id.
@@ -63,7 +82,13 @@ class AereiRepository(BaseRepository[AereiClass]):
                              modello=modello,
                              consumoMedio=consumoMedio,
                              dimensione=dimensione,
-                             id_compagnia=id_compagnia)
+                             id_compagnia=id_compagnia,
+                             seat_row_number_first = seat_row_number_first,
+                             seat_column_number_first = seat_column_number_first,
+                             seat_row_number_business= seat_row_number_business,
+                             seat_column_number_business= seat_column_number_business,
+                             seat_row_number_economy= seat_row_number_economy,
+                             seat_column_number_economy=seat_column_number_economy)
         return jsonify({"success":res})
 
     def delete(self, id_aereo: int) -> Response:
@@ -71,10 +96,10 @@ class AereiRepository(BaseRepository[AereiClass]):
         res = super().delete(id_aereo, self.pk_field)
         return jsonify({"success":res})
 
-    def get_datatable(self, draw: int, start: int, length: int, search_value: str):
+    def get_datatable(self, draw: int, start: int, length: int, search_value: str,**kwargs):
 
         return super().get_datatable(draw=draw,
                                      start=start,
                                      length=length,
                                      search_value=search_value,
-                                     search_fields=["email","nome","tel"],joins=[AereiClass.compagnia_rel])
+                                     search_fields=["email","nome","tel"],joins=[AereiClass.compagnia_rel],id_compagnia = kwargs.get('id_compagnia',''))

@@ -19,7 +19,8 @@ def getParam(param: str):
 
 
 class BaseUser(UserMixin):
-    def __init__(self, id, nome, email, role):
+    def __init__(self, id = "", nome= "", email= "", role= "",**kwargs):
+        super().__init__(**kwargs)
         self.id = id
         self.nome = nome
         self.email = email

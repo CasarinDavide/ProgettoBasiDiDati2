@@ -136,6 +136,12 @@
                         <i class="fas fa-sign-in fa-2x me-2"></i>
                         Accedi</a>
                 {% else %}
+
+
+                    {% if session["role"] == "CompagnieClass" or session["role"] == "PasseggeriClass" %}
+                        <a class="text-white text-decoration-none"> Saldo - {{ current_user.get_saldo() }} </a>
+                    {% endif %}
+
                     {% if user %}
                         <a href="/mytriviaggi" class="text-white text-decoration-none"> Area Personale - {{ current_user.get_nome() }}</a>
                         <a href="/logout" class="text-white text-decoration-none d-flex align-items-center">

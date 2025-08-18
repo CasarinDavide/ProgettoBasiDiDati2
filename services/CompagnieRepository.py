@@ -4,8 +4,10 @@ from typing import Optional, List
 
 from flask import jsonify, Response
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import joinedload
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from core.AereiClass import AereiClass
 from core.CompagnieClass import CompagnieClass
 from services.BaseRepository import BaseRepository, model_to_dict
 from core.CompagnieClass import CompagnieClass
@@ -89,5 +91,6 @@ class CompagnieRepository(BaseRepository[CompagnieClass]):
     def get_by_email(self, email: str) -> CompagnieClass | None:
         return super().search_single_by_columns(email=email)
 
-
+    def get_by_volo(self,id_volo,**kwargs):
+        return self.search_by_columns(joins=[joinedload(CompagnieClass.aerei_rel).joinedload(AereiClass.voli_rel)],id_volo = id_volo,**kwargs)
 

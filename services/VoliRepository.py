@@ -12,6 +12,9 @@ from flask import jsonify, Response
 
 from typing import List
 
+from services.BigliettiRepository import BigliettiRepository
+
+
 class VoliRepository(BaseRepository[VoliClass]):
 
     def __init__(self):
@@ -19,7 +22,7 @@ class VoliRepository(BaseRepository[VoliClass]):
         self.pk_field = "id_volo"
 
     def add(self,comandante: str, ritardo: str, id_viaggio: str, id_aereo: str,
-            id_aereoporto_partenza: str,id_aereoporto_arrivo: str) -> Response:
+            id_aereoporto_partenza: str,id_aereoporto_arrivo: str,sequence_identifier:int) -> Response:
 
         """Create a new Compagnie record (custom wrapper)."""
 
@@ -29,7 +32,8 @@ class VoliRepository(BaseRepository[VoliClass]):
             id_viaggio = id_viaggio,
             id_aereo = id_aereo,
             id_aereoporto_partenza = id_aereoporto_partenza,
-            id_aereoporto_arrivo = id_aereoporto_arrivo
+            id_aereoporto_arrivo = id_aereoporto_arrivo,
+            sequence_identifier = sequence_identifier
         )
 
         if rec is None:
@@ -68,21 +72,51 @@ class VoliRepository(BaseRepository[VoliClass]):
         res = super().delete(id_volo, self.pk_field)
         return jsonify({"success":res})
 
-    def get_datatable(self, draw: int   , start: int, length: int, search_value: str,id_viaggio:str):
+    def get_datatable(self, draw: int, start: int, length: int, search_value: str, id_viaggio: str):
+        query = text('''
+                     SELECT sequence_identifier, id_viaggio, COUNT(sequence_identifier) as num_scali, dev."Compagnie".nome as nome_compagnia
+                     FROM dev."Voli"
+                              LEFT JOIN dev."Aerei" ON dev."Aerei".id_aereo = dev."Voli".id_aereo
+                              LEFT JOIN dev."Compagnie" ON dev."Compagnie".id_compagnia = dev."Aerei".id_compagnia
+                     WHERE id_viaggio = :id_viaggio
+                     GROUP BY sequence_identifier, id_viaggio, dev."Compagnie".nome
+                     ''')
+
+        with Session(engine()) as session:
+            res = session.execute(query, {"id_viaggio": id_viaggio}).fetchall()
+
+            # Convert rows to dicts
+            data = [dict(row._mapping) for row in res]
+
+            return jsonify({
+                "draw": draw,
+                "recordsTotal": len(res),
+                "recordsFiltered": len(res),
+                "data": data
+            })
+
+        return jsonify({"success": False})
+
+    def get_datatable_details(self, draw: int   , start: int, length: int, search_value: str,sequence_identifier:str):
 
         return super().get_datatable(draw=draw,
                                      start=start,
                                      length=length,
                                      search_value=search_value,
-                                     search_fields=["nome","citta"],joins=[VoliClass.aereo_rel],id_viaggio = id_viaggio)
+                                     search_fields=["nome","citta"],joins=[VoliClass.aereo_rel],sequence_identifier = sequence_identifier)
+
 
     def add_from_json(self,voli_json):
         voli = json.loads(voli_json)["tratte"]
 
         try:
             with Session(engine()) as session:
+
+                sequence_identifier = self.generate_sequence_identifier()+1
+
                 for ordine, volo in enumerate(voli):
                     volo["ordine"] = ordine
+                    volo["sequence_identifier"] = sequence_identifier
                     record = self.model(**volo)
                     session.add(record)
 
@@ -103,3 +137,60 @@ class VoliRepository(BaseRepository[VoliClass]):
         except Exception as e:
             print("Error in delete_all:", e)
             return jsonify({"success": False, "error": str(e)})
+
+    def generate_sequence_identifier(self):
+        # get last sequence
+        query = text('''
+                     SELECT sequence_identifier
+                     FROM dev."Voli"
+                     ORDER BY sequence_identifier DESC
+                         LIMIT 1;
+                     ''')
+
+        with Session(engine()) as session:
+            res = session.execute(query).fetchall()
+
+        if res:
+            return res[0][0]
+        return 0
+
+    def get_sequence_by_viaggioDatatable(self, draw: int, start: int, length: int, search_value: str, id_viaggio:str, sequence_identifier:str):
+        return super().get_datatable(draw=draw,
+                                     start=start,
+                                     length=length,
+                                     search_value=search_value,
+                                     search_fields=["nome","citta"],joins=[VoliClass.aereo_rel],id_viaggio = id_viaggio,sequence_identifier = sequence_identifier)
+
+    def get_sequence_by_viaggio(self,id_viaggio:str, sequence_identifier:str):
+        return super().get_all(joins=[VoliClass.aereo_rel,VoliClass.aereoporto_arrivo_rel,VoliClass.aereoporto_partenza_rel],id_viaggio = id_viaggio,sequence_identifier = sequence_identifier)
+
+    def getAllSequenceByViaggio(self,id_andata:str,id_ritorno:str, sequence_identifier_andata:str,sequence_identifier_ritorno:str):
+
+        andata = self.get_sequence_by_viaggio(id_viaggio=id_andata,sequence_identifier=sequence_identifier_andata)
+        ritorno = None
+
+        if id_ritorno != 'null' and sequence_identifier_ritorno != 'null':
+            ritorno = self.get_sequence_by_viaggio(id_viaggio=id_ritorno,sequence_identifier=sequence_identifier_ritorno)
+
+
+        biglietti_repo = BigliettiRepository()
+
+        andata_json = [model_to_dict(row,backrefs = True) for row in andata]
+        ritorno_json = [model_to_dict(row,backrefs = True) for row in ritorno] if ritorno else []
+
+
+        for row in andata_json:
+            row['seats'] = biglietti_repo.get_by_volo(id_volo=row.get("id_volo"))
+            print(row['seats'])
+
+        for row in ritorno_json:
+            row['seats'] = biglietti_repo.get_by_volo(id_volo=row.get("id_volo"))
+
+        res = {"andata": andata_json,
+               "ritorno": ritorno_json}
+
+        return jsonify(res)
+
+
+
+

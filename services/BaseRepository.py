@@ -140,6 +140,8 @@ class BaseRepository(Generic[T]):
         Generic DataTable query with search + optional joins.
         search_fields: list of model fields to search (like ['nome', 'email', 'tel'])
         """
+
+
         with Session(engine()) as session:
             query = session.query(self.model)
             query = self._apply_joins(query, joins)
@@ -154,7 +156,9 @@ class BaseRepository(Generic[T]):
                 query = query.filter(or_(*filters))
 
 
-            filters = [getattr(self.model, key) == value for key, value in kwargs.items()]
+            filters = [getattr(self.model, key) == value
+                       for key, value in kwargs.items()
+                       if value is not None and not (isinstance(value, str) and value == '')]
             query = query.filter(and_(*filters))
 
             records_filtered = query.count()
@@ -173,24 +177,59 @@ class BaseRepository(Generic[T]):
     def search_by_columns(self, joins: Optional[List[Any]] = None, **kwargs) -> Optional[List[T]]:
         """
         Search records by exact column matches + optional joins.
-        Example: search_by_columns(nome="Test", email="abc@test.com", joins=[OtherModel])
+        Example:
+            search_by_columns(nome="Test", email="abc@test.com", joins=[OtherModel], session=session)
         """
-        with Session(engine()) as session:
+
+        # Extract an existing session if provided
+        session = kwargs.pop("session", None)
+
+        # Use provided session or create a new one
+        owns_session = False
+
+        if session is None:
+            session = Session(engine())
+            owns_session = True
+
+        try:
             query = session.query(self.model)
-            
             query = self._apply_joins(query, joins)
-            
+
             filters = [getattr(self.model, key) == value for key, value in kwargs.items()]
             query = query.filter(and_(*filters))
-            return query.all()
+
+            results = query.all()
+
+            return results
+
+        finally:
+            if owns_session:
+                session.close()
+
 
     def search_single_by_columns(self, joins: Optional[List[Any]] = None, **kwargs) -> Optional[T]:
         """
         Fetch a single record by multiple filters with optional joins.
-        Example: search_single_by_columns(nome="Test", joins=[OtherModel])
+        Example:
+            search_single_by_columns(nome="Test", joins=[OtherModel], session=session)
         """
-        with Session(engine()) as session:
+        session = kwargs.pop("session", None)
+
+        owns_session = False
+        if session is None:
+            session = Session(engine())
+            owns_session = True
+
+        try:
             query = session.query(self.model)
             query = self._apply_joins(query, joins)
+
             filters = [getattr(self.model, key) == value for key, value in kwargs.items()]
-            return query.filter(and_(*filters)).first()
+            result = query.filter(and_(*filters)).first()
+
+            return result
+
+        finally:
+            if owns_session:
+                session.close()
+

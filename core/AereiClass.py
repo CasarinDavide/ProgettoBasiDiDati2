@@ -21,6 +21,13 @@ class AereiClass(Base):
     modello: Mapped[str] = mapped_column(nullable=False)
     consumoMedio: Mapped[float] = mapped_column(nullable=False)
     dimensione: Mapped[str] = mapped_column(nullable=False)
+    seat_row_number_first: Mapped[int] = mapped_column(nullable=False)
+    seat_column_number_first: Mapped[int] = mapped_column(nullable=False)
+    seat_row_number_business: Mapped[int] = mapped_column(nullable=False)
+    seat_column_number_business: Mapped[int] = mapped_column(nullable=False)
+    seat_row_number_economy: Mapped[int] = mapped_column(nullable=False)
+    seat_column_number_economy: Mapped[int] = mapped_column(nullable=False)
+
     # FK -> Compagnie
     id_compagnia: Mapped[int] = mapped_column(ForeignKey('dev.Compagnie.id_compagnia'), nullable=False)
     compagnia_rel = relationship('CompagnieClass', back_populates='aerei_rel')

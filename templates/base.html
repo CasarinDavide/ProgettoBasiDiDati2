@@ -59,7 +59,7 @@
         <link href="{{ url_for('static', filename='include/custom/plugins.bundle.css') }}" rel="stylesheet" type="text/css">
 
         <script>
-            const ajaxUrl = window.location.href;
+            const ajaxUrl = window.location.origin + window.location.pathname;
         </script>
         <title id="title"> {% block title %} Tri-Voli {% endblock title %}</title>
         

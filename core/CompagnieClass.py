@@ -16,7 +16,11 @@ CREATE TABLE dev.Compagnie (
                                 civico VARCHAR(200) NOT NULL,
                                 cod_postale INTEGER NOT NULL,
                                 citta VARCHAR(200) NOT NULL,
-                                paese VARCHAR(200) NOT NULL
+                                paese VARCHAR(200) NOT NULL,
+                               saldo
+                                   DECIMAL(2)
+                                   NOT NULL
+                                   DEFAULT '0'
 );
 """
 
@@ -38,6 +42,8 @@ class CompagnieClass(BaseUser, Base):
     cod_postale: Mapped[int] = mapped_column(nullable=False)
     citta: Mapped[str] = mapped_column(nullable=False)
     paese: Mapped[str] = mapped_column(nullable=False)
+    saldo: Mapped[float] = mapped_column(nullable=False, default=0)
+
 
     #Dipendenti della compagnia
     dipendenti_rel = relationship('DipendentiClass', back_populates='compagnia_rel')
@@ -60,3 +66,6 @@ class CompagnieClass(BaseUser, Base):
 
     def get_role(self):
         return "compagnia"
+
+    def get_saldo(self):
+        return self.saldo
