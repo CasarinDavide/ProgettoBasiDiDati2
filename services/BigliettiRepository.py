@@ -2,41 +2,15 @@ from __future__ import annotations
 
 from core.BigliettiClass import BigliettiClass
 from core.ViaggiClass import ViaggiClass
-from services.BaseRepository import BaseRepository, model_to_dict, connection_err
+from services.BaseRepository import BaseRepository, model_to_dict, connection_err, to_dict_list
 
 from flask import jsonify, Response
 from sqlalchemy import text, Row
 from System import engine
 from sqlalchemy.orm import Session, joinedload
-from typing import Sequence, Any
-from datetime import date, time, datetime
 
 
-def json(rows: Sequence[Row[Any]], error: str) -> Response:
-    data = []
-    for row in rows:
-        row_dict = dict(row._mapping)
 
-        for key, value in row_dict.items():
-            if isinstance(value, (date, time, datetime)):
-                row_dict[key] = str(value)
-        data.append(row_dict)
-
-    if data:
-        return jsonify(data)
-    else:
-        return jsonify({ 'error': error })
-
-def to_dict_list(rows: Sequence[Row[Any]]) -> list[dict]:
-    """Converte RowMapping in lista di dict serializzabili"""
-    data = []
-    for row in rows:
-        row_dict = dict(row._mapping)
-        for key, value in row_dict.items():
-            if isinstance(value, (date, time, datetime)):
-                row_dict[key] = str(value)
-        data.append(row_dict)
-    return data
 
 class BigliettiRepository(BaseRepository[BigliettiClass]):
     
@@ -183,11 +157,10 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
                                 WHEN seat_class = 'Economy' THEN 0
                                 ELSE 3
                                 END AS class_order
-                         
                      FROM "dev"."AereoMappaPosti" as mappa_posti
                      JOIN "dev"."Voli" as v ON v.id_volo = :id_volo AND mappa_posti.id_aereo = v.id_aereo
                      WHERE id_volo = :id_volo
-                     ORDER BY mappa_posti.seat_label, class_order DESC
+                     ORDER BY class_order DESC,mappa_posti.seat_label 
                      ''')
 
         with Session(engine()) as session:

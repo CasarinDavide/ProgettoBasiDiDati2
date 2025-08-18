@@ -1,9 +1,9 @@
 import datetime
-from typing import Optional, List, Type, TypeVar, Generic, Any, Dict
+from typing import Optional, List, Type, TypeVar, Generic, Any, Dict, Sequence
 from flask import jsonify, Response
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import or_, and_, inspect
+from sqlalchemy import or_, and_, inspect, Row
 from System import engine
 
 T = TypeVar("T")
@@ -12,6 +12,36 @@ from sqlalchemy.inspection import inspect
 
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm.state import InstanceState
+
+from typing import Sequence, Any
+from datetime import date, time, datetime
+
+
+def json(rows: Sequence[Row[Any]], error: str) -> Response:
+    data = []
+    for row in rows:
+        row_dict = dict(row._mapping)
+
+        for key, value in row_dict.items():
+            if isinstance(value, (date, time, datetime)):
+                row_dict[key] = str(value)
+        data.append(row_dict)
+
+    if data:
+        return jsonify(data)
+    else:
+        return jsonify({ 'error': error })
+
+def to_dict_list(rows: Sequence[Row[Any]]) -> list[dict]:
+    """Converte RowMapping in lista di dict serializzabili"""
+    data = []
+    for row in rows:
+        row_dict = dict(row._mapping)
+        for key, value in row_dict.items():
+            if isinstance(value, (date, time, datetime)):
+                row_dict[key] = str(value)
+        data.append(row_dict)
+    return data
 
 def connection_err() -> Response:
     return jsonify({'error': 'Errore di connessione'})
@@ -25,7 +55,7 @@ def model_to_dict(obj, include_relationships=True, backrefs=False):
     # Extract basic columns
     for c in mapper.columns:
         value = getattr(obj, c.key)
-        if isinstance(value, (datetime.datetime, datetime.date, datetime.time)):
+        if isinstance(value, (datetime, date, time)):
             data[c.key] = value.isoformat()
         else:
             data[c.key] = value

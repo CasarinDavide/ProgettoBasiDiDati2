@@ -28,3 +28,5 @@ class BaseUser(UserMixin):
 
     def get_id(self):
         return f"{self.role}-{self.id}"
+
+
