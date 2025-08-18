@@ -371,7 +371,7 @@ def function_actions():
         elif action == "getAllDatatable":
             return compagnie_repo.get_datatable(draw,start,length,search_value)
         elif action == "getById":
-            return compagnie_repo.get_by_id(getParam("id_compagnia"))
+            return compagnie_repo.get_by_id_json(getParam("id_compagnia"))
         elif action == "get_for_select":
             return compagnie_repo.get_all()
         elif action == "edit":

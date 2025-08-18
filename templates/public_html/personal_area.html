@@ -41,16 +41,17 @@
 
     $(document).ready(() => {
         $.ajax({
-            url: ajaxUrl + "?fun=tickets&oper=getTickets",
+            url: ajaxUrl + "?fun=tickets&oper=getByUser",
             type: "POST",
             success: (data) => {
+                if(!data || data.error)
+                    return
+
+
                 let i = 1
-
-                console.log(data)
-
                 for (ticket of data) {
                     let partenza = new Date(ticket.data_partenza + " " + ticket.orario_partenza)
-                    // Calcola l'orario di arrivo
+                    // Calcola l'orario di ar   rivo
                     let arrivo = new Date(partenza.getTime() + 
                         (ticket.durata * 60 * 1000) +    // durata in minuti -> millisecondi
                         (ticket.sosta * 60 * 1000)       // sosta in minuti -> millisecondi  

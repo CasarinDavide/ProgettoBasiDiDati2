@@ -62,7 +62,7 @@ class AereiRepository(BaseRepository[AereiClass]):
     def get_by_id(self, id_aereo: str) -> Response:
         """Fetch a single compagnie by ID."""
 
-        return jsonify(model_to_dict(super().get_by_id(int(id_aereo), pk_field=self.pk_field,joins=[AereiClass.compagnia_rel]),backrefs = True))
+        return jsonify(model_to_dict(super().get_by_id(int(id_aereo), pk_field=self.pk_field, joins=[AereiClass.compagnia_rel]), backrefs=True))
 
 
     def update(self, id_aereo: int, capacita: str, modello: str, consumoMedio: str, dimensione: str,id_compagnia:Optional[None] | Optional[str],

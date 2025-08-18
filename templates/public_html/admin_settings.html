@@ -639,7 +639,7 @@
                     {
                         "targets": [6],
                         "createdCell": function (td, cellData, rowData, row, col) {
-                            $(td, td).html(`<a class="cursor-pointer" onclick="PAAereiEditModal.showModal(${rowData.id_compagnia})" ><i title="Modifica Utente" class="fa fs-3 fa-gear"></i></a>`);
+                            $(td, td).html(`<a class="cursor-pointer" onclick="PAAereiEditModal.showModal(${rowData.id_aereo})" ><i title="Modifica Utente" class="fa fs-3 fa-gear"></i></a>`);
                         }
                     }
                 ],
@@ -3814,7 +3814,7 @@
         <div class="offcanvas-header bg-primary-dwave">
             <h3 id="dipendenti-title" class="offcanvas-title fw-bold text-white"></h3>
             <button type="button" class="btn btn-sm btn-icon btn-primary" data-bs-dismiss="offcanvas" aria-label="Close">
-                <i class="ki-duotone ki-cross fs-1 text-white"></i>
+                <i class="fa-solid fa-x"></i>
             </button>
         </div>
         <div class="offcanvas-body p-0">
@@ -3881,7 +3881,7 @@
         <div class="offcanvas-header bg-primary-dwave">
             <h3 id="voli-title" class="offcanvas-title fw-bold text-white"></h3>
             <button type="button" class="btn btn-sm btn-icon btn-primary" data-bs-dismiss="offcanvas" aria-label="Close">
-                <i class="ki-duotone ki-cross fs-1 text-white"></i>
+                <i class="fa-solid fa-x"></i>
             </button>
         </div>
         <div class="offcanvas-body p-0">

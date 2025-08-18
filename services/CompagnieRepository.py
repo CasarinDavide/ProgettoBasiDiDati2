@@ -47,7 +47,6 @@ class CompagnieRepository(BaseRepository[CompagnieClass]):
 
     def get_by_id_json(self, compagnie_id: str) -> Response:
         """Fetch a single compagnie by ID."""
-
         return jsonify(model_to_dict(super().get_by_id(int(compagnie_id), pk_field=self.pk_field,joins=[]),backrefs = True))
     
     def get_by_id(self, id_compagnia: str) -> CompagnieClass | None:
