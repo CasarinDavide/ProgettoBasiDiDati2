@@ -1,7 +1,7 @@
 import json
 
 from core.VoliClass import VoliClass
-from services.BaseRepository import BaseRepository, model_to_dict
+from services.BaseRepository import BaseRepository, model_to_dict, to_dict_list
 from core.VoliClass import VoliClass
 
 from System import engine
@@ -181,16 +181,64 @@ class VoliRepository(BaseRepository[VoliClass]):
 
         for row in andata_json:
             row['seats'] = biglietti_repo.get_by_volo(id_volo=row.get("id_volo"))
-            print(row['seats'])
+            row['prices'] = self.get_prices_per_class(id_volo=row.get("id_volo"))
+
 
         for row in ritorno_json:
             row['seats'] = biglietti_repo.get_by_volo(id_volo=row.get("id_volo"))
+            row['prices'] = self.get_prices_per_class(id_volo=row.get("id_volo"))
 
         res = {"andata": andata_json,
                "ritorno": ritorno_json}
 
         return jsonify(res)
 
+    def get_prices_per_class(self,id_volo):
+
+        query = text('''
+                     WITH seat_stats AS (
+                         SELECT
+                             v.id_volo,
+                             v.sequence_identifier,
+                             amp.seat_class,
+                             COUNT(*) AS posti_totali,
+                             COUNT(b.id_biglietto) AS posti_occupati
+                         FROM dev."Voli" v
+                                  JOIN dev."AereoMappaPosti" amp
+                                       ON amp.id_aereo = v.id_aereo
+                                  LEFT JOIN dev."Biglietti" b
+                                            ON b.id_volo = v.id_volo
+                                                AND b.posto = amp.seat_label
+                         WHERE v.id_volo = :id_volo
+                         GROUP BY v.id_volo, v.sequence_identifier, amp.seat_class
+                     )
+                          
+                              SELECT
+                                  id_volo,
+                                  sequence_identifier,
+                                  seat_class,
+                                  posti_totali,
+                                  posti_occupati,
+                                  (posti_totali - posti_occupati) AS posti_liberi,
+                                  ROUND((posti_occupati::decimal / posti_totali) * 100, 2) AS percentuale_occupati,
+                                  CASE
+                                      WHEN seat_class = 'Economy'::classe THEN ROUND((posti_occupati::decimal / posti_totali) * 50 +100, 2)
+                                      WHEN seat_class = 'Business'::classe THEN ROUND((posti_occupati::decimal / posti_totali) * 100  +120, 2)
+                                      WHEN seat_class = 'FirstClass'::classe THEN ROUND((posti_occupati::decimal / posti_totali) * 200 + 140, 2)
+                                      ELSE 0
+                                      END AS costo_posto
+                              FROM seat_stats
+                             WHERE id_volo = :id_volo
+                          ''')
+
+        with Session(engine()) as session:
+            res = session.execute(query, {
+                'id_volo': id_volo
+            }).fetchall()
+
+            return to_dict_list(res)
+
+        return connection_err()
 
 
 

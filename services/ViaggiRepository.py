@@ -1,5 +1,4 @@
-from services.BaseRepository import BaseRepository, model_to_dict
-from services.BigliettiRepository import json
+from services.BaseRepository import BaseRepository, model_to_dict,json
 from core.ViaggiClass import ViaggiClass
 
 from System import engine

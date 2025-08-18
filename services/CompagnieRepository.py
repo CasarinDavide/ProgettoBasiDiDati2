@@ -51,7 +51,8 @@ class CompagnieRepository(BaseRepository[CompagnieClass]):
         return jsonify(model_to_dict(super().get_by_id(int(compagnie_id), pk_field=self.pk_field,joins=[]),backrefs = True))
     
     def get_by_id(self, id_compagnia: str) -> CompagnieClass | None:
-        return super().get_by_id(int(id_compagnia), pk_field=self.pk_field)
+        return jsonify(model_to_dict(super().get_by_id(id_compagnia, pk_field=self.pk_field),backrefs = True))
+
 
     def update(self, compagnie_id: int, email: str, tel: str, nome: str, civico: str, via: str, citta: str, cod_postale: str, paese: str) -> Response:
         """
