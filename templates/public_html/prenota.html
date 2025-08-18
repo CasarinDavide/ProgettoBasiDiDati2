@@ -14,161 +14,175 @@ Home
 
 {% block extra_jquery %}
 
-    <style>
+<style>
+    .accordion-button.economy {
+        background-color: #4caf50;
+        /* Green */
+        color: white;
+    }
 
-        .accordion-button.economy {
-            background-color: #4caf50; /* Green */
-            color: white;
-        }
+    .accordion-button.business {
+        background-color: #f44336;
+        /* Red */
+        color: white;
+    }
 
-        .accordion-button.business {
-            background-color: #f44336; /* Red */
-            color: white;
-        }
+    .accordion-button.first {
+        background-color: #2196f3;
+        /* Blue */
+        color: black;
+    }
 
-        .accordion-button.first {
-            background-color: #2196f3; /* Blue */
-            color: black;
-        }
+    /* Seat map background */
+    .accordion-body {
+        background-color: #f5f5f5;
+    }
 
-        /* Seat map background */
-        .accordion-body {
-            background-color: #f5f5f5;
-        }
+    /* Seat improvements */
+    .seat-row {
+        width: 100%;
+    }
 
-        /* Seat improvements */
-        .seat-row {
-            width: 100%;
-        }
+    .seat-group {
+        display: flex;
+        gap: 5px;
+    }
 
-        .seat-group {
-            display: flex;
-            gap: 5px;
-        }
+    .aisle {
+        width: 20px;
+    }
 
-        .aisle {
-            width: 20px;
-        }
+    .seat {
+        width: 35px;
+        height: 35px;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        cursor: pointer;
+        border: 1px solid #ccc;
+        transition: 0.2s all;
+    }
 
-        .seat {
-            width: 35px;
-            height: 35px;
-            border-radius: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.85rem;
-            cursor: pointer;
-            border: 1px solid #ccc;
-            transition: 0.2s all;
-        }
+    .seat.free {
+        background-color: #e0f7fa;
+    }
 
-        .seat.free { background-color: #e0f7fa; }
-        .seat.occupied { background-color: #b0bec5; cursor: not-allowed; }
-        .seat.selected { background-color: #4db6ac; color: white; }
+    .seat.occupied {
+        background-color: #b0bec5;
+        cursor: not-allowed;
+    }
 
-        .seat-row {
-            width: 100%;
-        }
+    .seat.selected {
+        background-color: #4db6ac;
+        color: white;
+    }
 
-        .seat-group {
-            display: flex;
-            gap: 5px; /* space between seats */
-        }
+    .seat-row {
+        width: 100%;
+    }
 
-        .aisle {
-            width: 20px; /* narrow aisle */
-        }
+    .seat-group {
+        display: flex;
+        gap: 5px;
+        /* space between seats */
+    }
 
-        .seat {
-            width: 35px;
-            height: 35px;
-            border-radius: 5px;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.85rem;
-            cursor: pointer;
-            border: 1px solid #ccc;
-            transition: 0.2s all;
-        }
+    .aisle {
+        width: 20px;
+        /* narrow aisle */
+    }
 
-        .seat.free {
-            background-color: #e0f7fa;
-        }
+    .seat {
+        width: 35px;
+        height: 35px;
+        border-radius: 5px;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        cursor: pointer;
+        border: 1px solid #ccc;
+        transition: 0.2s all;
+    }
 
-        .seat.occupied {
-            background-color: #b0bec5;
-            cursor: not-allowed;
-        }
+    .seat.free {
+        background-color: #e0f7fa;
+    }
 
-        .seat.selected {
-            background-color: #4db6ac;
-            color: white;
-        }
-    </style>
+    .seat.occupied {
+        background-color: #b0bec5;
+        cursor: not-allowed;
+    }
 
-    <script>
+    .seat.selected {
+        background-color: #4db6ac;
+        color: white;
+    }
+</style>
 
+<script>
+    let clearModal = function() {
+        $('#nominativiContainer').html('');
+    }
 
-        let PrenotaClass = function(){
+    let PrenotaClass = function () {
 
-            const cabins =  ["FirstClass", "Business", "Economy"]
+        const cabins = ["FirstClass", "Business", "Economy"]
 
-            let params;
-            let id_andata;
-            let id_ritorno;
-            let quantity;
-            let seq_ritorno;
-            let seq_andata;
-            let selectedSeats = [];
-            let viaggio_data;
+        let params;
+        let id_andata;
+        let id_ritorno;
+        let quantity;
+        let seq_ritorno;
+        let seq_andata;
+        let selectedSeats = [];
+        let viaggio_data;
 
-            function loadData(){
-                let data_ = null;
-                jQuery.ajax({
-                    url: ajaxUrl + '?fun=voli&oper=getAllSequenceByViaggio',
-                    type: 'POST',
-                    data: {
-                        id_andata:id_andata,
-                        id_ritorno:id_ritorno,
-                        seq_andata:seq_andata,
-                        seq_ritorno:seq_ritorno
-                    },
-                    dataType: "json",
-                    async: false,
-                    success: function (data) {
+        function loadData() {
+            let data_ = null;
+            jQuery.ajax({
+                url: ajaxUrl + '?fun=voli&oper=getAllSequenceByViaggio',
+                type: 'POST',
+                data: {
+                    id_andata: id_andata,
+                    id_ritorno: id_ritorno,
+                    seq_andata: seq_andata,
+                    seq_ritorno: seq_ritorno
+                },
+                dataType: "json",
+                async: false,
+                success: function (data) {
 
-                        var parsedResult = checkAjaxResponse(data, false);
-                        if (!parsedResult) {
+                    var parsedResult = checkAjaxResponse(data, false);
+                    if (!parsedResult) {
 
-                            data_ = data;
+                        data_ = data;
 
-                        }
                     }
-                });
+                }
+            });
 
-                return data_;
-            }
+            return data_;
+        }
 
-            // Disegna tabs per gli scali
-            function drawRouteTabs(travelType, routes) {
+        // Disegna tabs per gli scali
+        function drawRouteTabs(travelType, routes) {
 
-                if(routes)
-                {
-                    const tabs = $("#" + travelType + "Tabs");
-                    const content = $("#" + travelType + "Content");
+            if (routes) {
+                const tabs = $("#" + travelType + "Tabs");
+                const content = $("#" + travelType + "Content");
 
-                    tabs.empty();
-                    content.empty();
+                tabs.empty();
+                content.empty();
 
-                    for(let i = 0; i < routes.length;++i)
-                    {
-                        let route = routes[i];
-                        let tab_id = travelType + "-route-" + route.id_volo;
+                for (let i = 0; i < routes.length; ++i) {
+                    let route = routes[i];
+                    let tab_id = travelType + "-route-" + route.id_volo;
 
-                        tabs.append(`
+                    tabs.append(`
                             <li class="nav-item" role="presentation">
                               <button class="nav-link ${route.sequence_identifier === 1 ? "active" : ""}" id="${tab_id}-tab"
                                       data-bs-toggle="tab" data-bs-target="#${tab_id}" type="button" role="tab">
@@ -177,72 +191,71 @@ Home
                             </li>
                           `);
 
-                        content.append(`
+                    content.append(`
                             <div class="tab-pane fade ${route.sequence_identifier === 1 ? "show active" : ""}" id="${tab_id}" role="tabpanel">
                               <div id="seatMap-${tab_id}" class=""></div>
                             </div>
                           `);
 
-                        let prices = {}
-                        for(let j = 0; j < route.prices.length; j++)
-                        {
-                            let price = route.prices[j];
-                            prices[price.seat_class] = price;
-                        }
-
-                        drawSeatMap(
-                            cabins,
-                            $("#seatMap-" + tab_id),
-                            travelType,
-                            `${route.aereoporto_partenza_rel.citta} -> ${route.aereoporto_arrivo_rel.citta}`,
-                            {
-                                "FirstClass": [route.aereo_rel.seat_row_number_first,route.aereo_rel.seat_column_number_first],
-                                "Business": [route.aereo_rel.seat_row_number_business,route.aereo_rel.seat_column_number_business],
-                                "Economy": [route.aereo_rel.seat_row_number_economy,route.aereo_rel.seat_column_number_economy]
-                            },
-                            route.seats,
-                            prices
-                        )
+                    let prices = {}
+                    for (let j = 0; j < route.prices.length; j++) {
+                        let price = route.prices[j];
+                        prices[price.seat_class] = price;
                     }
-                }
 
+                    drawSeatMap(
+                        cabins,
+                        $("#seatMap-" + tab_id),
+                        travelType,
+                        `${route.aereoporto_partenza_rel.citta} -> ${route.aereoporto_arrivo_rel.citta}`,
+                        {
+                            "FirstClass": [route.aereo_rel.seat_row_number_first, route.aereo_rel.seat_column_number_first],
+                            "Business": [route.aereo_rel.seat_row_number_business, route.aereo_rel.seat_column_number_business],
+                            "Economy": [route.aereo_rel.seat_row_number_economy, route.aereo_rel.seat_column_number_economy]
+                        },
+                        route.seats,
+                        prices
+                    )
+                }
             }
 
-            // Disegna mappa dei posti (accordion per cabine)
-           function drawSeatMap(cabins, seatMap, travelType, route, map, seats,prices) {
-                const routeId = route.replace(/\s/g, '').replace(/[^a-zA-Z0-9_-]/g, '');
-                let lastClassSeen = null;
-                let seatContainer = null;
-                let rowId = "";
-                let changed_class = false;
-                let inserted = 0;
+        }
 
-                seatMap.empty();
-                seatMap.append(`<div class="accordion" id="accordion_${routeId}"></div>`);
-                const accordionParent = $(`#accordion_${routeId}`);
+        // Disegna mappa dei posti (accordion per cabine)
+        function drawSeatMap(cabins, seatMap, travelType, route, map, seats, prices) {
+            const routeId = route.replace(/\s/g, '').replace(/[^a-zA-Z0-9_-]/g, '');
+            let lastClassSeen = null;
+            let seatContainer = null;
+            let rowId = "";
+            let changed_class = false;
+            let inserted = 0;
 
-                // Helper: get color class for seat class
-                function getClassColorClass(seatClass) {
-                    switch(seatClass.toLowerCase()) {
-                        case "economy": return "economy";
-                        case "business": return "business";
-                        case "first": return "first";
-                        default: return "";
-                    }
+            seatMap.empty();
+            seatMap.append(`<div class="accordion" id="accordion_${routeId}"></div>`);
+            const accordionParent = $(`#accordion_${routeId}`);
+
+            // Helper: get color class for seat class
+            function getClassColorClass(seatClass) {
+                switch (seatClass.toLowerCase()) {
+                    case "economy": return "economy";
+                    case "business": return "business";
+                    case "first": return "first";
+                    default: return "";
                 }
+            }
 
-                // Loop through seats
-                for (let i = 0; i < seats.length; i++) {
-                    const seat = seats[i];
-                    const seatClass = seat.seat_class;
+            // Loop through seats
+            for (let i = 0; i < seats.length; i++) {
+                const seat = seats[i];
+                const seatClass = seat.seat_class;
 
-                    if (lastClassSeen !== seatClass) {
-                        changed_class = true;
-                        lastClassSeen = seatClass;
-                        const idx = `${routeId}_${seatClass}`;
-                        const classColor = getClassColorClass(seatClass);
+                if (lastClassSeen !== seatClass) {
+                    changed_class = true;
+                    lastClassSeen = seatClass;
+                    const idx = `${routeId}_${seatClass}`;
+                    const classColor = getClassColorClass(seatClass);
 
-                        const itemHtml = `
+                    const itemHtml = `
                             <div class="accordion-item">
                                 <h2 class="accordion-header" id="heading_${idx}">
                                     <button class="accordion-button collapsed ${classColor}" type="button"
@@ -260,171 +273,310 @@ Home
                                 </div>
                             </div>
                         `;
-                        accordionParent.append(itemHtml);
-                        seatContainer = $(`#${idx}_seats`);
-                    }
+                    accordionParent.append(itemHtml);
+                    seatContainer = $(`#${idx}_seats`);
+                }
 
-                    const [rows, cols] = map[seatClass];
+                const [rows, cols] = map[seatClass];
 
-                    // Start new row
-                    if (inserted % cols === 0 || changed_class) {
-                        inserted = 0;
-                        changed_class = false;
-                        rowId = `${routeId}_${seatClass}_row_${i}`;
-                        const rowHtml = `
+                // Start new row
+                if (inserted % cols === 0 || changed_class) {
+                    inserted = 0;
+                    changed_class = false;
+                    rowId = `${routeId}_${seatClass}_row_${i}`;
+                    const rowHtml = `
                             <div class="seat-row d-flex align-items-center mb-2" id="${rowId}">
                                 <div class="seat-group d-flex flex-wrap" id="${rowId}_col_1"></div>
                                 <div class="aisle text-center col-2">||</div>
                                 <div class="seat-group d-flex flex-wrap" id="${rowId}_col_2"></div>
                             </div>
                         `;
-                        seatContainer.append(rowHtml);
-                    }
+                    seatContainer.append(rowHtml);
+                }
 
-                    // Determine left/right column
-                    const colIndex = inserted % cols;
-                    const targetCol = colIndex < cols / 2
-                        ? $(`#${rowId}_col_1`)
-                        : $(`#${rowId}_col_2`);
+                // Determine left/right column
+                const colIndex = inserted % cols;
+                const targetCol = colIndex < cols / 2
+                    ? $(`#${rowId}_col_1`)
+                    : $(`#${rowId}_col_2`);
 
-                    // Create seat element
-                    const seatId = `${travelType}-${route}-${seatClass}-${seat.seat_label}`;
-                    const seatDiv = $(`
+                // Create seat element
+                const seatId = `${travelType}-${route}-${seatClass}-${seat.seat_label}`;
+                const seatDiv = $(`
                         <div class="seat ${seat.posti_occupati ? 'occupied' : 'free'}" id="${seatId}">
                             ${seat.seat_label}
                         </div>
                     `);
-                    targetCol.append(seatDiv);
+                targetCol.append(seatDiv);
 
-                    // Add seat info
-                    seatDiv.data("info", {
-                        travelType,
-                        route,
-                        cabin: seatClass,
-                        seat: seat.seat_label,
-                        price: prices[seatClass].costo_posto
-                    });
+                // Add seat info
+                seatDiv.data("info", {
+                    travelType,
+                    route,
+                    cabin: seatClass,
+                    seat: seat.seat_label,
+                    price: prices[seatClass].costo_posto
+                });
 
-                    // Seat click behavior
-                    seatDiv.on("click", function() {
-                        if ($(this).hasClass("occupied")) return;
-                        $(this).toggleClass("selected");
-                        const info = $(this).data("info");
+                // Seat click behavior
+                seatDiv.on("click", function () {
+                    if ($(this).hasClass("occupied")) return;
+                    $(this).toggleClass("selected");
+                    const info = $(this).data("info");
 
-                        if ($(this).hasClass("selected")) {
-                            selectedSeats.push(info);
-                        } else {
-                            selectedSeats = selectedSeats.filter(s => !(s.travelType === info.travelType && s.route === info.route && s.cabin === info.cabin && s.seat === info.seat));
-                        }
-                        updateSummary();
-                    });
-                    inserted++;
+                    if ($(this).hasClass("selected")) {
+                        selectedSeats.push(info);
+                    } else {
+                        selectedSeats = selectedSeats.filter(s => !(s.travelType === info.travelType && s.route === info.route && s.cabin === info.cabin && s.seat === info.seat));
+                    }
+                    updateSummary();
+                });
+                inserted++;
+            }
+        }
+
+
+
+        // Aggiorna riepilogo
+        function updateSummary() {
+            $("#quantita").text(selectedSeats.length);
+
+            $("#selectedSeatDisplay").text(
+                selectedSeats.map(s => `${s.route} [${s.seat}]`).join(", ") || "-"
+            );
+
+            // Ensure numeric sum
+            let total = selectedSeats.reduce((sum, s) => sum + Number(s.price || 0), 0);
+
+            // Format total as integer or with 2 decimals
+            $("#totalPriceDisplay").text(total.toFixed(2) + " €");
+        }
+
+        function updateSummaryModal() {
+            $("#quantitaModal").text(selectedSeats.length);
+
+            $("#selectedSeatDisplayModal").text(
+                selectedSeats.map(s => `${s.route} [${s.seat}]`).join(", ") || "-"
+            );
+
+            let total = selectedSeats.reduce((sum, s) => sum + Number(s.price || 0), 0);
+
+            // Format total as integer or with 2 decimals
+            $("#totalPriceDisplayModal").text(total.toFixed(2) + " €");
+
+            $("#checkoutButton").on('click', () => {
+                PrenotaClass.checkout();
+            });
+        }
+
+        return {
+            init() {
+
+                params = new URLSearchParams(window.location.search);
+                id_andata = params.get("id_andata");
+                id_ritorno = params.get("id_ritorno");
+                quantity = params.get("quantita");
+                seq_andata = params.get("seq_andata");
+                seq_ritorno = params.get("seq_ritorno");
+
+                viaggio_data = loadData();
+
+                drawRouteTabs("andata", viaggio_data.andata);
+                drawRouteTabs("ritorno", viaggio_data.ritorno);
+
+            },
+
+            confirm() {
+                if (selectedSeats.length !== parseInt(quantity)) {
+                    document.getElementById('totalPriceDisplay').innerText = 'Selezionare il numero corretto di biglietti';
+                    //disattivare il modal
+                    return;
                 }
+
+                for (let i=0; i < selectedSeats.length; i++) {
+                    let row = $('<div></div>');
+                    row.addClass('row mb-3');
+                    let labelHtml = `<label class="form-label">Biglietto ${selectedSeats[i].cabin} posto: ${selectedSeats[i].seat} </label>`;
+                    let infoHtml = `
+                            <div class="col-md-6">
+                                <input type="text" class="form-nome-${i} form-control" placeholder="Inserisci nome" required>
+                            </div>
+                            <div class="col-md-6">
+                                <input type="text" class="form-cognome-${i} form-control" placeholder="Inserisci cognome" required>
+                            </div>`;
+
+
+                    row.append(labelHtml + infoHtml);
+                    $('#nominativiContainer').append(row);
+                }
+                updateSummaryModal();
+            },
+
+            checkout() {
+                let info = []
+                
+                for(let i=0; i < selectedSeats.length; i++) {
+                    console.log(selectedSeats[i]);
+                    
+                    let nome = $(`.form-nome-${i}`).val();
+                    let cognome = $(`.form-cognome-${i}`).val();
+
+                    info.push({
+                        'nome': nome,
+                        'cognome': cognome,
+                        'cabin': selectedSeats[i].cabin,
+                        'seat': selectedSeats[i].seat,
+                        'travelType': selectedSeats[i].travelType,
+                        'route': selectedSeats[i].route,
+                    });
+                }
+
+                console.log(info)
+
+                $.ajax({
+                    url: ajaxUrl + '?',
+                    type: 'POST',
+                    data: {
+                        id_andata: id_andata,
+                        id_ritorno: id_ritorno,
+                        quantita: quantity,
+                        info: info
+                    },
+                })
             }
 
+        }
+    }();
 
-
-            // Aggiorna riepilogo
-           function updateSummary() {
-                $("#quantita").text(selectedSeats.length);
-
-                $("#selectedSeatDisplay").text(
-                    selectedSeats.map(s => `${s.route} [${s.seat}]`).join(", ") || "-"
-                );
-
-                // Ensure numeric sum
-                let total = selectedSeats.reduce((sum, s) => sum + Number(s.price || 0), 0);
-
-                // Format total as integer or with 2 decimals
-                $("#totalPriceDisplay").text(total.toFixed(2) + " €");
-           }
-
-           return {
-                init(){
-
-                    params = new URLSearchParams(window.location.search);
-                    id_andata = params.get("id_andata");
-                    id_ritorno = params.get("id_ritorno");
-                    quantity = params.get("quantita");
-                    seq_andata = params.get("seq_andata");
-                    seq_ritorno = params.get("seq_ritorno");
-
-                    viaggio_data = loadData();
-
-                    drawRouteTabs("andata", viaggio_data.andata);
-                    drawRouteTabs("ritorno", viaggio_data.ritorno);
-
-                }
-
-            }
-        }();
-
-        // Fake data
+    // Fake data
 
 
 
-        // Inizializza pagina
-        $(function() {
-            PrenotaClass.init();
-        });
-    </script>
+    // Inizializza pagina
+    $(function () {
+        PrenotaClass.init();
+    });
+</script>
 
 </script>
 {% endblock extra_jquery %}
 
 {% block main_content %}
 
-    <div class="container py-4">
+<div class="container py-4">
 
-        <!-- Tabs principali Andata/Ritorno -->
-        <ul class="nav nav-tabs" id="tripTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="andata-tab" data-bs-toggle="tab" data-bs-target="#andata" type="button" role="tab">
-                    Andata
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="ritorno-tab" data-bs-toggle="tab" data-bs-target="#ritorno" type="button" role="tab">
-                    Ritorno
-                </button>
-            </li>
-        </ul>
+    <!-- Tabs principali Andata/Ritorno -->
+    <ul class="nav nav-tabs" id="tripTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="andata-tab" data-bs-toggle="tab" data-bs-target="#andata" type="button"
+                role="tab">
+                Andata
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="ritorno-tab" data-bs-toggle="tab" data-bs-target="#ritorno" type="button"
+                role="tab">
+                Ritorno
+            </button>
+        </li>
+    </ul>
 
-        <div class="tab-content mt-3">
-            <!-- ANDATA -->
-            <div class="tab-pane fade show active" id="andata" role="tabpanel">
-                <ul class="nav nav-tabs" id="andataTabs" role="tablist"></ul>
-                <div class="tab-content mt-3" id="andataContent"></div>
-            </div>
-
-            <!-- RITORNO -->
-            <div class="tab-pane fade" id="ritorno" role="tabpanel">
-                <ul class="nav nav-tabs" id="ritornoTabs" role="tablist"></ul>
-                <div class="tab-content mt-3" id="ritornoContent"></div>
-            </div>
+    <div class="tab-content mt-3">
+        <!-- ANDATA -->
+        <div class="tab-pane fade show active" id="andata" role="tabpanel">
+            <ul class="nav nav-tabs" id="andataTabs" role="tablist"></ul>
+            <div class="tab-content mt-3" id="andataContent"></div>
         </div>
 
-        <!-- Riepilogo -->
-        <div class="card shadow-sm mt-4">
-            <div class="card-body">
-                <h5 class="text-primary mb-3">Riepilogo</h5>
-                <div class="row">
-                    <div class="col-md-4">
-                        <small>Biglietti</small>
-                        <div id="quantita" class="h6">0</div>
-                    </div>
-                    <div class="col-md-4">
-                        <small>Posti Selezionati</small>
-                        <div id="selectedSeatDisplay" class="h6 text-success">-</div>
-                    </div>
-                    <div class="col-md-4">
-                        <small>Totale ( senza sconto )</small>
-                        <div id="totalPriceDisplay" class="h5 text-warning">0 €</div>
+        <!-- RITORNO -->
+        <div class="tab-pane fade" id="ritorno" role="tabpanel">
+            <ul class="nav nav-tabs" id="ritornoTabs" role="tablist"></ul>
+            <div class="tab-content mt-3" id="ritornoContent"></div>
+        </div>
+    </div>
 
-                    </div>
+    <!-- Riepilogo -->
+    <div class="card shadow-sm mt-4">
+        <div class="card-body">
+            <h5 class="text-primary mb-3">Riepilogo</h5>
+            <div class="row">
+                <div class="col-md-4">
+                    <small>Biglietti</small>
+                    <div id="quantita" class="h6">0</div>
+                </div>
+                <div class="col-md-4">
+                    <small>Posti Selezionati</small>
+                    <div id="selectedSeatDisplay" class="h6 text-success">-</div>
+                </div>
+                <div class="col-md-4">
+                    <small>Totale ( senza sconto )</small>
+                    <div id="totalPriceDisplay" class="h5 text-warning">0 €</div>
+                </div>
+            </div>
+
+            <!-- Bottone di conferma -->
+            <div class="row mt-4">
+                <div class="col-12 text-center">
+                    <button onclick="PrenotaClass.confirm()" type="button" class="btn btn-success btn-lg px-4"
+                        data-bs-toggle="modal" data-bs-target="#nominativiModal">
+                        Conferma Prenotazione
+                    </button>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
+
+<!-- Modal per inserimento nominativi -->
+<div class="modal fade" id="nominativiModal" tabindex="-1" aria-labelledby="nominativiModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="nominativiModalLabel">Inserisci Nominativi</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info" role="alert">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Inserisci i nominativi per tutti i biglietti selezionati
+                </div>
+
+                <!-- Form per i nominativi -->
+                <form id="nominativiForm">
+                    <div id="nominativiContainer"></div>
+
+                    <hr>
+
+                    <!-- Riepilogo nell'ordine -->
+                    <div class="bg-light p-3 rounded">
+                        <h6 class="text-primary mb-2">Riepilogo Ordine</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <small>Biglietti</small>
+                                <div id="quantitaModal" class="h6">0</div>
+                            </div>
+                            <div class="col-md-4">
+                                <small>Posti Selezionati</small>
+                                <strong id="selectedSeatDisplayModal" class="h6 text-success">-</strong>
+                            </div>
+                            <div class="col-md-4">
+                                <small>Totale ( senza sconto )</small>
+                                <strong id="totalPriceDisplayModal" class="h5 text-warning">0 €</strong>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button onclick="clearModal()" type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button id="checkoutButton" type="button" class="btn btn-success">
+                    <i class="fas fa-check me-2"></i>
+                    Conferma e Paga
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock main_content %}

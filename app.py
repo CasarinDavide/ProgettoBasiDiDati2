@@ -624,7 +624,6 @@ def function_actions():
 
     elif target == "voli":
 
-
         voli_repo = VoliRepository()
         if action == "add":
             if not check_permission([is_admin,is_compagnia]):
@@ -696,8 +695,6 @@ def function_actions():
             return viaggi_repo.get_viaggi(partenza=partenza, destinazione=destinazione, dataP=dataP, dataR=dataR)
 
     elif target== "checkout":
-
-
         id_andata = getParam('id_andata')
         id_ritorno = getParam('id_ritorno')
         quantita = getParam('quantita')
