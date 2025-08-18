@@ -14,6 +14,7 @@ from core.AereiClass import AereiClass
 from core.AereoportiClass import AereoportiClass
 from core.BigliettiClass import BigliettiClass
 from core.CompagnieClass import CompagnieClass
+from core.AdminClass import AdminClass
 from core.DipendentiClass import DipendentiClass
 from core.EffettuanoClass import EffettuanoClass
 from core.PasseggeriClass import PasseggeriClass
@@ -21,6 +22,8 @@ from core.ViaggiClass import ViaggiClass
 from core.VoliClass import VoliClass
 
 from dotenv import load_dotenv
+
+from services.AdminRepository import AdminRepository
 from services.AereoportiRepository import AereoportiRepository
 from services.CompagnieRepository import CompagnieRepository
 from services.AereiRepository import AereiRepository
@@ -38,20 +41,18 @@ login_manager = LoginManager(app)
 login_manager.init_app(app)
 
 def is_admin():
-    # TODO
-    return session['role'] == 'AdminClass'
+    return session.get('role','') == AdminClass.__name__
 
 def is_compagnia():
-    return session['role'] == CompagnieClass.__name__
+    return session.get('role','') == CompagnieClass.__name__
 
 def is_passeggero():
-    return session['role'] == PasseggeriClass.__name__
+    return session.get('role','') == PasseggeriClass.__name__
 
 def is_dipendente():
-    return session['dipendente'] == DipendentiClass.__name__
+    return session.get('role','') == DipendentiClass.__name__
 
 def check_permission(check_list: List[Callable[[], bool]]) -> bool:
-    print(session.get('role', 'No role in session'))
     has_permission = False
 
     for boolean_func in check_list:
@@ -62,7 +63,6 @@ def check_permission(check_list: List[Callable[[], bool]]) -> bool:
     if not has_permission:
         flash("Permission denied. You have been logged out.", "danger")
 
-    print(has_permission)
     return has_permission
 
 def auth_error():
@@ -83,34 +83,28 @@ def load_user(user_id):
         return PasseggeriRepository().get_by_id(real_id)
     elif role == "dipendente":
         return DipendentiRepository().get_by_id(real_id)
+    elif role == "admin":
+        return AdminRepository().get_by_id(id=real_id)
 
     return None
 
 def custom_login_user(user, remember):
-    if isinstance(user, PasseggeriClass) or isinstance(user, CompagnieClass) or isinstance(user, DipendentiClass):
+    if isinstance(user, PasseggeriClass) or isinstance(user, CompagnieClass) or isinstance(user, DipendentiClass) or isinstance(user,AdminClass):
         login_user(System.BaseUser(id=user.get_id(), nome=user.get_nome(), email=user.get_email(), role= user.get_role()),remember=remember)
         session['role'] = user.__class__.__name__
 
     return None
 
-@login_required
-def check_permissions(class_name:list):
-    if session['role'] in class_name:
-        return True
-
-    flash("Permission denied. You have been logged out.", "danger")
-    logout_user()
-    return redirect("/home")
-
 # Home Page
 @app.route('/', methods = ["GET", "POST"])
 def home():
 
-
     nome = ""
 
     if not current_user.is_authenticated or is_passeggero():
+
         passeggeri_repo = PasseggeriRepository()
+
         if current_user.is_authenticated:
             nome = passeggeri_repo.get_by_id(current_user.get_id()).nome
 
@@ -132,8 +126,13 @@ def home():
         if nome != "":
             return render_template('./public_html/home.html', user=nome, partenze=partenze, arrivi=arrivi)
         return render_template('./public_html/home.html', partenze=partenze, arrivi=arrivi)
-
-    return redirect('/gestione_compagnia')
+    elif is_compagnia():
+        return redirect('/gestione_compagnia')
+    elif is_admin():
+        return redirect('/admin_settings')
+    else:
+        flash('Login Unsuccessful. Please check email and password.', 'danger')
+        return render_template('./public_html/home.html')
 
 @app.route('/trip', methods=['GET', 'POST'])
 def trip():
@@ -144,8 +143,7 @@ def trip():
     if current_user.is_authenticated:
         passeggeri_repo = PasseggeriRepository()
         nome = passeggeri_repo.get_by_id(current_user.get_id()).nome
-    
-    function_actions()
+
     if oper is None:
         return render_template('./public_html/trip.html', user=nome)
     else:
@@ -154,14 +152,18 @@ def trip():
 @app.route('/admin_settings', methods=['GET', 'POST'])
 @login_required
 def admin_settings():
-    option = getParam("oper")
-    compagnie_repo = CompagnieRepository()
-    nome = compagnie_repo.get_by_id(current_user.get_id()).nome
-    
+
+    if check_permission([is_admin]):
+        option = getParam("oper")
+    admin_repo = AdminRepository()
+    nome = admin_repo.get_by_id(current_user.get_id()).nome
+
     if option is None:
         return render_template('./public_html/admin_settings.html', compagnia=nome)
     else:
         return function_actions()
+
+
 
 
 
@@ -185,8 +187,6 @@ def user_login():
 
 
     if current_user.is_authenticated:
-        print("Autenticato")
-
         return 'You are already authenticated'
 
     passeggeri_repo = PasseggeriRepository()
@@ -197,21 +197,19 @@ def user_login():
         remind = request.form.get('remind_me') != None
         
         if passeggeri_repo.validate_password(email, password):
-            print("successo")
             user = passeggeri_repo.get_by_email(email)
             custom_login_user(user, remember = remind )
             return redirect('/')
         else:
-            print("FAllito")
             flash('Login Unsuccessful. Please check email and password.', 'danger')
             return redirect('/user_login')
-        
+
     return render_template('public_html/login.html')
 
 
 @app.route('/authorized_user_login', methods=['GET', 'POST'])
 def authorized_user_login():
-    if current_user.is_authenticated and ( isinstance(current_user,CompagnieRepository) or isinstance(current_user,DipendentiClass)):
+    if current_user.is_authenticated and ( is_admin() or is_dipendente() or is_compagnia()):
         return 'You are already authenticated'
 
     option = getParam("oper")
@@ -274,27 +272,23 @@ def user_registration():
     return render_template('public_html/register.html')
 
 @app.route('/prenota', methods=['GET', 'POST'])
-@login_required
 def prenota():
 
-    viaggi_repo = ViaggiRepository()
-    nome = ""
-
-    oper = getParam("oper")
+    func = getParam("fun")
 
     if current_user.is_authenticated:
         passeggeri_repo = PasseggeriRepository()
         nome = passeggeri_repo.get_by_id(current_user.get_id()).nome
 
-        if oper is None:
+        if func is None:
             return render_template('public_html/prenota.html', user=nome)
         else:
             return function_actions()
     else:
         # TODO  rimanda al form di login
         # e poi vai al conferma pagamento
-
-        return flash("Permission denied. You have been logged in.", "danger")
+        flash("Permission denied. You have been logged in.", "danger")
+        return render_template('public_html/prenota.html')
     
 
 
@@ -302,9 +296,14 @@ def prenota():
 @app.route('/logout')
 @login_required
 def logout():
-    logout_user()
-    return redirect(url_for('user_login'))
+    role = is_admin() or is_compagnia() or is_dipendente()
 
+    logout_user()
+
+    if role:
+        return redirect(url_for('authorized_user_login'))
+    else:
+        return redirect(url_for('user_login'))
 
 @app.route('/mytriviaggi', methods=['GET', 'POST'])
 @login_required
@@ -337,8 +336,23 @@ def function_actions():
     search_value = getParam('search[value]')
 
     ####
+    if target == "admin":
+        admin_repo = AdminRepository()
 
-    if target == "compagnia_aerea":
+        if action == "login":
+
+            if admin_repo.validate_password(email=getParam("email"),
+                                                password=getParam("password")):
+                user = admin_repo.get_by_email(email=getParam("email"))
+                custom_login_user(user, remember = getParam("remind_me") )
+
+                return jsonify(success=True, next_url=url_for("admin_settings"))
+            else:
+                return jsonify(success=False, message="Invalid credentials")
+
+
+
+    elif target == "compagnia_aerea":
 
         compagnie_repo = CompagnieRepository()
 
@@ -397,10 +411,17 @@ def function_actions():
                 modello=getParam("modello"),
                 consumoMedio=getParam("consumoMedio"),
                 dimensione=getParam("dimensione"),
-                id_compagnia=id_compagnia
+                id_compagnia=id_compagnia,
+                seat_row_number_first = getParam("seat_row_number_first"),
+                seat_column_number_first = getParam("seat_row_number_first"),
+                seat_row_number_business = getParam("seat_row_number_first"),
+                seat_column_number_business = getParam("seat_row_number_first"),
+                seat_row_number_economy = getParam("seat_row_number_first"),
+                seat_column_number_economy = getParam("seat_row_number_first")
             )
 
         elif action == "getAllDatatable":
+
             return aerei_repo.get_datatable(draw,start,length,search_value,id_compagnia = id_compagnia)
         elif action == "getById":
             return aerei_repo.get_by_id(getParam("id_aereo"))
@@ -411,16 +432,24 @@ def function_actions():
                 modello=getParam("modello"),
                 consumoMedio=getParam("consumoMedio"),
                 dimensione=getParam("dimensione"),
-                id_compagnia=id_compagnia
+                id_compagnia=id_compagnia,
+                seat_row_number_first = getParam("seat_row_number_first"),
+                seat_column_number_first = getParam("seat_row_number_first"),
+                seat_row_number_business = getParam("seat_row_number_first"),
+                seat_column_number_business = getParam("seat_row_number_first"),
+                seat_row_number_economy = getParam("seat_row_number_first"),
+                seat_column_number_economy = getParam("seat_row_number_first")
             )
         elif action == "get_for_select":
             # permessi admin TODO
-            return aerei_repo.get_all()
+
+            check_permission([is_compagnia,is_admin])
+
+            id_compagnia = getParam("id_compagnia") if is_admin() else current_user.get_id()
+            return aerei_repo.get_all(id_compagnia =id_compagnia)
         elif action == "get_for_select_compagnia":
-            check_permissions([CompagnieClass])
+            check_permission([is_compagnia])
             return aerei_repo.get_all(id_compagnia = current_user.get_id())
-
-
     elif target == "dipendenti":
 
         if not check_permission([is_compagnia,is_admin]):
@@ -471,6 +500,7 @@ def function_actions():
         elif action == "getById":
             return aereoporti_repo.get_by_id(getParam("id_aereoporto"))
         elif action == "get_for_select":
+            print("qui")
             return aereoporti_repo.get_all()
         elif action == "edit":
             return aereoporti_repo.update(
@@ -572,6 +602,8 @@ def function_actions():
             return viaggi_repo.get_by_id(getParam("id_viaggio"))
         elif action == "get_for_select":
             return viaggi_repo.get_all()
+        elif action == "get_seats":
+            return viaggi_repo.get()
         elif action == "edit":
 
             if not check_permission([is_admin]):
@@ -587,9 +619,17 @@ def function_actions():
                 data_partenza= getParam("data_partenza"),
                 orario_partenza= getParam("orario_partenza")
             )
+        elif action == "getDetails":
+            return viaggi_repo.getDetails(id_andata=getParam('id_andata'),id_ritorno=getParam('id_ritorno'))
+
     elif target == "voli":
+
+
         voli_repo = VoliRepository()
         if action == "add":
+            if not check_permission([is_admin,is_compagnia]):
+                return auth_error()
+
             return voli_repo.add(
                 comandante=getParam("comandante"),
                 ritardo=getParam("ritardo"),
@@ -598,12 +638,24 @@ def function_actions():
                 id_aereoporto_partenza= getParam("id_aereoporto_partenza"),
                 id_aereoporto_arrivo=getParam("id_aereoporto_arrivo"))
         elif action == "getAllDatatable":
+            if not check_permission([is_admin,is_compagnia]):
+                return auth_error()
+
             return voli_repo.get_datatable(draw,start,length,search_value,getParam("id_viaggio"))
+        elif action == "geDetailsDatatable":
+            if not check_permission([is_admin,is_compagnia]):
+                return auth_error()
+
+            return voli_repo.get_datatable_details(draw,start,length,search_value,getParam("sequence_identifier"))
         elif action == "getById":
-            return voli_repo.get_by_id(getParam("id_volo"))
+                    return voli_repo.get_by_id(getParam("id_volo"))
         elif action == "get_for_select":
+            if not check_permission([is_admin,is_compagnia]):
+                return auth_error()
             return voli_repo.get_all()
         elif action == "edit":
+            if not check_permission([is_admin,is_compagnia]):
+                return auth_error()
             return voli_repo.update(
                 id_volo=getParam("id_volo"),
                 comandante=getParam("comandante"),
@@ -614,10 +666,25 @@ def function_actions():
                 id_aereoporto_arrivo=getParam("id_aereoporto_arrivo")
             )
         elif action == "add_from_json":
+            if not check_permission([is_admin,is_compagnia]):
+                return auth_error()
             return voli_repo.add_from_json(getParam("voli_json"))
         elif action == "delete_all":
+            if not check_permission([is_admin,is_compagnia]):
+                return auth_error()
             return voli_repo.delete_all(getParam("id_viaggio"))
+        elif action == "getSequenceDatatable":
+            if not check_permission([is_admin,is_compagnia]):
+                return auth_error()
+            return voli_repo.get_sequence_by_viaggioDatatable(draw, start, length, search_value, getParam("id_viaggio"), getParam("sequence_identifier"))
+        elif action == "getAllSequenceByViaggio":
+            return voli_repo.getAllSequenceByViaggio(id_andata=getParam('id_andata'),
+                                                     id_ritorno=getParam('id_ritorno'),
+                                                     sequence_identifier_ritorno=getParam('seq_ritorno'),
+                                                     sequence_identifier_andata=getParam('seq_andata'))
+
     elif target == "trips":
+
         viaggi_repo = ViaggiRepository()
 
         if action == "getSelectedTrips":
@@ -629,6 +696,8 @@ def function_actions():
             return viaggi_repo.get_viaggi(partenza=partenza, destinazione=destinazione, dataP=dataP, dataR=dataR)
 
     elif target== "checkout":
+
+
         id_andata = getParam('id_andata')
         id_ritorno = getParam('id_ritorno')
         quantita = getParam('quantita')
@@ -637,28 +706,15 @@ def function_actions():
 
         correct_params = True
 
-        print(id_andata)
-        print(id_ritorno)
-        print(posti_andata)
-        print(posti_ritorno)
-        print(quantita)
 
         if not isDefined(id_andata):
             correct_params = False
-        print(correct_params)
         if isDefined(id_andata) and not isDefined(posti_andata):
             correct_params = False
-        print(correct_params)
-
         if isDefined(id_ritorno) and not isDefined(posti_ritorno):
             correct_params = False
-
-        print(correct_params)
-
         if len(posti_andata) != int(quantita) or (isDefined(id_ritorno) and (len(posti_ritorno) != quantita)):
             correct_params = False
-        print(correct_params)
-
         if correct_params:
             passeggeri_repo = PasseggeriRepository()
             return passeggeri_repo.buy_tickets(current_user.get_id(), id_andata, id_ritorno, posti_andata, posti_ritorno, quantita)

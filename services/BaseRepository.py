@@ -140,6 +140,8 @@ class BaseRepository(Generic[T]):
         Generic DataTable query with search + optional joins.
         search_fields: list of model fields to search (like ['nome', 'email', 'tel'])
         """
+
+
         with Session(engine()) as session:
             query = session.query(self.model)
             query = self._apply_joins(query, joins)
@@ -154,7 +156,9 @@ class BaseRepository(Generic[T]):
                 query = query.filter(or_(*filters))
 
 
-            filters = [getattr(self.model, key) == value for key, value in kwargs.items()]
+            filters = [getattr(self.model, key) == value
+                       for key, value in kwargs.items()
+                       if value is not None and not (isinstance(value, str) and value == '')]
             query = query.filter(and_(*filters))
 
             records_filtered = query.count()

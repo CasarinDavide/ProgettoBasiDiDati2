@@ -30,3 +30,7 @@ class BigliettiClass(Base):
     # FK -> Passeggeri
     id_passeggero = mapped_column(ForeignKey('dev.Passeggeri.id_passeggero'), nullable=True)
     passeggero_rel = relationship('PasseggeriClass', back_populates='biglietti_rel')
+
+    id_volo = mapped_column(ForeignKey('dev.Voli.id_volo'), nullable=False)
+    volo_rel = relationship('VoliClass', back_populates='biglietti_rel')
+

@@ -21,7 +21,7 @@ class VoliClass(Base):
     comandante: Mapped[str] = mapped_column(nullable=False)
     ritardo: Mapped[int] = mapped_column(nullable=False)
     ordine: Mapped[int] = mapped_column(nullable=False)
-
+    sequence_identifier:Mapped[int] = mapped_column(nullable=False)
 
     # FK -> Viaggi
     id_viaggio: Mapped[int] = mapped_column(ForeignKey('dev.Viaggi.id_viaggio'))
@@ -38,3 +38,5 @@ class VoliClass(Base):
     # FK -> Aereoporti
     id_aereoporto_arrivo: Mapped[str] = mapped_column(ForeignKey('dev.Aereoporti.id_aereoporto'), nullable=False)
     aereoporto_arrivo_rel = relationship('AereoportiClass', foreign_keys=[id_aereoporto_arrivo], back_populates='voli_arrivo_rel')
+
+    biglietti_rel = relationship('BigliettiClass', back_populates='volo_rel')

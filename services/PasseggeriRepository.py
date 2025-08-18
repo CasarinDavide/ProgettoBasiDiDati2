@@ -117,7 +117,6 @@ class PasseggeriRepository(BaseRepository[PasseggeriClass]):
 
                     biglietto.id_passeggero = id_utente
                     # after this all obj that has reference to internal db will be pushed
-
         except ValueError as e:
             session.rollback()
             return {"status": "error", "message": str(e)}

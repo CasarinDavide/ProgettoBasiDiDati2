@@ -11,6 +11,9 @@ from flask import jsonify, Response
 from typing import List, Sequence, Any
 from datetime import date, time, datetime
 
+from services.VoliRepository import VoliRepository
+
+
 def json_data(rows: Sequence[Row[Any]]) -> List:
     """Converte le righe in lista di dizionari, senza response"""
     data = []
@@ -141,78 +144,85 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
         '''
         #informazioni sui viaggi ricercati
         query_info_viaggi = text('''
-                                WITH viaggi_dettagli AS (
-                                    SELECT
-                                        cmp.nome AS compagnia,
-                                        v.id_viaggio AS id_viaggio,
-                                        v.durata AS durata, 
-                                        prt.citta AS citta_partenza,
-                                        v.id_aereoporto_partenza AS aereoporto_partenza,
-                                        dst.citta AS citta_destinazione,
-                                        v.id_aereoporto_arrivo AS aereoporto_destinazione,
-                                        v.data_partenza AS data_partenza,
-                                        v.orario_partenza AS orario_partenza
 
-                                    FROM dev."Viaggi" v 
-                                        JOIN dev."Aereoporti" prt ON v.id_aereoporto_partenza = prt.id_aereoporto     
-                                        JOIN dev."Aereoporti" dst ON v.id_aereoporto_arrivo = dst.id_aereoporto
-                                        JOIN dev."Effettuano" e USING(id_viaggio)
-                                        JOIN dev."Compagnie" cmp USING(id_compagnia)                                
-                                    WHERE prt.citta = :partenza AND dst.citta = :destinazione AND v.data_partenza = :dataP
-                                ),
+                                 WITH seat_stats AS (
+                                     SELECT
+                                         v.id_volo,
+                                         v.sequence_identifier,
+                                         amp.seat_class,
+                                         COUNT(*) AS posti_totali,
+                                         COUNT(b.id_biglietto) AS posti_occupati
+                                     FROM dev."Voli" v
+                                              JOIN dev."AereoMappaPosti" amp
+                                                   ON amp.id_aereo = v.id_aereo
+                                              LEFT JOIN dev."Biglietti" b
+                                                        ON b.id_volo = v.id_volo
+                                                            AND b.posto = amp.seat_label
+                                     GROUP BY v.id_volo, v.sequence_identifier, amp.seat_class
+                                 ),
+                                      seat_cost AS (
+                                          SELECT
+                                              id_volo,
+                                              sequence_identifier,
+                                              seat_class,
+                                              posti_totali,
+                                              posti_occupati,
+                                              (posti_totali - posti_occupati) AS posti_liberi,
+                                              ROUND((posti_occupati::decimal / posti_totali) * 100, 2) AS percentuale_occupati,
+                                              ---Placeholder to evaluate cost----
+                                              CASE
+                                                  WHEN seat_class = 'Economy'::classe THEN ROUND((posti_occupati::decimal / posti_totali) * 50 +100, 2)
+                                                  WHEN seat_class = 'Business'::classe THEN ROUND((posti_occupati::decimal / posti_totali) * 100  +120, 2)
+                                                  WHEN seat_class = 'FirstClass'::classe THEN ROUND((posti_occupati::decimal / posti_totali) * 200 + 140, 2)
+                                                  ELSE 0
+                                                  END AS costo_minimo
+                                          FROM seat_stats
+                                      ),
+                                      seat_cost_min AS (
+                                          SELECT
+                                              id_volo,
+                                              sequence_identifier,
+                                              MIN(costo_minimo) as costo_minimo
+                                          FROM seat_cost
+                                          GROUP BY id_volo,sequence_identifier
+                                      )
 
-                                costo_biglietto AS (
-                                    SELECT 
-                                        v.id_viaggio AS id_viaggio, 
-                                        MIN(b.prezzo) AS prezzo
-                                    
-                                    FROM dev."Biglietti" b 
-                                        JOIN viaggi_dettagli v USING(id_viaggio)
-                                    GROUP BY v.id_viaggio
-                                ),
+                                 SELECT
+                                     
+                                     v.sequence_identifier,
+                                     v.id_viaggio,
+                                     viaggi_filtrati.data_partenza AS data_partenza,
+                                     viaggi_filtrati.orario_partenza AS orario_partenza,
+                                     aereoporto_partenza.citta AS citta_partenza,
+                                     aereoporto_partenza.id_aereoporto AS aereoporto_partenza,
+                                     aereoporto_arrivo.citta AS citta_destinazione,
+                                     aereoporto_arrivo.id_aereoporto AS aereoporto_destinazione,
+                                     viaggi_filtrati.durata as durata,
+                                     c.nome AS nome_compagnia,
+                                     
+                                     COUNT(v.sequence_identifier) AS num_scali,
+                                     ROUND(SUM((sc.costo_minimo - sc.costo_minimo * COALESCE(viaggi_filtrati.sconto_biglietto, 0))::numeric),2) AS prezzo_biglietto,
+                                     STRING_AGG(aereoporto_partenza.nome || ' - ' || aereoporto_arrivo.nome, ' -> ' ORDER BY v.sequence_identifier) AS scali
+                                 FROM dev."Voli" v
+                                          LEFT JOIN dev."Aerei" a ON a.id_aereo = v.id_aereo
+                                          LEFT JOIN dev."Compagnie" c ON c.id_compagnia = a.id_compagnia
+                                          LEFT JOIN seat_cost_min sc ON sc.id_volo = v.id_volo
+                                          JOIN dev."Viaggi" as viaggi_filtrati ON v.id_viaggio = viaggi_filtrati.id_viaggio
+                                          JOIN dev."Aereoporti" AS aereoporto_arrivo ON viaggi_filtrati.id_aereoporto_arrivo = aereoporto_arrivo.id_aereoporto
+                                          JOIN dev."Aereoporti" AS aereoporto_partenza ON viaggi_filtrati.id_aereoporto_partenza = aereoporto_partenza.id_aereoporto
 
-                                numero_scali_intermedi AS (
-                                    SELECT 
-                                        v.id_viaggio AS id_viaggio, 
-                                        COUNT(*) AS numero_scali
-                                    
-                                    FROM dev."Voli" voli
-                                        JOIN viaggi_dettagli v USING(id_viaggio)
-                                    
-                                    GROUP BY v.id_viaggio
-                                ),
+                                 WHERE aereoporto_partenza.citta = :partenza
+                                   AND aereoporto_arrivo.citta = :destinazione
+                                   AND viaggi_filtrati.data_partenza = :dataP
 
-                                info_scali_aggregati AS (
-                                    SELECT
-                                        vo.id_viaggio AS id_viaggio,
-                                        STRING_AGG(a.citta, ',' ORDER BY vo.ordine) AS scali
-                                    FROM dev."Viaggi" vi
-                                        JOIN dev."Voli" vo USING(id_viaggio)
-                                        JOIN dev."Aereoporti" a ON vo.id_aereoporto_arrivo = a.id_aereoporto
-                                    GROUP BY vo.id_viaggio
-                                )
+                                 GROUP BY v.sequence_identifier, v.id_viaggio, c.nome,durata,citta_partenza,aereoporto_partenza,citta_destinazione,aereoporto_destinazione,data_partenza,orario_partenza
+                                 ORDER BY v.sequence_identifier;
 
-                                SELECT
-                                    vd.compagnia AS compagnia,
-                                    vd.id_viaggio AS id_viaggio,
-                                    vd.durata AS durata,
-                                    vd.citta_partenza AS citta_partenza,
-                                    vd.aereoporto_partenza AS aereoporto_partenza,
-                                    vd.citta_destinazione AS citta_destinazione,
-                                    vd.aereoporto_destinazione AS aereoporto_destinazione,
-                                    vd.data_partenza AS data_partenza,
-                                    vd.orario_partenza AS orario_partenza,
-                                    cb.prezzo AS prezzo_biglietto,
-                                    si.numero_scali AS numero_scali,
-                                    COALESCE(isa.scali, 'Nessuno scalo') AS scali
                                 
-                                FROM viaggi_dettagli vd
-                                    JOIN costo_biglietto cb USING(id_viaggio)
-                                    JOIN numero_scali_intermedi si USING(id_viaggio)
-                                    LEFT JOIN info_scali_aggregati isa USING(id_viaggio);
                                 ''')
 
         with Session(engine()) as session:
+
             rows_andata = session.execute( query_info_viaggi, {
                 'partenza': partenza,
                 'destinazione': destinazione,
@@ -282,4 +292,5 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
 
 
         return jsonify({'error': 'Errore di connessione'})
-            
+
+

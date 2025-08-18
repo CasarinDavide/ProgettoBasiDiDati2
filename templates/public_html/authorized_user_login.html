@@ -27,6 +27,29 @@
         });
     }
 
+    function login_admin(){
+        jQuery.ajax({
+            url: ajaxUrl + '?fun=admin&oper=login',
+            type: 'POST',
+            dataType: "json",
+            data: {
+                email: $('#email').val(),
+                password:$('#password').val(),
+                remind_me: $('#remind_me').is(':checked')?1:0
+            },
+            async: true,
+            success: function (data) {
+                if (data.success) {
+                    window.location.href = data.next_url;
+                } else {
+                    alert(data.message); // Show error
+                }
+            }
+
+        });
+    }
+
+
 </script>
 
 <div class="container">
@@ -49,8 +72,13 @@
                             <label class="form-check-label"> Remind Me </label>
                         </div>
                         <div class="mb-3">
-                            <button class="btn btn-primary w-100 mb-3"  onclick="login()" type="button">Login</button>
+                            <button class="btn btn-primary w-100 mb-3"  onclick="login()" type="button">Login come Compagnia</button>
                         </div>
+
+                        <div class="mb-3">
+                            <button class="btn btn-primary w-100 mb-3"  onclick="login_admin()" type="button">Login come admin</button>
+                        </div>
+
                     </form>
                     <p class="text-muted mb-0"> Non hai un accout? <a href="{{ url_for('user_registration') }}" class="text-decoration-none"> Registrati </a></p>
                 </div>

@@ -1026,6 +1026,102 @@
                 viaggio_obj = PAViaggi.getById(id_viaggio);
             }
 
+            let PAVoliDettaglio = function () {
+                // Define shared variables (not accessible outside this block)
+                let datatable;
+                let table;
+                let reloadButton;
+                let add_button;
+                let timeoutSearchTyping;
+                let usergroup_filter = "";
+                let initialSearchValue = "";
+                let customer_filters;
+                let sequence_identifier = 0;
+
+                // Private functions
+                var initDatatable = function () {
+                    // Init datatable --- more info on datatables: https://datatables.net/manual/
+                    datatable = $(table).DataTable({
+                        ajax: {
+                            url: ajaxUrl + '?fun=voli&oper=geDetailsDatatable',
+                            type: "POST",
+                            data: function (data) {
+                                data.sequence_identifier = sequence_identifier
+                            },
+                        },
+
+                        "oSearch": {"sSearch": initialSearchValue},
+                        pageLength: 25,
+                        serverSide: true,
+                        "info": false,
+                        'order': [0, "ASC"],
+                        'columns': [
+                            /*0*/   {data: 'id_volo'},
+                            /*1*/   {data: 'comandante'},
+                            /*2*/   {data: 'ritardo'},
+                            /*3*/   {data: 'id_aereo'},
+                            /*4*/   {data: 'id_aereoporto_partenza'},
+                            /*5*/   {data: 'id_aereoporto_arrivo'},
+                            /*6*/   {data: 'ordine'},
+                        ],
+                        'columnDefs': [
+                            {
+                                "targets": [0],
+                                "visible": false
+                            },
+                            {
+                                "targets": [3],
+                                "createdCell": function (td, cellData, rowData, row, col) {
+                                    //$(td, td).html(`${rowData.compagnia_rel.nome}`);
+                                }
+                            },
+                            {
+                                "targets": [6],
+                                "createdCell": function (td, cellData, rowData, row, col) {
+                                    $(td, td).html(`${cellData} ° Tratta`);
+
+                                }
+                            }
+                        ],
+                        "drawCallback": function (settings) {
+                            PAVoli.onReloadDone();
+                        }
+                    });
+
+                    // Re-init functions on every table re-draw -- more info: https://datatables.net/reference/event/draw
+                    datatable.on('draw', function () {
+                        const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+                        const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+                    });
+
+                }
+
+
+                // Public methods
+                return {
+                    reloadTable: function (sequence_identifier_) {
+                        sequence_identifier = sequence_identifier_
+                        datatable.ajax.reload();
+                    },
+                    onReloadDone: function () {
+                        reloadButton.blur();
+                    },
+                    init: function () {
+                        table = document.querySelector('#table_voli_dettaglio');
+                        add_button = document.querySelector('#table_voli-add_button');
+                        if (!table) {
+                            return;
+                        }
+
+                        initDatatable();
+                    },
+                    adjustColumns : function()
+                    {
+                        datatable.columns.adjust().draw();
+                    }
+                }
+            }();
+
             let PAVoliAddModal = function () {
                 let modal;
                 let confirm_button;
@@ -1045,6 +1141,20 @@
                 let inserisci_tratte_div;
                 let confirm_tratte_btn;
 
+                let showTratte = function()
+                {
+                    tratte_generate_div.removeClass("d-none");
+                    inserisci_tratte_div.addClass("d-none");
+                    confirm_button.removeClass("d-none")
+                    this.generateTratte();
+                }
+
+                let showInserisciTratte = function()
+                {
+                    confirm_button.addClass("d-none")
+                    tratte_generate_div.addClass("d-none");
+                    inserisci_tratte_div.removeClass("d-none");
+                }
                 return {
                     init: function () {
                         modal = new bootstrap.Modal(document.querySelector('#add-voli-modal'));
@@ -1069,17 +1179,12 @@
 
                         back_to_inserisci_tratte.on('click',function()
                         {
-                            confirm_button.addClass("d-none")
-                            tratte_generate_div.addClass("d-none");
-                            inserisci_tratte_div.removeClass("d-none");
+                            showInserisciTratte();
                         });
 
                         confirm_tratte_btn.on('click',()=>
                         {
-                            tratte_generate_div.removeClass("d-none");
-                            inserisci_tratte_div.addClass("d-none");
-                            confirm_button.removeClass("d-none")
-                            this.generateTratte();
+                            showTratte();
                         });
 
 
@@ -1094,6 +1199,8 @@
                         // Reset form
 
                         PAVoliDrawer.hideModal();
+
+                        showInserisciTratte();
 
                         confirm_button.addClass("d-none")
                         tratte_generate_div.addClass("d-none");
@@ -1268,14 +1375,14 @@
                         serverSide: true,
                         "info": false,
                         'order': [0, "ASC"],
+
                         'columns': [
-                            /*0*/   {data: 'id_volo'},
-                            /*1*/   {data: 'comandante'},
-                            /*2*/   {data: 'ritardo'},
-                            /*3*/   {data: 'id_aereo'},
-                            /*4*/   {data: 'id_aereoporto_partenza'},
-                            /*5*/   {data: 'id_aereoporto_arrivo'},
-                            /*6*/   {data: 'ordine'},
+                            /*0*/   {data: 'sequence_identifier'},
+                            /*1*/   {data: 'id_viaggio'},
+                            /*2*/   {data: 'num_scali'},
+                            /*3*/   {data: 'nome_compagnia'},
+                            /*4*/   {data: null}
+
                         ],
                         'columnDefs': [
                             {
@@ -1283,18 +1390,20 @@
                                 "visible": false
                             },
                             {
-                                "targets": [3],
-                                "createdCell": function (td, cellData, rowData, row, col) {
-                                    //$(td, td).html(`${rowData.compagnia_rel.nome}`);
-                                }
+                                "targets": [1],
+                                "visible": false
                             },
                             {
-                                "targets": [6],
+                                "targets": [4],
                                 "createdCell": function (td, cellData, rowData, row, col) {
-                                    $(td, td).html(`${cellData} ° Tratta`);
-
+                                    $(td, td).html(`<a class="cursor-pointer"><i title="Mostra dettaglio" class="fa fs-3 fa-gear"></i></a>`);
+                                    $(td, td).on('click',()=>
+                                    {
+                                        PAVoliDettaglio.reloadTable(parseInt(rowData.sequence_identifier));
+                                    });
                                 }
                             }
+
                         ],
                         "drawCallback": function (settings) {
                             PAVoli.onReloadDone();
@@ -1457,6 +1566,7 @@
 
                     PAVoli.init()
                     PAVoliAddModal.init();
+                    PAVoliDettaglio.init();
 
                 },
                 showModal: function (id_viaggio_in) {
@@ -2257,6 +2367,23 @@
                         <table class="table table-striped align-middle fs-6 gy-2 dataTable no-footer" id="table_voli">
                             <thead>
                             <tr class="text-start text-white fw-bold text-uppercase bg-ryanair-blue">
+                                <th>ID</th>
+                                <th>ID</th>
+                                <th>Num.Scali</th>
+                                <th>Compagnia</th>
+                                <th></th>
+                            </tr>
+                            </thead>
+                            <tbody class="fw-semibold text-gray-700">
+                            <!-- Data will populate dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-striped align-middle fs-6 gy-2 dataTable no-footer" id="table_voli_dettaglio">
+                            <thead>
+                            <tr class="text-start text-white fw-bold text-uppercase bg-ryanair-blue">
                                 <th class="px-3">ID</th>
                                 <th>Comandante</th>
                                 <th>Ritardo</th>
@@ -2271,6 +2398,7 @@
                             </tbody>
                         </table>
                     </div>
+
                 </div>
             </div>
         </div>
