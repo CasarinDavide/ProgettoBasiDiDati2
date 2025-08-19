@@ -1,8 +1,11 @@
+import enum
+
 from System import Base
 from typing import Literal    
 from sqlalchemy import ForeignKey
+from sqlalchemy import Enum, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from sqlalchemy import Enum as SQLEnum
 """
 CREATE TABLE dev.Biglietti (
                                id_biglietto VARCHAR(200) PRIMARY KEY,
@@ -14,15 +17,23 @@ CREATE TABLE dev.Biglietti (
 );
 """
 
+class CategoriaEnum(str, enum.Enum):
+    Economy = "Economy"
+    Business = "Business"
+    FirstClass = "FirstClass"
+
 class BigliettiClass(Base):
     __tablename__ = 'Biglietti'
     __table_args__ = { 'schema': 'dev' }
 
-    id_biglietto: Mapped[str] = mapped_column(primary_key=True)
-    categoria: Mapped[Literal['Economy', 'Business', 'FirstClass']] = mapped_column(nullable=False)
+    id_biglietto: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    categoria: Mapped[CategoriaEnum] = mapped_column(Enum(CategoriaEnum, name="classe"), nullable=False)
     prezzo: Mapped[float] = mapped_column(nullable=False)
     posto: Mapped[str] = mapped_column(nullable=False)
-    
+    nome: Mapped[str] = mapped_column(nullable=False)
+    cognome: Mapped[str] = mapped_column(nullable=False)
+    id_volo: Mapped[int] = mapped_column(nullable=False)
+
     # FK -> Viaggi
     id_viaggio = mapped_column(ForeignKey('dev.Viaggi.id_viaggio'), nullable=False)
     viaggio_rel = relationship('ViaggiClass', back_populates='biglietti_rel')

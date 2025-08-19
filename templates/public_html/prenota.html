@@ -95,17 +95,13 @@ Home
     }
 
     .seat {
-        width: 35px;
-        height: 35px;
-        border-radius: 5px;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.85rem;
-        cursor: pointer;
-        border: 1px solid #ccc;
-        transition: 0.2s all;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin: 4px;
+      min-width: 50px;
+      min-height: 50px;
+      cursor: pointer;
+      transition: transform 0.2s ease, background-color 0.2s ease;
     }
 
     .seat.free {
@@ -125,7 +121,7 @@ Home
 
 <script>
     let clearModal = function() {
-        $('#nominativiContainer').html('');
+        $('#nominativiContainer').empty();
     }
 
     let PrenotaClass = function () {
@@ -139,8 +135,40 @@ Home
         let seq_ritorno;
         let seq_andata;
         let selectedSeats = [];
-        let viaggio_data;
+        let voli_data;
+        let viaggio_local_data;
+        let unique_tratte = {}
+        
+        
+        function getViaggioData() {
+            viaggio_local_data = null;
+            jQuery.ajax({
+                url: ajaxUrl + '?fun=viaggi&oper=get_andata_ritorno',
+                type: 'POST',
+                data: {
+                    id_andata: id_andata,
+                    id_ritorno: id_ritorno
+                },
+                dataType: "json",
+                async: false,
+                success: function (data) {
 
+                    var parsedResult = checkAjaxResponse(data, false);
+                    if (!parsedResult) {
+
+                        viaggio_local_data = data;
+
+                        $('#scontoAndataDisplay').text(`${data['andata'].sconto_biglietto} %`);
+                        $('#scontoRitornoDisplay').text(`${data['ritorno']?data['ritorno'].sconto_biglietto:'-'} %`);
+
+
+                    }
+                }
+            });
+        }
+
+        
+        
         function loadData() {
             let data_ = null;
             jQuery.ajax({
@@ -182,6 +210,8 @@ Home
                     let route = routes[i];
                     let tab_id = travelType + "-route-" + route.id_volo;
 
+                    unique_tratte[`${route.aereoporto_partenza_rel.citta} -> ${route.aereoporto_arrivo_rel.citta}`] = false;
+
                     tabs.append(`
                             <li class="nav-item" role="presentation">
                               <button class="nav-link ${route.sequence_identifier === 1 ? "active" : ""}" id="${tab_id}-tab"
@@ -214,7 +244,8 @@ Home
                             "Economy": [route.aereo_rel.seat_row_number_economy, route.aereo_rel.seat_column_number_economy]
                         },
                         route.seats,
-                        prices
+                        prices,
+                        route
                     )
                 }
             }
@@ -222,7 +253,7 @@ Home
         }
 
         // Disegna mappa dei posti (accordion per cabine)
-        function drawSeatMap(cabins, seatMap, travelType, route, map, seats, prices) {
+        function drawSeatMap(cabins, seatMap, travelType, route, map, seats, prices,volo_raw_data) {
             const routeId = route.replace(/\s/g, '').replace(/[^a-zA-Z0-9_-]/g, '');
             let lastClassSeen = null;
             let seatContainer = null;
@@ -303,9 +334,12 @@ Home
                 // Create seat element
                 const seatId = `${travelType}-${route}-${seatClass}-${seat.seat_label}`;
                 const seatDiv = $(`
-                        <div class="seat ${seat.posti_occupati ? 'occupied' : 'free'}" id="${seatId}">
-                            ${seat.seat_label}
-                        </div>
+                        <div class="seat ${seat.posti_occupati ? 'occupied' : 'free'} p-1 text-center" id="${seatId}">
+                            <div class="d-flex flex-column justify-content-center align-items-center seat-content">
+                              <div class="seat-label fw-bold">${seat.seat_label}</div>
+                              <div class="seat-price text-muted small">${prices[seatClass].costo_posto} €</div>
+                            </div>
+                          </div>
                     `);
                 targetCol.append(seatDiv);
 
@@ -315,20 +349,68 @@ Home
                     route,
                     cabin: seatClass,
                     seat: seat.seat_label,
-                    price: prices[seatClass].costo_posto
+                    price: prices[seatClass].costo_posto,
+                    volo_raw_data:volo_raw_data
                 });
 
                 // Seat click behavior
                 seatDiv.on("click", function () {
+
                     if ($(this).hasClass("occupied")) return;
-                    $(this).toggleClass("selected");
+
+
                     const info = $(this).data("info");
+
+                    if ($(this).hasClass("selected"))
+                    {
+                        unique_tratte[info.route] = false;
+                        selectedSeats = selectedSeats.filter(s => !(s.travelType === info.travelType && s.route === info.route && s.cabin === info.cabin && s.seat === info.seat));
+                        $(this).toggleClass("selected");
+                        updateSummary();
+                        return;
+                    }
+
+
+                    // si può fare meglio -------------
+                    let counting_unique_ticket = {};
+
+                    for (let i = 0; i < selectedSeats.length; i++) {
+                        let route = selectedSeats[i].route;
+                        if (!counting_unique_ticket[route]) {
+                            counting_unique_ticket[route] = 1; // start at 1
+                        } else {
+                            counting_unique_ticket[route]++; // increment
+                        }
+                    }
+
+                    counting_unique_ticket[info.route]++;
+
+                    let errors_encountered = false;
+
+                    for (const [route, count] of Object.entries(counting_unique_ticket)) {
+                        if (count > parseInt(quantity)) {
+                            errors_encountered = true;
+                        }
+                    }
+
+                    if (errors_encountered) {
+                        showToast("Numero di biglietti selezionati eccede la quantità proposta.")
+                        return;
+                    }
+
+
+
+                    // ----------------------
+
+                    $(this).toggleClass("selected");
+
 
                     if ($(this).hasClass("selected")) {
                         selectedSeats.push(info);
-                    } else {
-                        selectedSeats = selectedSeats.filter(s => !(s.travelType === info.travelType && s.route === info.route && s.cabin === info.cabin && s.seat === info.seat));
                     }
+
+                    unique_tratte[info.route] = true;
+
                     updateSummary();
                 });
                 inserted++;
@@ -346,10 +428,28 @@ Home
             );
 
             // Ensure numeric sum
-            let total = selectedSeats.reduce((sum, s) => sum + Number(s.price || 0), 0);
+            let total = selectedSeats.reduce((sum, s) => sum + Number(s.price || 0) - Number(s.price || 0) * viaggio_local_data[s.travelType].sconto_biglietto, 0);
 
             // Format total as integer or with 2 decimals
             $("#totalPriceDisplay").text(total.toFixed(2) + " €");
+
+            let show_confirm = true;
+            for([key,value] of Object.entries(unique_tratte))
+            {
+                show_confirm &&= value;
+            }
+
+            if (show_confirm)
+            {
+                $('#conferma_prenotazione').removeClass('d-none');
+                $('#warning_tratte').addClass('d-none');
+            }
+            else
+            {
+                $('#conferma_prenotazione').addClass('d-none');
+                $('#warning_tratte').removeClass('d-none');
+            }
+
         }
 
         function updateSummaryModal() {
@@ -359,14 +459,16 @@ Home
                 selectedSeats.map(s => `${s.route} [${s.seat}]`).join(", ") || "-"
             );
 
-            let total = selectedSeats.reduce((sum, s) => sum + Number(s.price || 0), 0);
+            let total = selectedSeats.reduce((sum, s) => sum + Number(s.price || 0) - Number(s.price || 0) * viaggio_local_data[s.travelType].sconto_biglietto, 0);
 
             // Format total as integer or with 2 decimals
-            $("#totalPriceDisplayModal").text(total.toFixed(2) + " €");
+            $("#totalPriceDisplayModal").text(total.toFixed(2)  + " €");
 
             $("#checkoutButton").on('click', () => {
                 PrenotaClass.checkout();
             });
+
+
         }
 
         return {
@@ -375,22 +477,34 @@ Home
                 params = new URLSearchParams(window.location.search);
                 id_andata = params.get("id_andata");
                 id_ritorno = params.get("id_ritorno");
+
+                getViaggioData();
+
                 quantity = params.get("quantita");
                 seq_andata = params.get("seq_andata");
                 seq_ritorno = params.get("seq_ritorno");
 
-                viaggio_data = loadData();
+                voli_data = loadData();
 
-                drawRouteTabs("andata", viaggio_data.andata);
-                drawRouteTabs("ritorno", viaggio_data.ritorno);
+                drawRouteTabs("andata", voli_data.andata);
+                drawRouteTabs("ritorno", voli_data.ritorno);
 
             },
 
             confirm() {
-                if (selectedSeats.length !== parseInt(quantity)) {
-                    document.getElementById('totalPriceDisplay').innerText = 'Selezionare il numero corretto di biglietti';
-                    //disattivare il modal
-                    return;
+
+                // dovrebbe essere che la quantità ad ogni scalo n
+                // devo selezionare tutti i biglietti
+
+                let counting_unique_ticket = {};
+
+                for (let i = 0; i < selectedSeats.length; i++) {
+                    let route = selectedSeats[i].route;
+                    if (!counting_unique_ticket[route]) {
+                        counting_unique_ticket[route] = 1; // start at 1
+                    } else {
+                        counting_unique_ticket[route]++; // increment
+                    }
                 }
 
                 for (let i=0; i < selectedSeats.length; i++) {
@@ -413,11 +527,11 @@ Home
             },
 
             checkout() {
+
                 let info = []
                 
                 for(let i=0; i < selectedSeats.length; i++) {
-                    console.log(selectedSeats[i]);
-                    
+
                     let nome = $(`.form-nome-${i}`).val();
                     let cognome = $(`.form-cognome-${i}`).val();
 
@@ -428,28 +542,40 @@ Home
                         'seat': selectedSeats[i].seat,
                         'travelType': selectedSeats[i].travelType,
                         'route': selectedSeats[i].route,
+                        'volo_raw_data':selectedSeats[i].volo_raw_data,
+                        'price':selectedSeats[i].price
                     });
                 }
 
-                console.log(info)
 
-                $.ajax({
-                    url: ajaxUrl + '?',
+                jQuery.ajax({
+                    url: ajaxUrl + '?fun=biglietti&oper=checkout',
                     type: 'POST',
+                    dataType: "json",
                     data: {
-                        id_andata: id_andata,
-                        id_ritorno: id_ritorno,
-                        quantita: quantity,
-                        info: info
+                        id_andata:id_andata,
+                        id_ritorno:id_ritorno,
+                        quantity:quantity,
+                        info: JSON.stringify(info)
                     },
-                })
+                    async: true,
+                    success: function (data) {
+                        errorModal.hide();
+                        var parsedResult = checkAjaxResponse(data, false);
+                        if (!parsedResult) {
+                            var result = data
+                            showToast('Acquisto avvennuto con successo.');
+                        } else {
+                            setTimeout(function () {
+                                showError('Errore', 'Attenzione, transazione negata.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
+                            }, 500);
+                        }
+                    }
+                });
             }
 
         }
     }();
-
-    // Fake data
-
 
 
     // Inizializza pagina
@@ -500,16 +626,22 @@ Home
         <div class="card-body">
             <h5 class="text-primary mb-3">Riepilogo</h5>
             <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <small>Biglietti</small>
                     <div id="quantita" class="h6">0</div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <small>Posti Selezionati</small>
                     <div id="selectedSeatDisplay" class="h6 text-success">-</div>
                 </div>
-                <div class="col-md-4">
-                    <small>Totale ( senza sconto )</small>
+                <div class="col-md-3">
+                    <small>Sconti Applicati</small>
+                    <span>Andata:<div id="scontoAndataDisplay" class="h5 text-warning">0</div></span>
+                    <span>Ritorno:<div id="scontoRitornoDisplay" class="h5 text-warning">0</div></span>
+                </div>
+
+                <div class="col-md-3">
+                    <small>Totale</small>
                     <div id="totalPriceDisplay" class="h5 text-warning">0 €</div>
                 </div>
             </div>
@@ -517,10 +649,12 @@ Home
             <!-- Bottone di conferma -->
             <div class="row mt-4">
                 <div class="col-12 text-center">
-                    <button onclick="PrenotaClass.confirm()" type="button" class="btn btn-success btn-lg px-4"
-                        data-bs-toggle="modal" data-bs-target="#nominativiModal">
+                    <button onclick="PrenotaClass.confirm()" type="button" class="btn btn-success btn-lg px-4 d-none"
+                        data-bs-toggle="modal" data-bs-target="#nominativiModal" id="conferma_prenotazione">
                         Conferma Prenotazione
                     </button>
+
+                    <span id="warning_tratte" >Seleziona i posti per tutte le tratte da effettuare</span>
                 </div>
             </div>
         </div>
@@ -562,7 +696,7 @@ Home
                                 <strong id="selectedSeatDisplayModal" class="h6 text-success">-</strong>
                             </div>
                             <div class="col-md-4">
-                                <small>Totale ( senza sconto )</small>
+                                <small>Totale ( con applicato sconto )</small>
                                 <strong id="totalPriceDisplayModal" class="h5 text-warning">0 €</strong>
                             </div>
                         </div>
