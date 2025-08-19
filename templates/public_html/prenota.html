@@ -535,6 +535,11 @@ Home
                     let nome = $(`.form-nome-${i}`).val();
                     let cognome = $(`.form-cognome-${i}`).val();
 
+                    if(nome === '' || cognome === '') {
+                        showToast("Errore durante l'acquisto, inserire tutti i nominativi.");
+                        return;
+                    }
+
                     info.push({
                         'nome': nome,
                         'cognome': cognome,
@@ -565,6 +570,7 @@ Home
                         if (!parsedResult) {
                             var result = data
                             showToast('Acquisto avvennuto con successo.');
+                            document.location.href = "/mytriviaggi"
                         } else {
                             setTimeout(function () {
                                 showError('Errore', 'Attenzione, transazione negata.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);

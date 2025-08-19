@@ -65,8 +65,8 @@ def check_permission(check_list: List[Callable[[], bool]]) -> bool:
 
     return has_permission
 
-    def auth_error():
-        return jsonify({"success": False, "message": "Errore Autenticazione"}), 401
+def auth_error():
+    return jsonify({"success": False, "message": "Errore Autenticazione"}), 401
 
 
 # CALLBACK OBBLIGATORIO

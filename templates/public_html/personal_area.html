@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title %}
-...
+MyTriviaggi
 {% endblock title %}
 
 {% block extra_jquery %}
@@ -44,22 +44,24 @@
             url: ajaxUrl + "?fun=tickets&oper=getByUser",
             type: "POST",
             success: (data) => {
-                if(!data || data.error)
+                if (!data || data.error)
                     return
 
-
-                let i = 1
-                for (ticket of data) {
+                for (let i=0; i < data.length; i++) {
+                    let ticket = data[i]
                     let partenza = new Date(ticket.data_partenza + " " + ticket.orario_partenza)
                     // Calcola l'orario di ar   rivo
-                    let arrivo = new Date(partenza.getTime() + 
+                    let arrivo = new Date(partenza.getTime() +
                         (ticket.durata * 60 * 1000) +    // durata in minuti -> millisecondi
                         (ticket.sosta * 60 * 1000)       // sosta in minuti -> millisecondi  
                     );
 
+                    let scaduto = ticket.scaduto === true ? 'scaduto' : 'valido'
+                    let prezzo = (parseFloat(ticket.prezzo) - (parseFloat(ticket.prezzo) * parseFloat(ticket.sconto_biglietto))).toFixed(2);
+
                     let n = document.createElement('div')
                     n.innerHTML =
-                        `<div id='ticket ${i}' class="card mb-3">
+                        `<div id="ticket${i}" class="card mb-3 ${scaduto}">
                             <div class="card-body">
                                 <div class="row align-items-center">
                                     <div class="col-md-3">
@@ -75,19 +77,41 @@
                                     </div>
                                     <div class="col-md-3">
                                         <p class="mb-0 mt-1">
-                                            <small> ${ticket.id_biglietto} • Posto ${ticket.posto} </small>
+                                            <small> Id: ${ticket.id_biglietto}</small>
                                         </p>
                                     </div>
                                     <div class="col-md-2 text-end">
-                                        <button class="btn btn-outline-primary btn-sm">Dettagli</button>
+                                        <button class="btn btn-outline-primary btn-sm" data-bs-toggle="collapse" data-bs-target="#dettagli${i}" aria-expanded="false" aria-controls="dettagli">Dettagli</button>
+                                    </div>
+                                </div>
+
+                                <div class="collapse mt-3" id="dettagli${i}">
+                                    <div class="card card-body">
+                                        Volo da (${ticket.id_aereoporto_partenza}) -> (${ticket.id_aereoporto_arrivo}) <br>
+                                        <span class="d-inline-flex align-items-center">
+                                            <i class="fa-solid fa-plane-departure me-3"> </i> Partenza: ${partenza.toLocaleTimeString()} - ${partenza.toLocaleDateString()}  <br>
+                                        </span>
+                                        <span class="d-inline-flex align-items-center">
+                                            <i class="fa-solid fa-plane-arrival me-3"></i> Arrivo: ${arrivo.toLocaleTimeString()} - ${arrivo.toLocaleDateString()}<br>
+                                        </span>
+                                        <span class="d-inline-flex align-items-center">
+                                            <i class="fa-solid fa-couch me-3"></i> Posto: ${ticket.categoria} - ${ticket.posto} <br>
+                                        </span>
+                                        <span class="d-inline-flex align-items-center">
+                                            <i class="fa-solid fa-address-card me-3"></i> Nominativo: ${ticket.nome} ${ticket.cognome}
+                                        </span>
+                                        <span class="d-inline-flex align-items-center">
+                                            <i class="fa-solid fa-money-bill-wave me-3"></i> Prezzo: ${prezzo}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
                         </div>`;
 
                     document.getElementById('tickets').appendChild(n);
-                    i += 1;
                 }
+
+                visualizza('valido', 'scaduto');
             },
 
             error: (err) => {
@@ -217,6 +241,16 @@
 
         document.getElementById(id).style.display = 'block';
     }
+
+    function visualizza(classToShow, classToHide) {
+        Array.from(document.getElementsByClassName(classToHide)).map( el => {
+                el.style.display = 'none';
+        });
+
+        Array.from(document.getElementsByClassName(classToShow)).map(el => {
+                el.style.display = 'block';
+        });
+    }
 </script>
 
 <div class="container-fluid">
@@ -321,6 +355,17 @@
 
         <div id="tickets" class="window col-md-9 p-4">
             <h3>I miei biglietti</h3>
+            <div class="d-flex justify-content-end mb-4">
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        Visualizza
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" onclick="visualizza('valido', 'scaduto')">Validi</a></li>
+                        <li><a class="dropdown-item" onclick="visualizza('scaduto', 'valido')">Scaduti</a></li>
+                    </ul>
+                </div>
+            </div>
             <p class="text-muted">I tuoi voli prenotati</p>
 
 
