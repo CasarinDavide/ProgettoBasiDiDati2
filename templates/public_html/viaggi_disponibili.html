@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+{% block title %}
+{% if user %}
+Home - {{ user }}
+{% else %}
+Home
+{% endif %}
+{% endblock title %}
+
+{% block extra_jquery %}
+
+
+<script>
+
+
+
+    function showTime(date) {
+        return date.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+    }
+
+    function getUrlParameter(name) {
+        let urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
+
+    function prenota(id_andata, id_ritorno,seq_andata,seq_ritorno) {
+        document.location.href = `/prenota?id_andata=${id_andata}&id_ritorno=${id_ritorno}&quantita=${TripClass.getFields().quantita_input.val()}&seq_andata=${seq_andata}&seq_ritorno=${seq_ritorno}`;
+    }
+
+
+    let TripClass = function (){
+        let global_data;
+        let container;
+        let params;
+        let da;
+        let a;
+        let dataP;
+        let dataR;
+        let quantita;
+        let dataP_input;
+        let dataR_input;
+        let quantita_input;
+
+
+        let getFlightDetail = function (flight) {
+
+            const durata = new Date(flight.durata * 60000);
+            const partenza = new Date(`${flight.data_partenza} ${flight.orario_partenza}`);
+            const arrivo = new Date(partenza.getTime() + durata.getTime());
+            const scali = flight.numero_scali - 1;
+            const scaliList = flight.scali;
+
+            return {
+                partenza,
+                arrivo,
+                durata,
+                scali,
+                scaliList,
+                aereoportoPartenza: flight.aereoporto_partenza,
+                aereoportoDestinazione: flight.aereoporto_destinazione,
+                prezzo: flight.prezzo_biglietto,
+                compagnia: flight.compagnia,
+                id_viaggio: flight.id_viaggio
+            };
+        }
+
+        let createCompagniaSection = function (compagnia = "") {
+            return `
+            <div class="mb-3">
+                <span class="text medium mt-1">Compagnia:</span>
+                <span class="badge bg-primary fs-6 p-2">${compagnia}</span>
+            </div>
+        `;
+        }
+
+        let createFlightSection = function(details, tipo) {
+            const {partenza, arrivo, durata, scali, scaliList, aereoportoPartenza, aereoportoDestinazione, prezzo, compagnia, id_viaggio} = details;
+
+            return `
+            <div class="d-flex justify-content-between">
+                <div class="text-center">
+                    <div class="fw-semibold fs-5">${showTime(partenza)}</div>
+                    <small>${aereoportoPartenza}</small>
+                </div>
+                <div class="text-center">
+                    <i class="fas fa-plane text-primary"></i>
+                    <div class="text-muted small">${durata.getUTCHours()}h ${durata.getUTCMinutes()}min</div>
+                    <div class="small">${scali === 0 ? "Diretto" : "Scali: " + scaliList.toString() }</div>
+                </div>
+                <div class="text-center">
+                    <div class="fw-semibold fs-5">${showTime(arrivo)}</div>
+                    <small>${aereoportoDestinazione}</small>
+                </div>
+            </div>
+            <div class="text-center mt-2 text-primary small">${tipo}</div>
+        `;
+        }
+
+        let createFlightTicket = function (andata, ritorno = null) {
+
+            const andataDetails = getFlightDetail(andata);
+            const andataTemplate = createFlightSection(andataDetails, "Andata");
+
+            let prezzo = andataDetails.prezzo;
+            let ritornoTemplate = "";
+            let ritornoDetails = "";
+
+            let compagnieInfo = createCompagniaSection(andataDetails.compagnia);
+
+            if(ritorno) {
+                ritornoDetails = getFlightDetail(ritorno);
+                ritornoTemplate = createFlightSection(ritornoDetails, "Ritorno");
+                prezzo += ritornoDetails.prezzo;
+
+                compagnieInfo += createCompagniaSection(ritornoDetails.compagnia);
+            }
+
+            return `
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body py-3">
+                    <div class="row">
+                        <div class="col-md-2 d-flex flex-column justify-content-center align-items-center text-center">
+                            ${compagnieInfo}
+                        </div>
+                        <div class="col-md-7">
+                            <div class="bg-light border rounded p-2">
+                                ${andataTemplate}
+                            </div>
+                            ${ritornoTemplate}
+                        </div>
+                        <div class="col-md-3 d-flex flex-column justify-content-center align-items-center">
+                            <h4 class="text-success mb-3">€${prezzo}</h4>
+                            <button class="btn btn-primary w-100" onclick="prenota(${andataDetails.id_viaggio}, ${ritorno ? ritornoDetails.id_viaggio : null},${andata?andata.sequence_identifier:null},${ritorno ? ritorno.sequence_identifier:null})">Prenota</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        }
+
+        let render_page = function (data) {
+
+            global_data = data;
+            $('#main').empty();
+            for(let i in data) {
+                const ticket = document.createElement('div');
+                ticket.innerHTML = createFlightTicket(data[i].andata, data[i].ritorno || null);
+                container.appendChild(ticket);
+            }
+
+        }
+
+        let getSelectTrip= function () {
+            jQuery.ajax({
+                url: ajaxUrl + '?fun=trips&oper=getSelectedTripsInPeriod',
+                type: 'POST',
+                dataType: "json",
+                data: {
+                    dataP : dataP,
+                    dataR :dataR
+                },
+                async: true,
+                success: function (data) {
+                    errorModal.hide();
+
+                    var parsedResult = checkAjaxResponse(data, false);
+                    if (!parsedResult) {
+                        render_page(Object.values(data));
+                    } else {
+                        setTimeout(function () {
+                            showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
+                        }, 500);
+
+                    }
+                }
+            })
+        }
+
+        function refresh()
+        {
+            dataP = dataP_input.val();
+            dataR = dataR_input.val();
+            quantita = quantita_input.val();
+            getSelectTrip();
+        }
+
+        return {
+            init()
+            {
+                container= document.getElementById('main');
+
+                dataP_input = $('#dateP');
+                dataR_input= $('#dateR');
+                quantita_input= $('#quantita');
+                const today = new Date().toISOString().split('T')[0];
+
+
+                dataR_input.on('change',function ()
+                {
+                    refresh();
+                })
+
+                dataP_input.on('change',function ()
+                {
+                    refresh();
+                })
+
+                dataP_input.val(today);
+                dataR_input.val(today);
+
+                dataP_input.trigger('change')
+
+            },
+            getFields()
+            {
+                return {
+                    global_data : global_data,
+                    dataP:dataP,
+                    dataR:dataR,
+                    quantita:quantita,
+                    quantita_input:quantita_input
+                }
+            },
+            orderBy(method) {
+                switch(method) {
+                    case "prezzo":
+                        global_data.sort( (a, b) => {
+                            if(a.ritorno && b.ritorno) {
+                                return (a.andata.prezzo + a.ritorno.prezzo) < (b.andata.prezzo + b.ritorno.prezzo);
+                            } else {
+                                return a.andata.prezzo < b.andata.prezzo;
+                            }
+                        })
+                        break;
+                    case "durata":
+                        global_data.sort( (a, b) =>
+                            a.andata.durata < b.andata.durata
+                        );
+                        break;
+                    case "partenza":
+                        global_data.sort( (a, b) =>
+                            a.andata.orario_partenza < b.andata.orario_partenza
+                        );
+                        break;
+                }
+
+                document.getElementById('main').innerHTML = ""
+                render_page(global_data);
+            }
+        }
+    }();
+
+
+    $(document).ready(function () {
+        TripClass.init();
+    });
+
+
+
+
+</script>
+{% endblock extra_jquery %}
+
+{% block main_content %}
+
+    <div class="d-flex justify-content-between mb-4">
+        <!-- Date pickers -->
+
+
+        <div class="d-flex gap-2 align-items-center">
+            <div class="fv-row mb-7">
+                <label for="dateP" class="fs-6 fw-semibold mb-2">Da:</label>
+                <input type="date" id="dateP" class="form-control form-control-solid" value="{{ request.args.get('dataP', '') }}">
+            </div>
+
+            <div class="fv-row mb-7">
+                <label for="dateR" class="fs-6 fw-semibold mb-2">A:</label>
+                <input type="date" id="dateR" class="form-control form-control-solid" value="{{ request.args.get('dataR', '') }}">
+            </div>
+
+            <div class="fv-row mb-7">
+                <label for="quantita" class="fs-6 fw-semibold mb-2">Quantità:</label>
+                <input type="number" id="quantita" class="form-control form-control-solid" value="1">
+            </div>
+        </div>
+
+        <div class="dropdown">
+            <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                Ordina Per:
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" onclick="TripClass.orderBy('prezzo')">Prezzo (crescente)</a></li>
+                <li><a class="dropdown-item" onclick="TripClass.orderBy('durata')">Durata</a></li>
+                <li><a class="dropdown-item" onclick="TripClass.orderBy('partenza')">Orario partenza</a></li>
+            </ul>
+        </div>
+    </div>
+
+<div id='main' class="container my-5">
+</div>
+
+<!-- Compagnie -->
+
+{% endblock main_content %}
