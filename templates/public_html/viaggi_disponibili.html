@@ -47,7 +47,7 @@ Home
             const durata = new Date(flight.durata * 60000);
             const partenza = new Date(`${flight.data_partenza} ${flight.orario_partenza}`);
             const arrivo = new Date(partenza.getTime() + durata.getTime());
-            const scali = flight.numero_scali - 1;
+            const scali = flight.num_scali - 1;
             const scaliList = flight.scali;
 
             return {
@@ -59,7 +59,7 @@ Home
                 aereoportoPartenza: flight.aereoporto_partenza,
                 aereoportoDestinazione: flight.aereoporto_destinazione,
                 prezzo: flight.prezzo_biglietto,
-                compagnia: flight.compagnia,
+                compagnia: flight.nome_compagnia,
                 id_viaggio: flight.id_viaggio
             };
         }

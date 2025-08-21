@@ -426,14 +426,13 @@ def function_actions():
                 id_compagnia=id_compagnia,
                 seat_row_number_first = getParam("seat_row_number_first"),
                 seat_column_number_first = getParam("seat_row_number_first"),
-                seat_row_number_business = getParam("seat_row_number_first"),
-                seat_column_number_business = getParam("seat_row_number_first"),
-                seat_row_number_economy = getParam("seat_row_number_first"),
-                seat_column_number_economy = getParam("seat_row_number_first")
+                seat_row_number_business = getParam("seat_row_number_business"),
+                seat_column_number_business = getParam("seat_column_number_business"),
+                seat_row_number_economy = getParam("seat_row_number_economy"),
+                seat_column_number_economy = getParam("seat_column_number_economy")
             )
 
         elif action == "getAllDatatable":
-
             return aerei_repo.get_datatable(draw,start,length,search_value,id_compagnia = id_compagnia)
         elif action == "getById":
             return aerei_repo.get_by_id(getParam("id_aereo"))
@@ -444,13 +443,7 @@ def function_actions():
                 modello=getParam("modello"),
                 consumoMedio=getParam("consumoMedio"),
                 dimensione=getParam("dimensione"),
-                id_compagnia=id_compagnia,
-                seat_row_number_first = getParam("seat_row_number_first"),
-                seat_column_number_first = getParam("seat_row_number_first"),
-                seat_row_number_business = getParam("seat_row_number_first"),
-                seat_column_number_business = getParam("seat_row_number_first"),
-                seat_row_number_economy = getParam("seat_row_number_first"),
-                seat_column_number_economy = getParam("seat_row_number_first")
+                id_compagnia=id_compagnia
             )
         elif action == "get_for_select":
             # permessi admin TODO
@@ -525,47 +518,72 @@ def function_actions():
                 paese = getParam("paese")
             )
     elif target == "personalArea":
-        passeggeri_repo = PasseggeriRepository()
+
+
 
         if action == "getCurrentInfo":
-            return passeggeri_repo.get_by_id_json(current_user.get_id())
+
+            repo = None
+
+            if is_passeggero():
+                repo = PasseggeriRepository()
+            elif is_compagnia():
+                repo = CompagnieRepository()
+
+            return repo.get_by_id_json(current_user.get_id())
 
         if action == "update":
+
+            repo = None
+
+            if is_passeggero():
+                repo = PasseggeriRepository()
+            elif is_compagnia():
+                repo = CompagnieRepository()
+
             element = getParam("element")
             val = getParam("value")
-            id_passeggero = current_user.get_id()
-            pk_field = passeggeri_repo.pk_field
+            id_ = current_user.get_id()
+            pk_field = repo.pk_field
             res = False
-            
+
             if element == "nome_cognome":
-                nome = val.split(" ")[0]
-                cognome = val.split(" ")[1]
-                res = passeggeri_repo.update(id_passeggero, pk_field, nome=nome, cognome=cognome)
-            
+
+                val_split = val.split(" ")
+
+                if len(val_split) > 1:
+                    nome = val.split(" ")[0]
+                    cognome = val.split(" ")[1]
+                    res = repo.update(id_, pk_field, nome=nome, cognome=cognome)
+                else:
+                    # case compagnia
+                    nome = val
+                    res = repo.update(id_, pk_field, nome=nome)
             elif element == "email":
-                res = passeggeri_repo.update(id_passeggero, pk_field, email=val)
+                res = repo.update(id_, pk_field, email=val)
             elif element == "password":
                 password = generate_password_hash(val)
-                res = passeggeri_repo.update(id_passeggero, pk_field, password=password)
+                res = repo.update(id_, pk_field, password=password)
             elif element == "telefono":
                 tel = val.replace(' ', '')
-                res = passeggeri_repo.update(id_passeggero, pk_field, tel=tel)
+                res = repo.update(id_, pk_field, tel=tel)
             elif element == "nascita":
-                res = passeggeri_repo.update(id_passeggero, pk_field, nascita=val)
+                res = repo.update(id_, pk_field, nascita=val)
             elif element == "indirizzo":
                 civico = val.split(' ')[0]
                 via = val.split(' ')[1]
                 citta = val.split(' ')[2]
                 cod_postale = val.split(' ')[3]
                 paese = val.split(' ')[4]
-                res = passeggeri_repo.update(id_passeggero, pk_field,  
+                res = repo.update(id_, pk_field,
                                                 civico=civico,
                                                 via=via,
                                                 citta=citta,
                                                 cod_postale=cod_postale,
                                                 paese=paese
-                                            )
+                                                )
             return jsonify({ 'success': res })
+
 
     elif target == "tickets":
         biglietti_repo = BigliettiRepository()
@@ -657,7 +675,10 @@ def function_actions():
             if not check_permission([is_admin,is_compagnia]):
                 return auth_error()
 
-            return voli_repo.get_datatable(draw,start,length,search_value,getParam("id_viaggio"))
+            if is_admin():
+                return voli_repo.get_datatable(draw,start,length,search_value,getParam("id_viaggio"))
+            else:
+                return voli_repo.get_datatable(draw,start,length,search_value,getParam("id_viaggio"),id_compagnia=current_user.get_id())
         elif action == "geDetailsDatatable":
             if not check_permission([is_admin,is_compagnia]):
                 return auth_error()
@@ -725,6 +746,23 @@ def function_actions():
                                            quantity = getParam('quantity'),
                                            json_data = getParam('info'),
                                            id_passeggero=current_user.get_id())
+        elif action == 'get_stats':
+
+            print(is_compagnia())
+
+            if not check_permission([is_compagnia]):
+                return auth_error()
+
+            print(getParam('start_date'))
+            print(getParam('end_date'))
+
+            return biglietti_repo.extract_stats(id_compagnia=current_user.get_id(),
+                                                start_date=getParam('start_date'),
+                                                end_date=getParam('end_date'))
+
+
+
+
     return jsonify({"error": "Invalid action"}), 400
 
 
