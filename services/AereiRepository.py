@@ -65,13 +65,7 @@ class AereiRepository(BaseRepository[AereiClass]):
         return jsonify(model_to_dict(super().get_by_id(int(id_aereo), pk_field=self.pk_field, joins=[AereiClass.compagnia_rel]), backrefs=True))
 
 
-    def update(self, id_aereo: int, capacita: str, modello: str, consumoMedio: str, dimensione: str,id_compagnia:Optional[None] | Optional[str],
-               seat_row_number_first:int = 1,
-               seat_column_number_first:int = 1,
-               seat_row_number_business:int = 1,
-               seat_column_number_business:int = 1,
-               seat_row_number_economy:int = 1,
-               seat_column_number_economy:int = 1) -> Response:
+    def update(self, id_aereo: int, capacita: str, modello: str, consumoMedio: str, dimensione: str,id_compagnia:Optional[None] | Optional[str]) -> Response:
         """
         Update a compagnie.
         kwargs can include email, password, tel, nome, address_id.
@@ -82,13 +76,7 @@ class AereiRepository(BaseRepository[AereiClass]):
                              modello=modello,
                              consumoMedio=consumoMedio,
                              dimensione=dimensione,
-                             id_compagnia=id_compagnia,
-                             seat_row_number_first = seat_row_number_first,
-                             seat_column_number_first = seat_column_number_first,
-                             seat_row_number_business= seat_row_number_business,
-                             seat_column_number_business= seat_column_number_business,
-                             seat_row_number_economy= seat_row_number_economy,
-                             seat_column_number_economy=seat_column_number_economy)
+                             id_compagnia=id_compagnia)
         return jsonify({"success":res})
 
     def delete(self, id_aereo: int) -> Response:

@@ -107,6 +107,7 @@ class BaseRepository(Generic[T]):
         if external_session:
             external_session.add(record)
             return record
+
         try:
             with Session(engine()) as session:
                 session.add(record)
@@ -148,10 +149,15 @@ class BaseRepository(Generic[T]):
         """Update a record by ID."""
         with Session(engine()) as session:
             obj = session.query(self.model).filter(getattr(self.model, pk_field) == obj_id).first()
+            query = session.query(self.model).filter(getattr(self.model, pk_field) == obj_id)
+            print(str(query.statement.compile(compile_kwargs={"literal_binds": True})))
+
             if not obj:
                 return False
             for key, value in kwargs.items():
                 setattr(obj, key, value)
+
+
             session.commit()
             return True
 

@@ -72,18 +72,29 @@ class VoliRepository(BaseRepository[VoliClass]):
         res = super().delete(id_volo, self.pk_field)
         return jsonify({"success":res})
 
-    def get_datatable(self, draw: int, start: int, length: int, search_value: str, id_viaggio: str):
-        query = text('''
-                     SELECT sequence_identifier, id_viaggio, COUNT(sequence_identifier) as num_scali, dev."Compagnie".nome as nome_compagnia
-                     FROM dev."Voli"
-                              LEFT JOIN dev."Aerei" ON dev."Aerei".id_aereo = dev."Voli".id_aereo
-                              LEFT JOIN dev."Compagnie" ON dev."Compagnie".id_compagnia = dev."Aerei".id_compagnia
-                     WHERE id_viaggio = :id_viaggio
-                     GROUP BY sequence_identifier, id_viaggio, dev."Compagnie".nome
-                     ''')
+    def get_datatable(self, draw: int, start: int, length: int, search_value: str, id_viaggio: str,**kwargs):
+
+        filter_id_compagnia = kwargs.get('id_compagnia',None)
+        params = {"id_viaggio": id_viaggio}
+
+        base_query = '''
+                            SELECT sequence_identifier, id_viaggio, COUNT(sequence_identifier) as num_scali, dev."Compagnie".nome as nome_compagnia
+                            FROM dev."Voli"
+                            LEFT JOIN dev."Aerei" ON dev."Aerei".id_aereo = dev."Voli".id_aereo
+                            LEFT JOIN dev."Compagnie" ON dev."Compagnie".id_compagnia = dev."Aerei".id_compagnia
+                            WHERE id_viaggio = :id_viaggio'''
+
+
+        if filter_id_compagnia is not None:
+            base_query += ''' AND dev."Aerei".id_compagnia = :id_compagnia'''
+            params['id_compagnia'] = filter_id_compagnia
+        base_query += ''' GROUP BY sequence_identifier, id_viaggio, dev."Compagnie".nome'''
+
+
+        query = text(base_query)
 
         with Session(engine()) as session:
-            res = session.execute(query, {"id_viaggio": id_viaggio}).fetchall()
+            res = session.execute(query, params).fetchall()
 
             # Convert rows to dicts
             data = [dict(row._mapping) for row in res]

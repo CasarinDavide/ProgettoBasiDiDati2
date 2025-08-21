@@ -213,7 +213,7 @@
                     {
                         "targets": [7],
                         "createdCell": function (td, cellData, rowData, row, col) {
-                            $(td, td).html(`<a class="cursor-pointer" onclick="PACompagniaAereaEditModal.showModal(${rowData.id_compagnia})" ><i title="Modifica Utente" class="fa fs-3 fa-gear"></i></a>`);
+                            $(td, td).html(`<a class="cursor-pointer" onclick="PACompagniaAereaEditModal.showModal(${rowData.id_compagnia})" ><i title="Modifica Compagnia" class="fa fs-3 fa-gear"></i></a>`);
                         }
                     },
                     {
@@ -639,7 +639,7 @@
                     {
                         "targets": [6],
                         "createdCell": function (td, cellData, rowData, row, col) {
-                            $(td, td).html(`<a class="cursor-pointer" onclick="PAAereiEditModal.showModal(${rowData.id_aereo})" ><i title="Modifica Utente" class="fa fs-3 fa-gear"></i></a>`);
+                            $(td, td).html(`<a class="cursor-pointer" onclick="PAAereiEditModal.showModal(${rowData.id_aereo})" ><i title="Modifica Aereo" class="fa fs-3 fa-gear"></i></a>`);
                         }
                     }
                 ],
@@ -905,7 +905,7 @@
                 confirm_button = $('#edit-aerei-submit');
                 form = document.getElementById("edit-aerei-form");
                 title = $('#edit-aerei-title');
-                title.text('Modifica Utente');
+                title.text('Modifica Aereo');
 
 
                 capacita_input = $('#edit-aerei-capacita');
@@ -925,7 +925,7 @@
                 confirm_button.on('click', function () {
                     confirm_button.attr('data-kt-indicator', 'on');
                     confirm_button.attr('disabled', true);
-                    PAAerei.edit(data.id);
+                    PAAerei.edit(data.id_aereo);
                 });
 
 
@@ -1092,14 +1092,14 @@
                         var parsedResult = checkAjaxResponse(data, false);
                         if (!parsedResult) {
                             var result = data;
-                            PACompagniaAerea.reloadTable();
-                            PACompagniaAereaAddModal.hideModal();
+                            PADipendenti.reloadTable();
+                            PADipendentiAddModal.hideModal();
                             PADipendentiDrawer.showModal();
                             showToast('Utente Aggiunta con successo.');
 
                         } else {
                             setTimeout(function () {
-                                showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PADipendentiAddModal.errorModal();" type="button">Chiudi</button>', true);
                             }, 500);
 
                         }
@@ -1133,7 +1133,7 @@
                             showToast('Dipendente Modificato con successo.');
                         } else {
                             setTimeout(function () {
-                                showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PACompagniaAereaAddModal.errorModal();" type="button">Chiudi</button>', true);
+                                showError('Errore', 'Attenzione, alcuni campi non sono stati compilati correttamente. Controllare e riprovare.', '<button class="btn btn-light" data-bs-dismiss="modal" onclick="errorModal.hide();PADipendentiEditModal.errorModal();" type="button">Chiudi</button>', true);
                             }, 500);
                         }
                     }
@@ -2136,7 +2136,7 @@
                         /*0*/   {data: 'id_volo'},
                         /*1*/   {data: 'comandante'},
                         /*2*/   {data: 'ritardo'},
-                        /*3*/   {data: 'id_aereo'},
+                        /*3*/   {data: 'aereo_rel.modello'},
                         /*4*/   {data: 'id_aereoporto_partenza'},
                         /*5*/   {data: 'id_aereoporto_arrivo'},
                         /*6*/   {data: 'ordine'},
@@ -3138,7 +3138,7 @@
                     <!--end::Button-->
                     <!--begin::Button-->
                     <button type="submit" id="edit-aerei-submit" class="btn btn-primary">
-                        <span class="indicator-label">Crea</span>
+                        <span class="indicator-label">Modifica</span>
                         <span class="indicator-progress">Attendi...
                         <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
                     </span>
