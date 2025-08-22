@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text, Row
 from datetime import datetime
 from flask import jsonify, Response
+from collections import defaultdict
 
 from typing import List, Sequence, Any
 from datetime import date, time, datetime
@@ -446,6 +447,8 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
 
 
         return jsonify({'error': 'Errore di connessione'})
+    
+
     def get_andata_ritorno(self, id_andata:str, id_ritorno:str):
 
         res = {}
@@ -456,5 +459,95 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
             res["ritorno"] =model_to_dict(super().get_by_id(id_ritorno, pk_field=self.pk_field,joins=[ViaggiClass.partenza_rel,ViaggiClass.arrivo_rel]),backrefs = True)
 
         return jsonify(res)
+    
+    def get_viaggi_voli_user(self, id_user):
+
+        query_viaggi = text('''
+            SELECT 
+                v.id_viaggio AS id_viaggio,
+                v.data_partenza AS data_partenza,
+                v.orario_partenza AS orario_partenza,
+                v.durata AS durata,
+                v.sosta AS sosta,
+                ap1.nome AS aereoporto_partenza,
+                ap2.nome AS aereoporto_arrivo,
+                CASE 
+                    WHEN v.data_partenza < CURRENT_DATE OR (v.data_partenza = CURRENT_DATE AND v.orario_partenza <= CURRENT_TIME)
+                    THEN true
+                    ELSE false
+                END AS scaduto
+            FROM dev."Viaggi" v
+                JOIN dev."Aereoporti" ap1 ON v.id_aereoporto_partenza = ap1.id_aereoporto
+                JOIN dev."Aereoporti" ap2 ON v.id_aereoporto_arrivo = ap2.id_aereoporto
+                JOIN dev."Biglietti" b ON b.id_viaggio = v.id_viaggio
+            WHERE 
+                b.id_passeggero = :id_passeggero;
+        ''')
+
+        query_voli = text('''
+            SELECT 
+                v.id_viaggio AS id_viaggio,
+                v.id_volo AS id_volo,
+                v.ordine AS ordine,
+                vi.sconto_biglietto AS sconto,
+                ap1.nome AS aeroporto_partenza,
+                ap2.nome AS aereoporto_arrivo,
+                b.id_biglietto AS id_biglietto,
+                b.posto AS posto,
+                b.nome AS nome,
+                b.cognome AS cognome,
+                b.prezzo AS prezzo
+            FROM dev."Voli" v
+                JOIN dev."Biglietti" b ON b.id_volo = v.id_volo
+                JOIN dev."Aereoporti" ap1 ON v.id_aereoporto_partenza = ap1.id_aereoporto
+                JOIN dev."Aereoporti" ap2 ON v.id_aereoporto_arrivo = ap2.id_aereoporto
+                JOIN dev."Viaggi" vi ON v.id_viaggio = vi.id_viaggio
+            WHERE b.id_passeggero = :id_passeggero
+            ORDER BY v.id_viaggio, v.ordine, b.id_biglietto
+        ''')
+
+        with Session(engine()) as session:
+            risultati_viaggi = session.execute(query_viaggi, {'id_passeggero': id_user}).fetchall()
+            risultati_voli = session.execute(query_voli, {'id_passeggero': id_user}).fetchall()
+
+            viaggi_dict = defaultdict(lambda: {
+                'voli': defaultdict( lambda: {
+                    'biglietti': []
+                })
+            })
+
+            for row in risultati_viaggi:
+                viaggio_key = f"viaggio_{row.id_viaggio}"
+                viaggi_dict[viaggio_key].update({
+                    'id_viaggio': row.id_viaggio,
+                    'partenza': f"{row.data_partenza} {row.orario_partenza}",
+                    'durata': row.durata,
+                    'sosta': row.sosta,
+                    'partenza_destinazione': f"{row.aereoporto_partenza} - {row.aereoporto_arrivo}",
+                    'scaduto': row.scaduto
+                })
+
+            for row in risultati_voli:
+                viaggio_key = f"viaggio_{row.id_viaggio}"
+                volo_key = f"volo_{row.ordine}"
+                
+                if 'nome' not in viaggi_dict[viaggio_key]['voli'][volo_key]:
+                    viaggi_dict[viaggio_key]['voli'][volo_key].update({
+                        'aereoporti': f"{row.aeroporto_partenza} - {row.aereoporto_arrivo}",
+                        'id_volo': row.id_volo,
+                        'ordine': row.ordine
+                    })
+
+                biglietto = {
+                    'id_biglietto': row.id_biglietto,
+                    'posto': row.posto,
+                    'prezzo': row.prezzo - (row.sconto * row.prezzo),
+                    'nominativo': f"{row.nome} {row.cognome}"
+                }
+
+                viaggi_dict[viaggio_key]['voli'][volo_key]['biglietti'].append(biglietto)
 
 
+            return jsonify(viaggi_dict)
+        
+        return jsonify({'error': 'Qualcosa è andato storto'})

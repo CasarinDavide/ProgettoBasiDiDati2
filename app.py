@@ -569,11 +569,12 @@ def function_actions():
 
     elif target == "tickets":
         biglietti_repo = BigliettiRepository()
+        viaggi_repo = ViaggiRepository()
         id_andata = getParam("id_andata")
         id_ritorno = getParam("id_ritorno")
 
         if action == "getByUser":
-            return biglietti_repo.get_by_user(current_user.get_id())
+            return viaggi_repo.get_viaggi_voli_user(current_user.get_id())
         if action == "getByViaggio":
             viaggio = getParam("viaggio")
             if viaggio == "andata":

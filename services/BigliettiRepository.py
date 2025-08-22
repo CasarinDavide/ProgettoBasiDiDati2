@@ -45,9 +45,8 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
         '''
         
         query = text('''
-                SELECT *    
-                    FROM dev."Biglietti" b 
-                    JOIN dev."Viaggi" v USING(id_viaggio)
+                SELECT *
+                FROM dev."Biglietti" b 
                 WHERE b.id_passeggero = :user
         ''')
 
@@ -110,7 +109,7 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
     
     def get_by_viaggio(self, id_viaggio: str) -> Response:
         '''
-            Return all the tickets of the given trip that are not already taken
+            Return all the tickets of the given trip
         '''
         return None
     
@@ -148,7 +147,7 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
             # should not be used, I expect to have viaggio_rel not null
             return biglietto.prezzo
 
-    def get_biglietto(self,id_volo,seat,**kwargs):
+    def get_biglietto(self, id_volo, seat,**kwargs):
         return self.search_by_columns(joins=[joinedload(BigliettiClass.viaggio_rel).joinedload(ViaggiClass.voli_rel)],id_volo = id_volo,posto = seat,**kwargs)
 
     def set_seat(self,id_biglietto,id_passeggero):
@@ -156,8 +155,7 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
         super().update(obj_id=id_biglietto,pk_field=self.pk_field,id_passeggero = id_passeggero)
 
 
-    def get_by_volo(self,id_volo):
-
+    def get_by_volo(self, id_volo):
         query = text('''
                      SELECT mappa_posti.*, CASE WHEN seat_label NOT IN (SELECT posto 
                                                                         FROM "dev"."Biglietti" 
