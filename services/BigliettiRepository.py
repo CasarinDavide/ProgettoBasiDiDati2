@@ -160,7 +160,8 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
                      SELECT mappa_posti.*, CASE WHEN seat_label NOT IN (SELECT posto 
                                                                         FROM "dev"."Biglietti" 
                                                                         WHERE id_viaggio = 1 
-                                                                          AND "dev"."Biglietti".categoria = seat_class) THEN 0 ELSE 1 END AS posti_occupati,
+                                                                          AND "dev"."Biglietti".categoria = seat_class
+                                                                          AND v.id_volo = "dev"."Biglietti".id_volo) THEN 0 ELSE 1 END AS posti_occupati,
                             CASE
                                 WHEN seat_class = 'Business' THEN 1
                                 WHEN seat_class = 'Economy' THEN 0
@@ -231,6 +232,72 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
             print(e)
             return jsonify({"success": False})
 
+
+    def extract_stats(self,id_compagnia,start_date,end_date):
+
+        print(start_date)
+        print(end_date)
+        agg_query = """ WITH ticket_stats AS (
+                                SELECT
+                                    COALESCE(AVG(b.prezzo),0) AS avg_price,
+                                    COALESCE(STDDEV_SAMP(b.prezzo),0) AS std_price,
+                                    COUNT(b.id_biglietto) AS total_tickets,
+                                    COALESCE(SUM(b.prezzo),0) AS total_revenue
+                                FROM "dev"."Biglietti" b
+                                         JOIN "dev"."Voli" v ON v.id_volo = b.id_volo
+                                         JOIN "dev"."Viaggi" s ON s.id_viaggio = v.id_viaggio
+                                         JOIN "dev"."Aerei" a ON v.id_aereo = a.id_aereo
+                                WHERE s.data_partenza BETWEEN :start_date AND :end_date
+                                AND a.id_compagnia = :id_compagnia
+                            ),
+                             delay_stats AS (
+                                 SELECT
+                                     COALESCE(AVG(v.ritardo),0) AS avg_delay,
+                                     COALESCE(STDDEV_SAMP(v.ritardo),0) AS std_delay,
+                                     COALESCE(AVG(CASE WHEN v.ritardo > 0 THEN 1 ELSE 0 END) * 100,0) AS percent_delayed
+                                 FROM "dev"."Voli" v
+                                 JOIN "dev"."Viaggi" s ON s.id_viaggio = v.id_viaggio
+                                 JOIN "dev"."Aerei" a ON v.id_aereo = a.id_aereo
+                                 WHERE s.data_partenza BETWEEN  :start_date AND :end_date
+                                   AND a.id_compagnia = :id_compagnia
+                             )
+                        SELECT
+                            t.avg_price,
+                            t.std_price,
+                            t.total_tickets,
+                            t.total_revenue,
+                            d.avg_delay,
+                            d.std_delay,
+                            d.percent_delayed
+                        FROM ticket_stats t, delay_stats d; """
+
+        ts_query = """ SELECT
+                           s.data_partenza::date AS giorno,
+                           COUNT(b.id_biglietto) AS tickets_sold,
+                           COALESCE(SUM(b.prezzo),0) AS revenue,
+                           COALESCE(AVG(b.prezzo),0) AS avg_price,
+                           COALESCE(AVG(v.ritardo),0) AS avg_delay
+                       FROM "dev"."Biglietti" b
+                                JOIN "dev"."Voli" v ON v.id_volo = b.id_volo
+                                JOIN  "dev"."Viaggi" s ON s.id_viaggio = v.id_viaggio
+                                JOIN "dev"."Aerei" a ON v.id_aereo = a.id_aereo
+                       WHERE s.data_partenza BETWEEN :start_date AND :end_date
+                         AND a.id_compagnia = :id_compagnia
+                       GROUP BY giorno
+                       ORDER BY giorno; """
+
+        params = {"start_date": start_date, "end_date": end_date,"id_compagnia":id_compagnia}
+
+        print(params)
+
+        with Session(engine()) as session:
+            agg = session.execute(text(agg_query), params).mappings().first()
+            ts = session.execute(text(ts_query), params).mappings().all()
+
+            return jsonify({
+                "aggregates": dict(agg),
+                "timeseries": [dict(row) for row in ts]
+            })
 
 
 

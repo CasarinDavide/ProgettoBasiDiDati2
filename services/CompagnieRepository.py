@@ -52,22 +52,6 @@ class CompagnieRepository(BaseRepository[CompagnieClass]):
     def get_by_id(self, id_compagnia: str) -> CompagnieClass | None:
         return super().get_by_id(int(id_compagnia), pk_field=self.pk_field)
 
-    def update(self, compagnie_id: int, email: str, tel: str, nome: str, civico: str, via: str, citta: str, cod_postale: str, paese: str) -> Response:
-        """
-        Update a compagnie.
-        kwargs can include email, password, tel, nome, address_id.
-        """
-        res = super().update(compagnie_id,
-                            self.pk_field,
-                            email=email,
-                            tel=tel,
-                            nome=nome,
-                            civico=civico,
-                            via=via,
-                            cod_postale=cod_postale,
-                            citta=citta,
-                            paese=paese)
-        return jsonify({"success":res})
 
     def delete(self, compagnie_id: int) -> Response:
         """Delete a compagnie by ID."""
