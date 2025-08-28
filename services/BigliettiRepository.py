@@ -184,7 +184,7 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
 
         return connection_err()
 
-    def checkout(self, id_andata:str, id_ritorno:str, quantity:str, json_data:str,prices: tuple,id_passeggero: str):
+    def checkout(self, id_andata:str, id_ritorno:str, quantity:str, json_data:str,prices: tuple,id_passeggero: str,**kwargs):
         """
             json_data structure example:
             [
@@ -196,14 +196,27 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
                     'travelType': 'andata',
                     'route': 'Milano -> Frankfurt am Main',
                     'volo_raw_data': {...},
-                    'price': 120.0
+                    'price': 120.0,
+                    'bagagli':2
+                    'snack':1
+                    'internet':0
                 },
                 ...
             ]
             """
         data = json.loads(json_data)
 
-        print(prices)
+
+        prezzo_internet = float(kwargs.get('prezzo_internet ', 0.0))
+        prezzo_bagaglio = float(kwargs.get('prezzo_bagaglio', 0.0))
+        prezzo_snack   = float(kwargs.get('snack_price', 0.0))
+        sconto         = float(kwargs.get('sconto', 0.0))
+
+        print(prezzo_internet)
+        print(prezzo_bagaglio)
+        print(prezzo_snack)
+
+
 
         try:
             with Session(engine()) as session:
@@ -215,32 +228,44 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
                         # Determine if it's the outbound or return flight
 
                         # Add the ticket
-
                         is_andata = biglietto.get('travelType') == 'andata'
                         id_viaggio = id_andata if is_andata else id_ritorno
                         id_volo = biglietto.get('volo_raw_data', {}).get('id_volo')
                         seat_class = biglietto.get('cabin')
-
+                        internet = biglietto.get('internet')
+                        snack=biglietto.get('snack')
+                        bagagli= int(biglietto.get('bagagli',0))
 
                         key = f"{id_volo}::{seat_class}"
 
                         # Seleziona la giusta tabella prezzi
-                        prezzo = (prezzi_andata if is_andata else prezzi_ritorno).get(key)
+                        prezzo = (prezzi_andata if is_andata else prezzi_ritorno).get(key,0.0)
                         if prezzo is None:
                             raise ValueError(
                                 f"Nessun prezzo valido trovato per {seat_class} (volo {id_volo})"
                             )
 
+                        prezzo = float(prezzo)
+
+                        prezzo += prezzo_internet
+                        prezzo = prezzo - prezzo * sconto
+                        prezzo += prezzo_bagaglio * bagagli
+                        prezzo += prezzo_snack
+
                         record = self.add(
                             categoria=CategoriaEnum(seat_class),
-                            prezzo=float(prezzo),
+                            prezzo=prezzo,
                             id_viaggio=int(id_viaggio),
                             id_passeggero=int(id_passeggero),
                             posto=biglietto.get('seat'),
                             nome=biglietto.get('nome'),
                             cognome=biglietto.get('cognome'),
                             id_volo=id_volo,
-                            session=session
+                            session=session,
+                            internet=internet,
+                            snack=snack,
+                            bagagli=bagagli
+
                         )
 
                         if record is None:

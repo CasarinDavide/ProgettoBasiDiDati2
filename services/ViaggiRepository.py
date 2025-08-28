@@ -1,4 +1,4 @@
-from services.BaseRepository import BaseRepository, model_to_dict,to_json
+from services.BaseRepository import BaseRepository, model_to_dict, to_json, to_dict_list
 from core.ViaggiClass import ViaggiClass
 
 from System import engine
@@ -158,6 +158,8 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                                               LEFT JOIN dev."Biglietti" b
                                                         ON b.id_volo = v.id_volo
                                                             AND b.posto = amp.seat_label
+                                                            AND b.id_viaggio = v.id_viaggio
+                                         
                                      GROUP BY v.id_volo, v.sequence_identifier, amp.seat_class
                                  ),
                                       seat_cost AS (
@@ -202,7 +204,7 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                                      
                                      COUNT(v.sequence_identifier) AS num_scali,
                                      ROUND(SUM((sc.costo_minimo - sc.costo_minimo * COALESCE(viaggi_filtrati.sconto_biglietto, 0))::numeric),2) AS prezzo_biglietto,
-                                     STRING_AGG(aereoporto_partenza.id_aereoporto || ' - ' || aereoporto_arrivo.id_aereoporto, ' -> ' ORDER BY v.sequence_identifier) AS scali
+                                     STRING_AGG(v.id_aereoporto_partenza || ' - ' || v.id_aereoporto_arrivo, ' -> ' ORDER BY v.sequence_identifier) AS scali
                                  FROM dev."Voli" v
                                           LEFT JOIN dev."Aerei" a ON a.id_aereo = v.id_aereo
                                           LEFT JOIN dev."Compagnie" c ON c.id_compagnia = a.id_compagnia
@@ -320,6 +322,7 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                                               LEFT JOIN dev."Biglietti" b
                                                         ON b.id_volo = v.id_volo
                                                             AND b.posto = amp.seat_label
+                                                            AND b.id_viaggio = v.id_viaggio
                                      GROUP BY v.id_volo, v.sequence_identifier, amp.seat_class
                                  ),
                                       seat_cost AS (
@@ -364,7 +367,7 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
 
                                      COUNT(v.sequence_identifier) AS num_scali,
                                      ROUND(SUM((sc.costo_minimo - sc.costo_minimo * COALESCE(viaggi_filtrati.sconto_biglietto, 0))::numeric),2) AS prezzo_biglietto,
-                                     STRING_AGG(aereoporto_partenza.id_aereoporto || ' - ' || aereoporto_arrivo.id_aereoporto, ' -> ' ORDER BY v.sequence_identifier) AS scali
+                                     STRING_AGG(v.id_aereoporto_partenza || ' - ' || v.id_aereoporto_arrivo, ' -> ' ORDER BY v.sequence_identifier) AS scali
                                  FROM dev."Voli" v
                                           LEFT JOIN dev."Aerei" a ON a.id_aereo = v.id_aereo
                                           LEFT JOIN dev."Compagnie" c ON c.id_compagnia = a.id_compagnia
@@ -551,3 +554,43 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
             return jsonify(viaggi_dict)
         
         return jsonify({'error': 'Qualcosa è andato storto'})
+
+    def get_posti_liberi(self, id_viaggio, seq_identifier):
+        query = text('''
+                     WITH seat_stats AS (
+                         
+                         
+                         SELECT
+                             v.id_volo,
+                             v.sequence_identifier,
+                             COUNT(*) AS posti_totali,
+                             COUNT(b.id_biglietto) AS posti_occupati
+                         FROM dev."Voli" v
+                                  JOIN dev."AereoMappaPosti" amp
+                                       ON amp.id_aereo = v.id_aereo
+                                  LEFT JOIN dev."Biglietti" b
+                                            ON b.id_volo = v.id_volo
+                                                AND b.posto = amp.seat_label
+                                                AND b.id_viaggio = v.id_viaggio
+                         WHERE v.id_viaggio = :id_viaggio
+                         AND sequence_identifier = :sequence_identifier
+                         GROUP BY v.id_volo, v.sequence_identifier)
+                         
+
+
+                     SELECT MIN(posti_occupati) as min_posti_rimanenti
+                     FROM seat_stats
+                     GROUP BY seat_stats.sequence_identifier
+                         
+                     ''')
+
+
+        with Session(engine()) as session:
+            res = session.execute(query, {
+                'id_viaggio': id_viaggio,
+                'sequence_identifier': seq_identifier,
+            }).fetchall()
+
+            return to_dict_list(res)
+
+        return connection_err()

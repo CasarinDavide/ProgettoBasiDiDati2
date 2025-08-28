@@ -136,18 +136,30 @@ class VoliRepository(BaseRepository[VoliClass]):
         except:
             return jsonify({"success":False})
 
-    def delete_all(self, id_viaggio):
+    def delete_all(self, id_viaggio, **kwargs):
+        id_compagnia = kwargs.get('id_compagnia', None)
+
         try:
             with Session(engine()) as session:
-                session.query(self.model).filter(
+                query = session.query(self.model).filter(
                     getattr(self.model, "id_viaggio") == id_viaggio
-                ).delete(synchronize_session=False)
+                )
 
+                if id_compagnia is not None:
+                    query = query.join(
+                        self.model.aereo_rel  # relazione definita nel modello
+                    ).filter(
+                        getattr(self.model.aereo_rel, "id_compagnia") == id_compagnia
+                    )
+
+                query.delete(synchronize_session=False)
                 session.commit()
                 return jsonify({"success": True})
+
         except Exception as e:
             print("Error in delete_all:", e)
-            return jsonify({"success": False, "error": str(e)})
+
+        return jsonify({"success": False, "error": str(e)})
 
     def generate_sequence_identifier(self):
         # get last sequence
@@ -221,6 +233,7 @@ class VoliRepository(BaseRepository[VoliClass]):
                                   LEFT JOIN dev."Biglietti" b
                                             ON b.id_volo = v.id_volo
                                                 AND b.posto = amp.seat_label
+                                                AND b.id_viaggio = v.id_viaggio
                          WHERE v.id_volo = :id_volo
                          GROUP BY v.id_volo, v.sequence_identifier, amp.seat_class
                      )

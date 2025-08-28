@@ -5,6 +5,10 @@ from sqlalchemy.orm import DeclarativeBase
 from dotenv import load_dotenv
 import os
 
+SNACK_PRICE = 5
+INTERNET_PRICE = 10
+BAGAGLIO_PRICE = 20
+
 def engine():
     load_dotenv()
     # Create SQLAlchemy engine globally

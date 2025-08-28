@@ -124,6 +124,10 @@ Home
         $('#nominativiContainer').empty();
     }
 
+    let costo_internet = parseInt("{{ session.get('internet_price', '') }}");
+    let costo_snack =  parseInt("{{ session.get('snack_price', '') }}");
+    let costo_a_bagaglio =  parseInt("{{ session.get('bagaglio_price', '') }}");
+
     let PrenotaClass = function () {
 
         const cabins = ["FirstClass", "Business", "Economy"]
@@ -214,7 +218,7 @@ Home
 
                     tabs.append(`
                             <li class="nav-item" role="presentation">
-                              <button class="nav-link ${route.sequence_identifier === 1 ? "active" : ""}" id="${tab_id}-tab"
+                              <button class="nav-link ${route.ordine === 0 ? "active" : ""}" id="${tab_id}-tab"
                                       data-bs-toggle="tab" data-bs-target="#${tab_id}" type="button" role="tab">
                                 ${route.aereoporto_partenza_rel.citta} -> ${route.aereoporto_arrivo_rel.citta}
                               </button>
@@ -222,7 +226,7 @@ Home
                           `);
 
                     content.append(`
-                            <div class="tab-pane fade ${route.sequence_identifier === 1 ? "show active" : ""}" id="${tab_id}" role="tabpanel">
+                            <div class="tab-pane fade ${route.ordine === 0 ? "show active" : ""}" id="${tab_id}" role="tabpanel">
                               <div id="seatMap-${tab_id}" class=""></div>
                             </div>
                           `);
@@ -427,8 +431,10 @@ Home
                 selectedSeats.map(s => `${s.route} [${s.seat}]`).join(", ") || "-"
             );
 
+
             // Ensure numeric sum
             let total = selectedSeats.reduce((sum, s) => sum + Number(s.price || 0) - Number(s.price || 0) * viaggio_local_data[s.travelType].sconto_biglietto, 0);
+
 
             // Format total as integer or with 2 decimals
             $("#totalPriceDisplay").text(total.toFixed(2) + " €");
@@ -459,14 +465,22 @@ Home
                 selectedSeats.map(s => `${s.route} [${s.seat}]`).join(", ") || "-"
             );
 
+
+            let extra_price = 0;
+             for(let i=0; i < selectedSeats.length; i++) {
+                 extra_price += $(`.form-internet-${i}`).is(':checked')?costo_internet:0;
+                 extra_price += $(`.form-snack-${i}`).is(':checked')?costo_snack:0;
+                 extra_price += costo_a_bagaglio *$(`.form-bagagli-${i}`).val();
+             }
+
             let total = selectedSeats.reduce((sum, s) => sum + Number(s.price || 0) - Number(s.price || 0) * viaggio_local_data[s.travelType].sconto_biglietto, 0);
+
+             total+=extra_price;
 
             // Format total as integer or with 2 decimals
             $("#totalPriceDisplayModal").text(total.toFixed(2)  + " €");
+            $("#extraPriceDisplayModal").text(extra_price.toFixed(2)  + " €");
 
-            $("#checkoutButton").on('click', () => {
-                PrenotaClass.checkout();
-            });
 
 
         }
@@ -488,6 +502,10 @@ Home
 
                 drawRouteTabs("andata", voli_data.andata);
                 drawRouteTabs("ritorno", voli_data.ritorno);
+
+                $("#checkoutButton").on('click', () => {
+                    PrenotaClass.checkout();
+                });
 
             },
 
@@ -512,16 +530,63 @@ Home
                     row.addClass('row mb-3');
                     let labelHtml = `<label class="form-label">Biglietto ${selectedSeats[i].cabin} posto: ${selectedSeats[i].seat} </label>`;
                     let infoHtml = `
-                            <div class="col-md-6">
-                                <input type="text" class="form-nome-${i} form-control" placeholder="Inserisci nome" required>
+                            <div class="row d-flex gap-3">
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <input type="text" class="form-nome-${i} form-control" placeholder="Inserisci nome" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="text" class="form-cognome-${i} form-control" placeholder="Inserisci cognome" required>
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <input type="text" class="form-cognome-${i} form-control" placeholder="Inserisci cognome" required>
+
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                      <input class="form-check-input form-snack-${i}" type="checkbox" value="" id="snack-${i}">
+                                      <label class="form-check-label" for="flexCheckDefault">
+                                        Snack
+                                      </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                      <input class="form-check-input form-internet-${i}"  id="internet-${i}" type="checkbox" value="">
+                                      <label class="form-check-label" for="flexCheckDefault">
+                                        Abilitato ad Internet
+                                      </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <input type="number" class="form-bagagli-${i} form-control" min="0" id="bagagli-${i}" placeholder="N. Bagagli" required>
+                                </div>
+
                             </div>`;
 
 
+
+
+
                     row.append(labelHtml + infoHtml);
+
+
                     $('#nominativiContainer').append(row);
+
+                    $(`#bagagli-${i}`).on('click',function (){
+                        updateSummaryModal()
+
+                    });
+
+                    $(`#snack-${i}`).on('click',function (){
+                        updateSummaryModal()
+
+                    });
+
+                    $(`#internet-${i}`).on('click',function (){
+                        updateSummaryModal()
+
+                    });
                 }
                 updateSummaryModal();
             },
@@ -534,6 +599,9 @@ Home
 
                     let nome = $(`.form-nome-${i}`).val();
                     let cognome = $(`.form-cognome-${i}`).val();
+                    let internet = $(`.form-internet-${i}`).is(':checked')?1:0;
+                    let snack = $(`.form-snack-${i}`).is(':checked')?1:0;
+                    let bagagli = $(`.form-bagagli-${i}`).val();
 
                     if(nome === '' || cognome === '') {
                         showToast("Errore durante l'acquisto, inserire tutti i nominativi.");
@@ -548,7 +616,10 @@ Home
                         'travelType': selectedSeats[i].travelType,
                         'route': selectedSeats[i].route,
                         'volo_raw_data':selectedSeats[i].volo_raw_data,
-                        'price':selectedSeats[i].price
+                        'price':selectedSeats[i].price,
+                        'internet':internet,
+                        'snack':snack,
+                        'bagagli':bagagli
                     });
                 }
 
@@ -704,6 +775,7 @@ Home
                             <div class="col-md-4">
                                 <small>Totale ( con applicato sconto )</small>
                                 <strong id="totalPriceDisplayModal" class="h5 text-warning">0 €</strong>
+                                <span>Costi Extra:<strong id="extraPriceDisplayModal" class="h5 text-warning">0 €</strong></span>
                             </div>
                         </div>
                     </div>

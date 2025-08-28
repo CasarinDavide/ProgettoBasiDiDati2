@@ -110,9 +110,6 @@ def home():
 
     nome = ""
 
-    print(is_admin())
-    print(session.get('role',''))
-
     if not current_user.is_authenticated or is_passeggero():
 
         passeggeri_repo = PasseggeriRepository()
@@ -301,9 +298,11 @@ def prenota():
     func = getParam("fun")
 
     session['checkout_start'] = True
-    print("valid_checkotu")
+    session['internet_price'] = System.INTERNET_PRICE
+    session['snack_price'] = System.SNACK_PRICE
+    session['bagaglio_price'] = System.BAGAGLIO_PRICE
 
-    print(session['checkout_start'])
+
     if current_user.is_authenticated:
         passeggeri_repo = PasseggeriRepository()
         nome = passeggeri_repo.get_by_id(current_user.get_id()).nome
@@ -626,8 +625,6 @@ def function_actions():
             pass
 
     elif target == "viaggi":
-
-
         viaggi_repo = ViaggiRepository()
         if action == "add":
             if not check_permission([is_admin]):
@@ -675,7 +672,9 @@ def function_actions():
 
     elif target == "voli":
 
+
         voli_repo = VoliRepository()
+
         if action == "add":
             if not check_permission([is_admin,is_compagnia]):
                 return auth_error()
@@ -686,7 +685,9 @@ def function_actions():
                 id_viaggio=getParam("id_viaggio"),
                 id_aereo =getParam("id_aereo"),
                 id_aereoporto_partenza= getParam("id_aereoporto_partenza"),
-                id_aereoporto_arrivo=getParam("id_aereoporto_arrivo"))
+                id_aereoporto_arrivo=getParam("id_aereoporto_arrivo")
+            )
+
         elif action == "getAllDatatable":
             if not check_permission([is_admin,is_compagnia]):
                 return auth_error()
@@ -725,7 +726,12 @@ def function_actions():
         elif action == "delete_all":
             if not check_permission([is_admin,is_compagnia]):
                 return auth_error()
-            return voli_repo.delete_all(getParam("id_viaggio"))
+
+            if is_admin():
+
+                return voli_repo.delete_all(getParam("id_viaggio"))
+            else:
+                return voli_repo.delete_all(getParam("id_viaggio"),id_compagnia=current_user.get_id())
         elif action == "getSequenceDatatable":
             if not check_permission([is_admin,is_compagnia]):
                 return auth_error()
@@ -772,6 +778,10 @@ def function_actions():
 
             return viaggi_repo.get_viaggi_period(dataP=dataP, dataR=dataR)
 
+        elif action == "update_posti_counter":
+            return viaggi_repo.get_posti_liberi(id_viaggio=getParam('id_viaggio'),
+                                                seq_identifier = getParam('seq_identifier'))
+
     elif "biglietti":
         biglietti_repo = BigliettiRepository()
         if action == 'checkout':
@@ -790,7 +800,11 @@ def function_actions():
                                            quantity = getParam('quantity'),
                                            json_data = getParam('info'),
                                            prices = (session['prices_andata'],session['prices_ritorno']),
-                                           id_passeggero=current_user.get_id())
+                                           id_passeggero=current_user.get_id(),
+                                           prezzo_internet=session.get('internet_price'),
+                                           prezzo_bagaglio=session.get('bagaglio_price'),
+                                           prezzo_snack=session.get('snack_price')
+                                           )
 
 
         elif action == 'get_stats':

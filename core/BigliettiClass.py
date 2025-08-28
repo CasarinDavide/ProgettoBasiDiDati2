@@ -33,6 +33,9 @@ class BigliettiClass(Base):
     nome: Mapped[str] = mapped_column(nullable=False)
     cognome: Mapped[str] = mapped_column(nullable=False)
     id_volo: Mapped[int] = mapped_column(nullable=False)
+    internet: Mapped[int] = mapped_column(nullable=False)
+    snack: Mapped[int] = mapped_column(nullable=False)
+    bagagli: Mapped[int] = mapped_column(nullable=False)
 
     # FK -> Viaggi
     id_viaggio = mapped_column(ForeignKey('dev.Viaggi.id_viaggio'), nullable=False)
