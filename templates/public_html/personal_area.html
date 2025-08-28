@@ -180,6 +180,9 @@ MyTriviaggi
             this.nominativo = data.nominativo;
             this.posto = data.posto;
             this.prezzo = parseFloat(data.prezzo).toFixed(2);
+            this.pasto = data.pasto;
+            this.internet = data.internet;
+            this.bagagli = data.bagagli;
         }
 
         render(container) {
@@ -191,6 +194,19 @@ MyTriviaggi
                     <h6 class="mb-0 fw-bold"> ${this.nominativo} </h6>
                     <small class="text-muted">ID biglietto: ${this.idBiglietto} </small>
                 </div>
+
+                <div class="mt-3 me-5 mb-3">
+                    <small class="d-block ${this.internet ? 'text-success' : 'text-muted'}">
+                        <i class="fas fa-wifi me-1"></i> Internet: ${this.internet ? 'Sì' : 'No'}
+                    </small>
+                    <small class="d-block ${this.pasto ? 'text-success' : 'text-muted'}">
+                        <i class="fas fa-utensils me-1"></i> Pasto: ${this.pasto ? 'Sì' : 'No'}
+                    </small>
+                    <small class="d-block text-muted">
+                        <i class="fas fa-suitcase-rolling me-1"></i> Bagagli: ${this.bagagli}
+                    </small>
+                </div>
+
                 <div class="text-end">
                     <small class="text-muted">Posto</small>
                     <div class="fw-bold text-primary"> ${this.posto} </div>

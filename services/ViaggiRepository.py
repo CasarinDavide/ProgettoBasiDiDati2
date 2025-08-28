@@ -496,7 +496,10 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                 b.posto AS posto,
                 b.nome AS nome,
                 b.cognome AS cognome,
-                b.prezzo AS prezzo
+                b.prezzo AS prezzo,
+                b.snack AS pasto,
+                b.bagagli AS bagagli,
+                b.internet AS internet
             FROM dev."Voli" v
                 JOIN dev."Biglietti" b ON b.id_volo = v.id_volo
                 JOIN dev."Aereoporti" ap1 ON v.id_aereoporto_partenza = ap1.id_aereoporto
@@ -542,7 +545,10 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                     'id_biglietto': row.id_biglietto,
                     'posto': row.posto,
                     'prezzo': row.prezzo - (row.sconto * row.prezzo),
-                    'nominativo': f"{row.nome} {row.cognome}"
+                    'nominativo': f"{row.nome} {row.cognome}",
+                    'internet': row.internet == '1',
+                    'bagagli': row.bagagli,
+                    'pasto': row.pasto == '1'
                 }
 
                 viaggi_dict[viaggio_key]['voli'][volo_key]['biglietti'].append(biglietto)
