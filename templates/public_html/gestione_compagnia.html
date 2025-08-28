@@ -10,8 +10,7 @@
 
         let ticketsChart, priceChart;
 
-
-
+        
         function getSelectAllAddress(selects = [],none_option = true){
 
             jQuery.ajax({
@@ -870,7 +869,7 @@
                         {
                             "targets": [8],
                             "createdCell": function (td, cellData, rowData, row, col) {
-                                $(td, td).html(`<a class="cursor-pointer" onclick="PAVoliDrawer.showModal(${rowData.id_viaggio})" ><i title="Dettaglio" class="fa fs-3 fa-gear"></i></a>`);
+                                $(td, td).html(`<a class="cursor-pointer" onclick="PAVoliDrawer.showModal(${rowData.id_viaggio})" ><i title="Dettaglio" class="fa fs-3 fa-eye"></i></a>`);
                             }
                         }
 
@@ -1410,7 +1409,7 @@
                             {
                                 "targets": [4],
                                 "createdCell": function (td, cellData, rowData, row, col) {
-                                    $(td, td).html(`<a class="cursor-pointer"><i title="Mostra dettaglio" class="fa fs-3 fa-gear"></i></a>`);
+                                    $(td, td).html(`<a class="cursor-pointer"><i title="Mostra dettaglio" class="fa fs-3 fa-eye"></i></a>`);
                                     $(td, td).on('click',()=>
                                     {
                                         PAVoliDettaglio.reloadTable(parseInt(rowData.sequence_identifier));

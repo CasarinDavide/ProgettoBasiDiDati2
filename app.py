@@ -77,16 +77,25 @@ def auth_error():
 def load_user(user_id):
     # user_id stored like "company-123" or "passenger-456"
     role, real_id = user_id.split("-", 1)
-    if role == "compagnia":
-        return CompagnieRepository().get_by_id(real_id)
-    elif role == "passeggero":
-        return PasseggeriRepository().get_by_id(real_id)
-    elif role == "dipendente":
-        return DipendentiRepository().get_by_id(real_id)
-    elif role == "admin":
-        return AdminRepository().get_by_id(id=real_id)
 
-    return None
+    user = None
+
+    if role == "compagnia":
+        user = CompagnieRepository().get_by_id(real_id)
+    elif role == "passeggero":
+        user = PasseggeriRepository().get_by_id(real_id)
+    elif role == "dipendente":
+        user = DipendentiRepository().get_by_id(real_id)
+    elif role == "admin":
+        user = AdminRepository().get_by_id(id=real_id)
+
+
+    if user is not None:
+        # refresh role
+        session['role'] = user.__class__.__name__
+
+
+    return user
 
 def custom_login_user(user, remember):
     if isinstance(user, PasseggeriClass) or isinstance(user, CompagnieClass) or isinstance(user, DipendentiClass) or isinstance(user,AdminClass):
@@ -100,6 +109,9 @@ def custom_login_user(user, remember):
 def home():
 
     nome = ""
+
+    print(is_admin())
+    print(session.get('role',''))
 
     if not current_user.is_authenticated or is_passeggero():
 
@@ -203,11 +215,11 @@ def user_login():
 
     passeggeri_repo = PasseggeriRepository()
 
-    if request.method == 'POST':    
+    if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
         remind = request.form.get('remind_me') != None
-        
+
         if passeggeri_repo.validate_password(email, password):
             user = passeggeri_repo.get_by_email(email)
             custom_login_user(user, remember = remind )
@@ -301,7 +313,7 @@ def prenota():
         # e poi vai al conferma pagamento
         flash("Permission denied. You have been logged in.", "danger")
         return render_template('public_html/prenota.html')
-    
+
 
 
 
@@ -311,6 +323,8 @@ def logout():
     role = is_admin() or is_compagnia() or is_dipendente()
 
     logout_user()
+
+    session.pop('role')
 
     if role:
         return redirect(url_for('authorized_user_login'))
@@ -323,10 +337,10 @@ def personal_area():
     oper = getParam("oper")
     nome = PasseggeriRepository().get_by_id(current_user.get_id()).nome
 
-    if oper is None: 
+    if oper is None:
         if not current_user.is_authenticated:
             return redirect(url_for(login_user))
-        
+
         return render_template("public_html/personal_area.html", user=nome)
     else:
         return function_actions()
