@@ -235,8 +235,6 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
 
     def extract_stats(self,id_compagnia,start_date,end_date):
 
-        print(start_date)
-        print(end_date)
         agg_query = """ WITH ticket_stats AS (
                                 SELECT
                                     COALESCE(AVG(b.prezzo),0) AS avg_price,

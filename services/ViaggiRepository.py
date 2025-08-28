@@ -202,7 +202,7 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                                      
                                      COUNT(v.sequence_identifier) AS num_scali,
                                      ROUND(SUM((sc.costo_minimo - sc.costo_minimo * COALESCE(viaggi_filtrati.sconto_biglietto, 0))::numeric),2) AS prezzo_biglietto,
-                                     STRING_AGG(aereoporto_partenza.nome || ' - ' || aereoporto_arrivo.nome, ' -> ' ORDER BY v.sequence_identifier) AS scali
+                                     STRING_AGG(aereoporto_partenza.id_aereoporto || ' - ' || aereoporto_arrivo.id_aereoporto, ' -> ' ORDER BY v.sequence_identifier) AS scali
                                  FROM dev."Voli" v
                                           LEFT JOIN dev."Aerei" a ON a.id_aereo = v.id_aereo
                                           LEFT JOIN dev."Compagnie" c ON c.id_compagnia = a.id_compagnia
@@ -364,7 +364,7 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
 
                                      COUNT(v.sequence_identifier) AS num_scali,
                                      ROUND(SUM((sc.costo_minimo - sc.costo_minimo * COALESCE(viaggi_filtrati.sconto_biglietto, 0))::numeric),2) AS prezzo_biglietto,
-                                     STRING_AGG(aereoporto_partenza.nome || ' - ' || aereoporto_arrivo.nome, ' -> ' ORDER BY v.sequence_identifier) AS scali
+                                     STRING_AGG(aereoporto_partenza.id_aereoporto || ' - ' || aereoporto_arrivo.id_aereoporto, ' -> ' ORDER BY v.sequence_identifier) AS scali
                                  FROM dev."Voli" v
                                           LEFT JOIN dev."Aerei" a ON a.id_aereo = v.id_aereo
                                           LEFT JOIN dev."Compagnie" c ON c.id_compagnia = a.id_compagnia
