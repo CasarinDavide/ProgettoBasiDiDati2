@@ -184,7 +184,7 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
 
         return connection_err()
 
-    def checkout(self, id_andata:str, id_ritorno:str, quantity:str, json_data:str,id_passeggero):
+    def checkout(self, id_andata:str, id_ritorno:str, quantity:str, json_data:str,prices: tuple,id_passeggero: str):
         """
             json_data structure example:
             [
@@ -203,23 +203,43 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
             """
         data = json.loads(json_data)
 
+        print(prices)
+
         try:
             with Session(engine()) as session:
+
+                prezzi_andata, prezzi_ritorno = prices  # tuple unpacking
+
                 with session.begin():  # transaction
-                    for biglietto in data:
+                    for i,biglietto in enumerate(data):
                         # Determine if it's the outbound or return flight
-                        id_viaggio = id_andata if biglietto.get('travelType') == 'andata' else id_ritorno
 
                         # Add the ticket
+
+                        is_andata = biglietto.get('travelType') == 'andata'
+                        id_viaggio = id_andata if is_andata else id_ritorno
+                        id_volo = biglietto.get('volo_raw_data', {}).get('id_volo')
+                        seat_class = biglietto.get('cabin')
+
+
+                        key = f"{id_volo}::{seat_class}"
+
+                        # Seleziona la giusta tabella prezzi
+                        prezzo = (prezzi_andata if is_andata else prezzi_ritorno).get(key)
+                        if prezzo is None:
+                            raise ValueError(
+                                f"Nessun prezzo valido trovato per {seat_class} (volo {id_volo})"
+                            )
+
                         record = self.add(
-                            categoria=CategoriaEnum(biglietto.get('cabin')),
-                            prezzo=float(biglietto.get('price')),
+                            categoria=CategoriaEnum(seat_class),
+                            prezzo=float(prezzo),
                             id_viaggio=int(id_viaggio),
                             id_passeggero=int(id_passeggero),
                             posto=biglietto.get('seat'),
                             nome=biglietto.get('nome'),
                             cognome=biglietto.get('cognome'),
-                            id_volo=biglietto.get('volo_raw_data', {}).get('id_volo'),
+                            id_volo=id_volo,
                             session=session
                         )
 

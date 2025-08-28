@@ -177,6 +177,7 @@ class VoliRepository(BaseRepository[VoliClass]):
 
     def getAllSequenceByViaggio(self,id_andata:str,id_ritorno:str, sequence_identifier_andata:str,sequence_identifier_ritorno:str):
 
+
         andata = self.get_sequence_by_viaggio(id_viaggio=id_andata,sequence_identifier=sequence_identifier_andata)
         ritorno = None
 
@@ -202,7 +203,7 @@ class VoliRepository(BaseRepository[VoliClass]):
         res = {"andata": andata_json,
                "ritorno": ritorno_json}
 
-        return jsonify(res)
+        return res
 
     def get_prices_per_class(self,id_volo):
 

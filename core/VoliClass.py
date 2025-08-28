@@ -21,6 +21,7 @@ class VoliClass(Base):
     comandante: Mapped[str] = mapped_column(nullable=False)
     ritardo: Mapped[int] = mapped_column(nullable=False)
     ordine: Mapped[int] = mapped_column(nullable=False)
+    sosta: Mapped[float] = mapped_column(nullable=False)
     sequence_identifier:Mapped[int] = mapped_column(nullable=False)
 
     # FK -> Viaggi

@@ -2382,10 +2382,15 @@
                                   <label class="form-label">Comandante</label>
                                   <input type="text" name="comandante[]" class="form-control form-control-solid" required placeholder="Nome Comandante">
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-2">
                                   <label class="form-label">Ritardo (minuti)</label>
                                   <input type="number" min="0" name="ritardo[]" class="form-control form-control-solid" placeholder="0">
                                 </div>
+                                <div class="col-md-2">
+                                  <label class="form-label">Sosta</label>
+                                  <input type="number" min="0" name="sosta[]" class="form-control form-control-solid" placeholder="0">
+                                </div>
+
                               </div>
                             `;
 
@@ -2409,6 +2414,7 @@
                         let to = card.querySelector("input[name='to[]']").value;
                         let comandante = card.querySelector("input[name='comandante[]']").value;
                         let ritardo = card.querySelector("input[name='ritardo[]']").value || 0;
+                        let sosta = card.querySelector("input[name='sosta[]']").value || 0;
                         let aereo = card.querySelector("select[name='aereo[]']").value;
 
                         tratte.push({
@@ -2417,7 +2423,8 @@
                             id_aereo: aereo,
                             id_viaggio: id_viaggio,
                             comandante: comandante,
-                            ritardo: ritardo
+                            ritardo: ritardo,
+                            sosta:sosta
                         });
                     });
 
