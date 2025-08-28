@@ -300,10 +300,13 @@ def prenota():
 
     func = getParam("fun")
 
+    session['checkout_start'] = True
+    print("valid_checkotu")
+
+    print(session['checkout_start'])
     if current_user.is_authenticated:
         passeggeri_repo = PasseggeriRepository()
         nome = passeggeri_repo.get_by_id(current_user.get_id()).nome
-
         if func is None:
             return render_template('public_html/prenota.html', user=nome)
         else:
@@ -460,7 +463,6 @@ def function_actions():
                 id_compagnia=id_compagnia
             )
         elif action == "get_for_select":
-            # permessi admin TODO
 
             check_permission([is_compagnia,is_admin])
 
@@ -519,7 +521,6 @@ def function_actions():
         elif action == "getById":
             return aereoporti_repo.get_by_id(getParam("id_aereoporto"))
         elif action == "get_for_select":
-            print("qui")
             return aereoporti_repo.get_all()
         elif action == "edit":
             return aereoporti_repo.update(
@@ -730,11 +731,30 @@ def function_actions():
                 return auth_error()
             return voli_repo.get_sequence_by_viaggioDatatable(draw, start, length, search_value, getParam("id_viaggio"), getParam("sequence_identifier"))
         elif action == "getAllSequenceByViaggio":
-            return voli_repo.getAllSequenceByViaggio(id_andata=getParam('id_andata'),
+            res = voli_repo.getAllSequenceByViaggio(id_andata=getParam('id_andata'),
                                                      id_ritorno=getParam('id_ritorno'),
                                                      sequence_identifier_ritorno=getParam('seq_ritorno'),
                                                      sequence_identifier_andata=getParam('seq_andata'))
 
+            # salvataggio dei prezzi in sessione
+
+            session['prices_andata'] = {}
+            session['prices_ritorno'] = {}
+
+            # ciclo sull'andata
+            for volo in res.get("andata", []):
+                for price in volo.get("prices", []):
+                    key = f"{price['id_volo']}::{price['seat_class']}"
+                    session['prices_andata'][key] =price["costo_posto"]
+
+
+            # ciclo sul ritorno
+            for volo in res.get("ritorno", []):
+                for price in volo.get("prices", []):
+                    key = f"{price['id_volo']}::{price['seat_class']}"
+                    session['prices_ritorno'][key] = price["costo_posto"]
+
+            return jsonify(res)
     elif target == "trips":
 
         viaggi_repo = ViaggiRepository()
@@ -756,27 +776,31 @@ def function_actions():
         biglietti_repo = BigliettiRepository()
         if action == 'checkout':
             # TODO check params too
+
+            # check se la sessione è ancora valida
+            # altrimenti do errore
+
+            valid_session_checkout = session.pop('checkout_start',False)
+
+            if not valid_session_checkout:
+                return jsonify({"error": "Invalid action"}), 400
+
             return biglietti_repo.checkout(id_andata = getParam('id_andata'),
                                            id_ritorno = getParam('id_ritorno'),
                                            quantity = getParam('quantity'),
                                            json_data = getParam('info'),
+                                           prices = (session['prices_andata'],session['prices_ritorno']),
                                            id_passeggero=current_user.get_id())
-        elif action == 'get_stats':
 
-            print(is_compagnia())
+
+        elif action == 'get_stats':
 
             if not check_permission([is_compagnia]):
                 return auth_error()
 
-            print(getParam('start_date'))
-            print(getParam('end_date'))
-
             return biglietti_repo.extract_stats(id_compagnia=current_user.get_id(),
                                                 start_date=getParam('start_date'),
                                                 end_date=getParam('end_date'))
-
-
-
 
     return jsonify({"error": "Invalid action"}), 400
 
