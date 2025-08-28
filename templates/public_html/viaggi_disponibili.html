@@ -187,7 +187,7 @@ Home
         return {
             init()
             {
-                container= document.getElementById('main');
+                container = document.getElementById('main');
 
                 dataP_input = $('#dateP');
                 dataR_input= $('#dateR');
@@ -226,21 +226,27 @@ Home
                     case "prezzo":
                         global_data.sort( (a, b) => {
                             if(a.ritorno && b.ritorno) {
-                                return (a.andata.prezzo + a.ritorno.prezzo) < (b.andata.prezzo + b.ritorno.prezzo);
+                                return (parseFloat(a.andata.prezzo_biglietto) + parseFloat(a.ritorno.prezzo_biglietto)) > (parseFloat(b.andata.prezzo_biglietto) + parseFloat(b.ritorno.prezzo_biglietto));
                             } else {
-                                return a.andata.prezzo < b.andata.prezzo;
+                                return parseFloat(a.andata.prezzo_biglietto) > parseFloat(b.andata.prezzo_biglietto);
                             }
                         })
                         break;
                     case "durata":
-                        global_data.sort( (a, b) =>
-                            a.andata.durata < b.andata.durata
-                        );
+                        global_data.sort( (a, b) => {
+                            let durata_a = parseInt(a.andata.durata);
+                            let durata_b = parseInt(b.andata.durata);
+                            
+                            return durata_a > durata_b;
+                        });
                         break;
                     case "partenza":
-                        global_data.sort( (a, b) =>
-                            a.andata.orario_partenza < b.andata.orario_partenza
-                        );
+                        global_data.sort( (a, b) => {
+                            let orario_partenza_a = new Date(a.andata.orario_partenza);
+                            let orario_partenza_b = new Date(a.andata.orario_partenza);
+                            
+                            return a.andata.orario_partenza > b.andata.orario_partenza;
+                        });
                         break;
                 }
 
