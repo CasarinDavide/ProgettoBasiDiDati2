@@ -111,7 +111,7 @@ Home
                 compagnieInfo += createCompagniaSection(ritornoDetails.compagnia);
             }
 
-            return `
+            let html = `
             <div class="card mb-4 shadow-sm">
                 <div class="card-body py-3">
                     <div class="row">
@@ -126,12 +126,63 @@ Home
                         </div>
                         <div class="col-md-3 d-flex flex-column justify-content-center align-items-center">
                             <h4 class="text-success mb-3">€${prezzo}</h4>
+                            <div class="text-success mb-3">Posti rimanenti Andata: <span id="posti_rimanenti_andata_${andataDetails.id_viaggio}_${andata?andata.sequence_identifier:null}">--</span>,Affrettati!</div>
+                            <div class="text-success mb-3">Posti rimanenti Ritorno: <span id="posti_rimanenti_ritorno_${ritornoDetails.id_viaggio}_${ritorno?ritorno.sequence_identifier:null}">--</span>,Affrettati!</div>
                             <button class="btn btn-primary w-100" onclick="prenota(${andataDetails.id_viaggio}, ${ritorno ? ritornoDetails.id_viaggio : null},${andata?andata.sequence_identifier:null},${ritorno ? ritorno.sequence_identifier:null})">Prenota</button>
                         </div>
                     </div>
                 </div>
             </div>
         `;
+
+            setTimeout(()=>{
+
+
+                jQuery.ajax({
+                    url: ajaxUrl + '?fun=trips&oper=update_posti_counter',
+                    type: 'POST',
+                    dataType: "json",
+                    data: {
+                        id_viaggio:andataDetails.id_viaggio,
+                        seq_identifier:andata?andata.sequence_identifier:null,
+                    },
+                    async: true,
+                    success: function (data) {
+                        errorModal.hide();
+
+                        var parsedResult = checkAjaxResponse(data, false);
+                        if (!parsedResult) {
+                            $(`#posti_rimanenti_andata_${andataDetails.id_viaggio}_${andata?andata.sequence_identifier:null}`).text(parseInt(data.length>0?data[0].min_posti_rimanenti:0));
+                        }
+                    }
+                })
+
+                if (ritorno && ritorno.sequence_identifier != null)
+
+                    jQuery.ajax({
+                        url: ajaxUrl + '?fun=trips&oper=update_posti_counter',
+                        type: 'POST',
+                        dataType: "json",
+                        data: {
+                            id_viaggio:ritornoDetails.id_viaggio,
+                            seq_identifier:ritorno.sequence_identifier,
+                        },
+                        async: true,
+                        success: function (data) {
+                            errorModal.hide();
+
+                            var parsedResult = checkAjaxResponse(data, false);
+                            if (!parsedResult) {
+
+                                $(`#posti_rimanenti_ritorno_${ritornoDetails.id_viaggio}_${ritorno.sequence_identifier}`).text(parseInt(data.length>0?data[0].min_posti_rimanenti:0));
+                            }
+                        }
+                    })
+
+
+            },2000);
+
+            return html;
         }
 
         let render_page = function (data) {
@@ -140,6 +191,7 @@ Home
             for(let i in data) {
                 const ticket = document.createElement('div');
                 ticket.innerHTML = createFlightTicket(data[i].andata, data[i].ritorno || null);
+
                 container.appendChild(ticket);
             }
 

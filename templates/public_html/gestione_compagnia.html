@@ -1321,8 +1321,8 @@
                                   <input type="number" min="0" name="ritardo[]" class="form-control form-control-solid" placeholder="0">
                                 </div>
                                 <div class="col-md-2">
-                                  <label class="form-label">Sosta</label>
-                                  <input type="number" min="0" name="sosta[]" class="form-control form-control-solid" placeholder="0">
+                                  <label class="form-label">Sosta (h)</label>
+                                  <input type="number" min="2" name="sosta[]" value="2" class="form-control form-control-solid" placeholder="0">
                                 </div>
 
                               </div>
@@ -1496,7 +1496,7 @@
                                     var result = data;
                                     PAVoli.reloadTable();
                                     PAVoliAddModal.hideModal();
-                                    PAVoliDrawer.showModal();
+                                    PAVoliDrawer.showModal(PAVoliDrawer.getId());
                                     showToast('Volo Aggiunto con successo.');
 
                                 } else {
@@ -1607,6 +1607,10 @@
                 {
                     PAVoliAddModal.errorModal();
                 },
+                getId:function ()
+                {
+                    return id_viaggio
+                }
 
             }
         }();
