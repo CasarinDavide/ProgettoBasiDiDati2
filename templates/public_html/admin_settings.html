@@ -1752,6 +1752,7 @@
                     /*5*/   {data: 'orario_partenza'},
                     /*6*/   {data: 'durata'},
                     /*6*/   {data: 'sosta'},
+                    /*6*/   {data: 'id_compagnia'},
                     /*7*/   {data: null,"width": '50px'},
                     /*8*/   {data: null,"width": '50px'},
                 ],
@@ -1763,13 +1764,22 @@
                     {
                         "targets": [8],
                         "createdCell": function (td, cellData, rowData, row, col) {
-                            $(td, td).html(`<a class="cursor-pointer" onclick="PAViaggiEditModal.showModal('${rowData.id_viaggio}')" ><i title="Modifica Viaggio" class="fa fs-3 fa-gear"></i></a>`);
+                            if(parseInt(cellData))
+                            {
+                                $(td, td).html(`${rowData.compagnia_rel.nome}`);
+                            }
                         }
                     },
                     {
                         "targets": [9],
                         "createdCell": function (td, cellData, rowData, row, col) {
-                            $(td, td).html(`<a class="cursor-pointer" onclick="PAVoliDrawer.showModal(${rowData.id_viaggio})" ><i title="Dettaglio" class="fa fs-3 fa-eye"></i></a>`);
+                            $(td, td).html(`<a class="cursor-pointer" onclick="PAViaggiEditModal.showModal('${rowData.id_viaggio}')" ><i title="Modifica Viaggio" class="fa fs-3 fa-gear"></i></a>`);
+                        }
+                    },
+                    {
+                        "targets": [10],
+                        "createdCell": function (td, cellData, rowData, row, col) {
+                            $(td, td).html(`<a class="cursor-pointer" onclick="PAVoliDrawer.showModal(${rowData.id_viaggio},${rowData.id_compagnia})" ><i title="Dettaglio" class="fa fs-3 fa-eye"></i></a>`);
                         }
                     }
 
@@ -1840,6 +1850,7 @@
                         sconto_biglietto:PAViaggiAddModal.getFields().sconto_biglietto.val(),
                         data_partenza:PAViaggiAddModal.getFields().data_partenza.val(),
                         orario_partenza:PAViaggiAddModal.getFields().orario_partenza.val(),
+                        id_compagnia:PAViaggiAddModal.getFields().id_compagnia.val(),
                     },
                     async: true,
                     success: function (data) {
@@ -1884,6 +1895,7 @@
                         sconto_biglietto:PAViaggiEditModal.getFields().sconto_biglietto.val(),
                         data_partenza:PAViaggiEditModal.getFields().data_partenza.val(),
                         orario_partenza:PAViaggiEditModal.getFields().orario_partenza.val(),
+                        id_compagnia : PAViaggiEditModal.getFields().id_compagnia.val(),
                     },
                     async: true,
                     success: function (data) {
@@ -1940,6 +1952,7 @@
         let sconto_biglietto;
         let data_partenza;
         let orario_partenza;
+        let id_compagnia;
 
         return {
             init: function () {
@@ -1957,6 +1970,7 @@
                 sconto_biglietto= $('#add-viaggi-sconto_biglietto');
                 data_partenza= $('#add-viaggi-data_partenza');
                 orario_partenza = $('#add-viaggi-orario_partenza');
+                id_compagnia = $('#add-viaggi-id_compagnia');
 
                 show_button.on('click',function ()
                 {
@@ -1980,7 +1994,7 @@
                 });
 
                 getSelectAllAereoporti([id_aereoporto_arrivo,id_aereoporto_partenza])
-
+                getSelectAllCompagnie([id_compagnia])
 
                 modal.show();
             },
@@ -2001,7 +2015,8 @@
                     id_aereoporto_arrivo  : id_aereoporto_arrivo,
                     sconto_biglietto:sconto_biglietto,
                     data_partenza:data_partenza,
-                    orario_partenza:orario_partenza
+                    orario_partenza:orario_partenza,
+                    id_compagnia:id_compagnia
                 }
             }
         }
@@ -2020,6 +2035,7 @@
         let sconto_biglietto;
         let data_partenza;
         let orario_partenza;
+        let id_compagnia;
 
         return {
             init: function () {
@@ -2036,6 +2052,7 @@
                 sconto_biglietto= $('#edit-viaggi-sconto_biglietto');
                 data_partenza= $('#edit-viaggi-data_partenza');
                 orario_partenza = $('#edit-viaggi-orario_partenza');
+                id_compagnia = $('#edit-viaggi-id_compagnia')
 
             },
             showModal: function (id) {
@@ -2052,6 +2069,7 @@
                 });
 
                 getSelectAllAereoporti([id_aereoporto_arrivo,id_aereoporto_partenza])
+                getSelectAllCompagnie([id_compagnia])
 
                 /*** FILL FORM **/
                 sosta.val(data.sosta);
@@ -2061,6 +2079,7 @@
                 sconto_biglietto.val(data.sconto_biglietto);
                 data_partenza.val(data.data_partenza);
                 orario_partenza.val(data.orario_partenza);
+                id_compagnia.val(data.id_compagnia).trigger('change')
 
                 /*** END ***/
 
@@ -2083,7 +2102,8 @@
                     id_aereoporto_arrivo  : id_aereoporto_arrivo,
                     sconto_biglietto:sconto_biglietto,
                     data_partenza:data_partenza,
-                    orario_partenza:orario_partenza
+                    orario_partenza:orario_partenza,
+                    id_compagnia:id_compagnia
                 }
             }
         }
@@ -2095,6 +2115,7 @@
         let modal_title;
         let id_viaggio = 0;
         let viaggio_obj;
+        let id_compagnia;
 
         let remove_all;
 
@@ -2140,6 +2161,7 @@
                         /*4*/   {data: 'id_aereoporto_partenza'},
                         /*5*/   {data: 'id_aereoporto_arrivo'},
                         /*6*/   {data: 'ordine'},
+
                     ],
                     'columnDefs': [
                         {
@@ -2217,7 +2239,6 @@
             let tratte_generate_div;
             let inserisci_tratte_div;
             let confirm_tratte_btn;
-            let id_compagnia_select;
 
             let showTratte = function()
             {
@@ -2249,7 +2270,6 @@
                     partenzaFissa = document.getElementById("add-voli-partenza-fissa");
                     destinazioneFissa = document.getElementById("add-voli-destinazione-fissa");
 
-                    id_compagnia_select = $('#add-voli-id_compagnia')
                     inserisci_tratte_div = $('#inserisci_tratte');
                     tratte_generate_div = $('#tratte_generate_div');
                     back_to_inserisci_tratte = $('#back_to-tratte-btn');
@@ -2294,9 +2314,8 @@
                     partenzaFissa.innerHTML = `<option value="${partenza.id_aereoporto}" selected>${partenza.nome}</option>`;
                     destinazioneFissa.innerHTML = `<option value="${destinazione.id_aereoporto}" selected>${destinazione.nome}</option>`;
 
-                    getSelectAllCompagnie([id_compagnia_select])
                     // Popola selezione aerei
-                    getSelectAllAerei([id_aereo]);
+                    getSelectAllAerei([id_aereo],id_compagnia);
 
                     // Aggiorna tratte minime (partenza→destinazione)
                     this.generateTratte();
@@ -2398,7 +2417,7 @@
 
                         // Popolo la select degli aerei
                         let selectAereo = $(trattaDiv).find(".tratta-aereo");
-                        getSelectAllAerei([selectAereo],id_compagnia_select.val());
+                        getSelectAllAerei([selectAereo],id_compagnia);
                     }
                 },
 
@@ -2573,7 +2592,7 @@
                                 var result = data;
                                 PAVoli.reloadTable();
                                 PAVoliAddModal.hideModal();
-                                PAVoliDrawer.showModal(PAVoliDrawer.getId());
+                                PAVoliDrawer.showModal(PAVoliDrawer.getId(),PAVoliDrawer.getCompagnia());
                                 showToast('Volo Aggiunto con successo.');
 
                             } else {
@@ -2667,10 +2686,13 @@
                 PAVoliDettaglio.init();
 
             },
-            showModal: function (id_viaggio_in) {
+            showModal: function (id_viaggio_in,id_compagnia_in) {
                 id_viaggio = id_viaggio_in
                 modal_title.html(`Lista Voli`)
                 drawer.show();
+
+                id_compagnia = id_compagnia_in
+
 
                 getViaggio();
 
@@ -2687,6 +2709,10 @@
             getId:function ()
             {
                 return id_viaggio
+            },
+            getCompagnia:function ()
+            {
+                return id_compagnia
             }
 
         }
@@ -3543,6 +3569,14 @@
                                 <input id="add-viaggi-orario_partenza" name="add-viaggi-orario_partenza" type="time" class="form-control form-control-solid" placeholder="Orario Partenza"/>
                             </div>
 
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Compagnia</label>
+                                <select id="add-viaggi-id_compagnia" name="add-viaggi-id_compagnia" class="form-control form-control-solid" placeholder="Compagnia">
+                                </select>
+                            </div>
+
+
                         </div>
 
                     </form>
@@ -3634,6 +3668,13 @@
                                 <input id="edit-viaggi-orario_partenza" name="edit-viaggi-orario_partenza" type="time" class="form-control form-control-solid" placeholder="Orario Partenza"/>
                             </div>
 
+
+                            <div class="fv-row mb-7">
+                                <label class="required fs-6 fw-semibold mb-2">Compagnia</label>
+                                <select id="edit-viaggi-id_compagnia" name="edit-viaggi-id_compagnia" class="form-control form-control-solid" placeholder="Compagnia">
+                                </select>
+                            </div>
+
                         </div>
 
                     </form>
@@ -3670,14 +3711,8 @@
                 <div id="add-voli-body" class="modal-body py-10 px-lg-17">
                     <form id="add-voli-form">
 
-                        <div class="fv-row mb-7">
-                            <label class="required fs-6 fw-semibold mb-2">Compagnia</label>
-                            <select id="add-voli-id_compagnia"
-                                    name="id_compagnia"
-                                    class="form-control form-control-solid">
-                                <!-- Opzioni da popolare dinamicamente -->
-                            </select>
-                        </div>
+
+                        <span>Un volo non diretto deve avere almeno 2 ore di sosta</span>
 
                         <div id="inserisci_tratte">
                             <!-- Partenza fissa -->
@@ -3710,7 +3745,6 @@
                             </button>
 
                         </div>
-
 
                         <div id="tratte_generate_div" class="d-none">
 
@@ -4254,6 +4288,7 @@
                                         <th>Orario Partenza</th>
                                         <th>Durata</th>
                                         <th>Sosta</th>
+                                        <th>Compagnia</th>
                                         <th class="text-end pe-3"></th>
                                         <th class="text-end pe-3"></th>
                                     </tr>

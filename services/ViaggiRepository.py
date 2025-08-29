@@ -1,3 +1,4 @@
+from core.CompagnieClass import CompagnieClass
 from services.BaseRepository import BaseRepository, model_to_dict, to_json, to_dict_list
 from core.ViaggiClass import ViaggiClass
 
@@ -32,7 +33,7 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
         self.pk_field = "id_viaggio"
 
     def add(self,sosta: str, durata: str, id_aereoporto_partenza: str, id_aereoporto_arrivo: str,
-            sconto_biglietto: str,data_partenza: str,orario_partenza:str) -> Response:
+            sconto_biglietto: str,data_partenza: str,orario_partenza:str,id_compagnia:str ) -> Response:
 
         """Create a new Compagnie record (custom wrapper)."""
 
@@ -44,6 +45,7 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
             sconto_biglietto = sconto_biglietto,
             data_partenza = data_partenza,
             orario_partenza = orario_partenza,
+            id_compagnia = id_compagnia
         )
 
         if rec is None:
@@ -61,7 +63,7 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
 
 
     def update(self,id_viaggio:str,sosta: str, durata: str, id_aereoporto_partenza: str, id_aereoporto_arrivo: str,
-               sconto_biglietto: str,data_partenza: str,orario_partenza:str) -> Response:
+               sconto_biglietto: str,data_partenza: str,orario_partenza:str,id_compagnia:str) -> Response:
         """
         Update a Aereoporti.
         kwargs can include email, password, tel, nome, address_id.
@@ -74,7 +76,8 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                              id_aereoporto_arrivo = id_aereoporto_arrivo,
                              sconto_biglietto = sconto_biglietto,
                              data_partenza = data_partenza,
-                             orario_partenza = orario_partenza)
+                             orario_partenza = orario_partenza,
+                             id_compagnia = id_compagnia)
 
         return jsonify({"success":res})
 
@@ -83,13 +86,15 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
         res = super().delete(id_viaggio, self.pk_field)
         return jsonify({"success":res})
 
-    def get_datatable(self, draw: int   , start: int, length: int, search_value: str):
+    def get_datatable(self, draw: int   , start: int, length: int, search_value: str,**kwargs):
+
+        id_compagnia = kwargs.get('id_compagnia',None)
 
         return super().get_datatable(draw=draw,
                                      start=start,
                                      length=length,
                                      search_value=search_value,
-                                     search_fields=["nome","citta"],joins=[ViaggiClass.partenza_rel,ViaggiClass.arrivo_rel])
+                                     search_fields=["nome","citta"],joins=[ViaggiClass.partenza_rel,ViaggiClass.arrivo_rel,ViaggiClass.compagnia_rel],id_compagnia=id_compagnia)
 
     #TODO : COMMENTATO CONTROLLARE SE HA ROTTO QUALCOSA DI RIKY
     #def get_all(self):

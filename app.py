@@ -16,7 +16,6 @@ from core.BigliettiClass import BigliettiClass
 from core.CompagnieClass import CompagnieClass
 from core.AdminClass import AdminClass
 from core.DipendentiClass import DipendentiClass
-from core.EffettuanoClass import EffettuanoClass
 from core.PasseggeriClass import PasseggeriClass
 from core.ViaggiClass import ViaggiClass
 from core.VoliClass import VoliClass
@@ -397,6 +396,7 @@ def function_actions():
                                       )
 
         elif action == "getAllDatatable":
+
             return compagnie_repo.get_datatable(draw,start,length,search_value)
         elif action == "getById":
             return compagnie_repo.get_by_id_json(getParam("id_compagnia"))
@@ -597,8 +597,6 @@ def function_actions():
                                                 paese=paese
                                                 )
             return jsonify({ 'success': res })
-
-
     elif target == "tickets":
         biglietti_repo = BigliettiRepository()
         viaggi_repo = ViaggiRepository()
@@ -627,8 +625,10 @@ def function_actions():
     elif target == "viaggi":
         viaggi_repo = ViaggiRepository()
         if action == "add":
-            if not check_permission([is_admin]):
+            if not check_permission([is_admin,is_compagnia]):
                 return auth_error()
+
+            id_compagnia = getParam('id_compagnia') if is_admin() else current_user.get_id()
 
             return viaggi_repo.add(sosta = getParam("sosta"),
                                    durata= getParam("durata"),
@@ -636,12 +636,17 @@ def function_actions():
                                    id_aereoporto_arrivo= getParam("id_aereoporto_arrivo"),
                                    sconto_biglietto= getParam("sconto_biglietto"),
                                    data_partenza= getParam("data_partenza"),
-                                   orario_partenza= getParam("orario_partenza"))
+                                   orario_partenza= getParam("orario_partenza"),
+                                   id_compagnia=id_compagnia)
+
         elif action == "getAllDatatable":
+
             if not check_permission([is_admin,is_compagnia]):
                 return auth_error()
 
-            return viaggi_repo.get_datatable(draw,start,length,search_value)
+            id_compagnia = getParam('id_compagnia') if is_admin() else current_user.get_id()
+            return viaggi_repo.get_datatable(draw,start,length,search_value,id_compagnia = id_compagnia)
+
         elif action == "getById":
             if not check_permission([is_admin,is_compagnia]):
                 return auth_error()
@@ -654,8 +659,10 @@ def function_actions():
             return viaggi_repo.get_all()
         elif action == "edit":
 
-            if not check_permission([is_admin]):
+            if not check_permission([is_admin,is_compagnia]):
                 return auth_error()
+
+            id_compagnia = getParam('id_compagnia') if is_admin() else current_user.get_id()
 
             return viaggi_repo.update(
                 id_viaggio=getParam("id_viaggio"),
@@ -665,7 +672,8 @@ def function_actions():
                 id_aereoporto_arrivo= getParam("id_aereoporto_arrivo"),
                 sconto_biglietto= getParam("sconto_biglietto"),
                 data_partenza= getParam("data_partenza"),
-                orario_partenza= getParam("orario_partenza")
+                orario_partenza= getParam("orario_partenza"),
+                id_compagnia = id_compagnia
             )
         elif action == "get_andata_ritorno":
             return viaggi_repo.get_andata_ritorno(id_andata=getParam('id_andata'),id_ritorno=getParam('id_ritorno'))

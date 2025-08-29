@@ -25,6 +25,7 @@ class ViaggiClass(Base):
     sconto_biglietto: Mapped[float] = mapped_column(nullable=False)
     data_partenza: Mapped[datetime] = mapped_column(nullable=True)
     orario_partenza: Mapped[datetime] = mapped_column(nullable=True)
+
     
     # FK -> Aereoporto Partenza
     id_aereoporto_partenza: Mapped[str] = mapped_column(ForeignKey('dev.Aereoporti.id_aereoporto'), nullable=False)
@@ -34,11 +35,12 @@ class ViaggiClass(Base):
     id_aereoporto_arrivo: Mapped[str] = mapped_column(ForeignKey('dev.Aereoporti.id_aereoporto'), nullable=False)
     arrivo_rel = relationship('AereoportiClass', foreign_keys=[id_aereoporto_arrivo],back_populates='viaggi_arrivo_rel')
 
-    #Compagnie Aree che effettuano questo viaggio
-    effettuato_da_rel = relationship('EffettuanoClass', back_populates='viaggio_rel')
-
     #Biglietti associati al viaggio
     biglietti_rel = relationship('BigliettiClass', back_populates='viaggio_rel')
 
     #Voli che compongono il viaggio
     voli_rel = relationship('VoliClass', back_populates='viaggio_rel')
+
+    #Compagnie che compongono il viaggio
+    id_compagnia: Mapped[int] = mapped_column(ForeignKey('dev.Compagnie.id_compagnia'),nullable=False)
+    compagnia_rel = relationship('CompagnieClass', back_populates='viaggi_rel')
