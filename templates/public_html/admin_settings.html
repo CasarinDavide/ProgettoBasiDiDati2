@@ -1751,10 +1751,10 @@
                     /*4*/   {data: 'data_partenza'},
                     /*5*/   {data: 'orario_partenza'},
                     /*6*/   {data: 'durata'},
-                    /*6*/   {data: 'sosta'},
-                    /*6*/   {data: 'id_compagnia'},
-                    /*7*/   {data: null,"width": '50px'},
-                    /*8*/   {data: null,"width": '50px'},
+                    /*7*/   {data: 'sosta'},
+                    /*8*/   {data: 'id_compagnia'},
+                    /*9*/   {data: null,"width": '50px'},
+                    /*10*/  {data: null,"width": '50px'},
                 ],
                 'columnDefs': [
                     {
@@ -2738,8 +2738,7 @@
         PAViaggiAddModal.init();
         PAViaggiEditModal.init();
 
-        PAVoliDrawer.init()
-
+        PAVoliDrawer.init();
     });
 
 </script>
@@ -2765,9 +2764,6 @@
                     <form id="add-compagnia_aerea-form">
 
                         <div class="scroll-y me-n7 pe-7" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto"  data-kt-scroll-offset="300px">
-
-
-
 
                             <div class="fv-row mb-7">
                                 <label class="required fs-6 fw-semibold mb-2">Email</label>
