@@ -97,7 +97,7 @@ Home
             const andataDetails = getFlightDetail(andata);
             const andataTemplate = createFlightSection(andataDetails, "Andata");
 
-            let prezzo = andataDetails.prezzo;
+            let prezzo = parseFloat(andataDetails.prezzo);
             let ritornoTemplate = "";
             let ritornoDetails = "";
 
@@ -106,7 +106,7 @@ Home
             if(ritorno) {
                 ritornoDetails = getFlightDetail(ritorno);
                 ritornoTemplate = createFlightSection(ritornoDetails, "Ritorno");
-                prezzo += ritornoDetails.prezzo;
+                prezzo += parseFloat(ritornoDetails.prezzo);
 
                 compagnieInfo += createCompagniaSection(ritornoDetails.compagnia);
             }
@@ -126,8 +126,8 @@ Home
                         </div>
                         <div class="col-md-3 d-flex flex-column justify-content-center align-items-center">
                             <h4 class="text-success mb-3">€${prezzo}</h4>
-                            <div class="text-success mb-3">Posti rimanenti Andata: <span id="posti_rimanenti_andata_${andataDetails.id_viaggio}_${andata?andata.sequence_identifier:null}">--</span>,Affrettati!</div>
-                            <div class="text-success mb-3">Posti rimanenti Ritorno: <span id="posti_rimanenti_ritorno_${ritornoDetails.id_viaggio}_${ritorno?ritorno.sequence_identifier:null}">--</span>,Affrettati!</div>
+                            <div class="text-success mb-3">Posti rimanenti Andata: <span id="posti_rimanenti_andata_${andataDetails.id_viaggio}_${andata?andata.sequence_identifier:null}">Tutti</span>,Affrettati!</div>
+                            <div class="text-success mb-3">Posti rimanenti Ritorno: <span id="posti_rimanenti_ritorno_${ritornoDetails.id_viaggio}_${ritorno?ritorno.sequence_identifier:null}">Tutti</span>,Affrettati!</div>
                             <button class="btn btn-primary w-100" onclick="prenota(${andataDetails.id_viaggio}, ${ritorno ? ritornoDetails.id_viaggio : null},${andata?andata.sequence_identifier:null},${ritorno ? ritorno.sequence_identifier:null})">Prenota</button>
                         </div>
                     </div>

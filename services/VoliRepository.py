@@ -129,6 +129,7 @@ class VoliRepository(BaseRepository[VoliClass]):
                     volo["ordine"] = ordine
                     volo["sequence_identifier"] = sequence_identifier
                     record = self.model(**volo)
+
                     session.add(record)
 
                 session.commit()

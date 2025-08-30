@@ -239,8 +239,8 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
             rows_ritorno = ''
             if dataR != '':
                 rows_ritorno = session.execute( query_info_viaggi, {
-                    'partenza': partenza if partenza else "",
-                    'destinazione': destinazione if destinazione else "",
+                    'partenza': destinazione if destinazione else "",
+                    'destinazione': partenza if partenza else "",
                     'dataP': dataR
                 }).fetchall()
             
@@ -570,7 +570,6 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
         query = text('''
                      WITH seat_stats AS (
                          
-                         
                          SELECT
                              v.id_volo,
                              v.sequence_identifier,
@@ -582,6 +581,7 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                                   LEFT JOIN dev."Biglietti" b
                                             ON b.id_volo = v.id_volo
                                                 AND b.posto = amp.seat_label
+                                                AND b.categoria = amp.seat_class
                                                 AND b.id_viaggio = v.id_viaggio
                          WHERE v.id_viaggio = :id_viaggio
                          AND sequence_identifier = :sequence_identifier
@@ -589,7 +589,7 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                          
 
 
-                     SELECT MIN(posti_occupati) as min_posti_rimanenti
+                     SELECT MIN(seat_stats.posti_totali - posti_occupati ) as min_posti_rimanenti
                      FROM seat_stats
                      GROUP BY seat_stats.sequence_identifier
                          

@@ -85,11 +85,36 @@ def model_to_dict(obj, include_relationships=True, backrefs=False):
 
 
 class BaseRepository(Generic[T]):
+
+    """
+       Classe repository generica per la gestione CRUD (Create, Read, Update, Delete)
+       di un modello SQLAlchemy.
+
+       Consente di:
+       - Aggiungere record
+       - Recuperare record (singoli o multipli)
+       - Aggiornare record
+       - Eliminare record
+       - Eseguire ricerche con filtri dinamici
+       - Fornire output in formato compatibile con DataTables (front-end)
+   """
+
     def __init__(self, model: Type[T]):
+        """
+            Inizializza il repository con un modello SQLAlchemy.
+            :param model: Classe del modello (es. Admin, Compagnia, ecc.)
+        """
+
         self.model = model
 
     def _apply_joins(self, query, joins: Optional[List[Any]] = None):
-        """Helper to apply joins dynamically"""
+        """
+            Applica dinamicamente join con altre tabelle,
+            senza alterare il risultato della query (grazie a joinedload).
+
+            :param query: oggetto Query SQLAlchemy
+            :param joins: lista di relazioni da caricare
+        """
         if joins:
 
             for j in joins:
@@ -99,7 +124,14 @@ class BaseRepository(Generic[T]):
         return query
 
     def add(self, **kwargs) -> Optional[T]:
-        """Create a new record for the model."""
+        """
+            Crea e salva un nuovo record nel database.
+            Supporta sessioni esterne per gestire transazioni complesse.
+
+            :param kwargs: attributi del modello
+            :return: record creato o None in caso di errore
+
+        """
 
         external_session = kwargs.pop("session", None)
         record = self.model(**kwargs)
@@ -122,7 +154,14 @@ class BaseRepository(Generic[T]):
             return None
 
     def get_all(self, joins: Optional[List[Any]] = None,**kwargs) -> List[T]:
-        """Fetch all records, with optional joins."""
+        """
+           Recupera tutti i record del modello con eventuali filtri.
+
+           :param joins: lista di relazioni da caricare
+           :param kwargs: filtri (colonna=valore)
+           :return: lista di record
+       """
+
         with Session(engine()) as session:
             query = session.query(self.model)
             if joins:
@@ -135,7 +174,16 @@ class BaseRepository(Generic[T]):
             return query.all()
 
     def get_by_id(self, obj_id, pk_field: str = "id", joins: Optional[List[Any]] = None) -> Optional[T]:
-        """Fetch a single record by primary key, with optional joins."""
+
+        """
+            Recupera un record per chiave primaria.
+
+            :param obj_id: valore della PK
+            :param pk_field: nome del campo PK (default "id")
+            :param joins: relazioni opzionali da caricare
+            :return: record o None
+        """
+
         with Session(engine()) as session:
             query = session.query(self.model)
             if joins:
@@ -146,7 +194,16 @@ class BaseRepository(Generic[T]):
             return query.first()
 
     def update(self, obj_id, pk_field: str = "id", **kwargs) -> bool:
-        """Update a record by ID."""
+
+        """
+           Aggiorna un record esistente.
+
+           :param obj_id: valore della PK
+           :param pk_field: nome del campo PK
+           :param kwargs: valori da aggiornare
+           :return: True se aggiornato, False altrimenti
+       """
+
         with Session(engine()) as session:
             obj = session.query(self.model).filter(getattr(self.model, pk_field) == obj_id).first()
             query = session.query(self.model).filter(getattr(self.model, pk_field) == obj_id)
@@ -162,7 +219,14 @@ class BaseRepository(Generic[T]):
             return True
 
     def delete(self, obj_id, pk_field: str = "id") -> bool:
-        """Delete a record by ID."""
+        """
+            Elimina un record dal database.
+
+            :param obj_id: valore della PK
+            :param pk_field: nome del campo PK
+            :return: True se eliminato, False altrimenti
+        """
+
         with Session(engine()) as session:
             obj = session.query(self.model).filter(getattr(self.model, pk_field) == obj_id).first()
             if not obj:
@@ -182,10 +246,17 @@ class BaseRepository(Generic[T]):
             **kwargs
     ):
         """
-        Generic DataTable query with search + optional joins.
-        search_fields: list of model fields to search (like ['nome', 'email', 'tel'])
-        """
+            Query generica per DataTables con ricerca, filtro e paginazione.
 
+            :param draw: contatore richieste DataTables
+            :param start: offset iniziale
+            :param length: numero di record da restituire
+            :param search_value: valore di ricerca globale
+            :param search_fields: campi in cui cercare
+            :param joins: relazioni opzionali da caricare
+            :param kwargs: ulteriori filtri
+            :return: Response JSON compatibile con DataTables
+        """
 
         with Session(engine()) as session:
             query = session.query(self.model)
@@ -221,9 +292,9 @@ class BaseRepository(Generic[T]):
 
     def search_by_columns(self, joins: Optional[List[Any]] = None, **kwargs) -> Optional[List[T]]:
         """
-        Search records by exact column matches + optional joins.
-        Example:
-            search_by_columns(nome="Test", email="abc@test.com", joins=[OtherModel], session=session)
+            Search records by exact column matches + optional joins.
+            Example:
+                search_by_columns(nome="Test", email="abc@test.com", joins=[OtherModel], session=session)
         """
 
         # Extract an existing session if provided
@@ -254,9 +325,9 @@ class BaseRepository(Generic[T]):
 
     def search_single_by_columns(self, joins: Optional[List[Any]] = None, **kwargs) -> Optional[T]:
         """
-        Fetch a single record by multiple filters with optional joins.
-        Example:
-            search_single_by_columns(nome="Test", joins=[OtherModel], session=session)
+            Fetch a single record by multiple filters with optional joins.
+            Example:
+                search_single_by_columns(nome="Test", joins=[OtherModel], session=session)
         """
         session = kwargs.pop("session", None)
 
