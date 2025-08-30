@@ -52,7 +52,8 @@ class CompagnieClass(BaseUser, Base):
     aerei_rel = relationship('AereiClass', back_populates='compagnia_rel')
 
     #Viaggi effettuati dalla compagnia
-    effettuano_rel = relationship('EffettuanoClass', back_populates='compagnia_rel')
+    viaggi_rel = relationship('ViaggiClass', back_populates='compagnia_rel')
+
 
 
     def get_id(self):
