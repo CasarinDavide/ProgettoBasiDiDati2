@@ -1751,10 +1751,9 @@
                     /*4*/   {data: 'data_partenza'},
                     /*5*/   {data: 'orario_partenza'},
                     /*6*/   {data: 'durata'},
-                    /*7*/   {data: 'sosta'},
-                    /*8*/   {data: 'id_compagnia'},
-                    /*9*/   {data: null,"width": '50px'},
-                    /*10*/  {data: null,"width": '50px'},
+                    /*7*/   {data: 'id_compagnia'},
+                    /*8*/   {data: null,"width": '50px'},
+                    /*9*/  {data: null,"width": '50px'},
                 ],
                 'columnDefs': [
                     {
@@ -1762,7 +1761,7 @@
                         "visible": false
                     },
                     {
-                        "targets": [8],
+                        "targets": [7],
                         "createdCell": function (td, cellData, rowData, row, col) {
                             if(parseInt(cellData))
                             {
@@ -1771,13 +1770,13 @@
                         }
                     },
                     {
-                        "targets": [9],
+                        "targets": [8],
                         "createdCell": function (td, cellData, rowData, row, col) {
                             $(td, td).html(`<a class="cursor-pointer" onclick="PAViaggiEditModal.showModal('${rowData.id_viaggio}')" ><i title="Modifica Viaggio" class="fa fs-3 fa-gear"></i></a>`);
                         }
                     },
                     {
-                        "targets": [10],
+                        "targets": [9],
                         "createdCell": function (td, cellData, rowData, row, col) {
                             $(td, td).html(`<a class="cursor-pointer" onclick="PAVoliDrawer.showModal(${rowData.id_viaggio},${rowData.id_compagnia})" ><i title="Dettaglio" class="fa fs-3 fa-eye"></i></a>`);
                         }
@@ -1843,7 +1842,6 @@
                     type: 'POST',
                     dataType: "json",
                     data: {
-                        sosta:PAViaggiAddModal.getFields().sosta.val(),
                         durata: PAViaggiAddModal.getFields().durata.val(),
                         id_aereoporto_partenza:PAViaggiAddModal.getFields().id_aereoporto_partenza.val(),
                         id_aereoporto_arrivo:PAViaggiAddModal.getFields().id_aereoporto_arrivo.val(),
@@ -1888,7 +1886,6 @@
                     dataType: "json",
                     data: {
                         id_viaggio : id,
-                        sosta:PAViaggiEditModal.getFields().sosta.val(),
                         durata: PAViaggiEditModal.getFields().durata.val(),
                         id_aereoporto_partenza:PAViaggiEditModal.getFields().id_aereoporto_partenza.val(),
                         id_aereoporto_arrivo:PAViaggiEditModal.getFields().id_aereoporto_arrivo.val(),
@@ -1945,7 +1942,6 @@
         let form;
         let title;
 
-        let sosta;
         let durata;
         let id_aereoporto_partenza;
         let id_aereoporto_arrivo;
@@ -1963,7 +1959,6 @@
 
                 title.text("Crea Nuovo Viaggio" );
 
-                sosta = $('#add-viaggi-sosta');
                 durata = $('#add-viaggi-durata');
                 id_aereoporto_partenza = $('#add-viaggi-id_aereoporto_partenza');
                 id_aereoporto_arrivo  = $('#add-viaggi-id_aereoporto_arrivo');
@@ -2009,7 +2004,6 @@
             getFields:function ()
             {
                 return {
-                    sosta : sosta,
                     durata : durata,
                     id_aereoporto_partenza:id_aereoporto_partenza,
                     id_aereoporto_arrivo  : id_aereoporto_arrivo,
@@ -2028,7 +2022,6 @@
         let data;
         let title;
 
-        let sosta;
         let durata;
         let id_aereoporto_partenza;
         let id_aereoporto_arrivo;
@@ -2045,7 +2038,6 @@
                 title = $('#edit-viaggi-title');
                 title.text('Modifica Viaggi');
 
-                sosta = $('#edit-viaggi-sosta');
                 durata = $('#edit-viaggi-durata');
                 id_aereoporto_partenza = $('#edit-viaggi-id_aereoporto_partenza');
                 id_aereoporto_arrivo  = $('#edit-viaggi-id_aereoporto_arrivo');
@@ -2072,7 +2064,6 @@
                 getSelectAllCompagnie([id_compagnia])
 
                 /*** FILL FORM **/
-                sosta.val(data.sosta);
                 durata.val(data.durata);
                 id_aereoporto_partenza.val(data.id_aereoporto_partenza);
                 id_aereoporto_arrivo.val(data.id_aereoporto_arrivo);
@@ -2096,7 +2087,6 @@
             getFields:function ()
             {
                 return {
-                    sosta : sosta,
                     durata : durata,
                     id_aereoporto_partenza:id_aereoporto_partenza,
                     id_aereoporto_arrivo  : id_aereoporto_arrivo,
@@ -3535,11 +3525,6 @@
                             </div>
 
                             <div class="fv-row mb-7">
-                                <label class="required fs-6 fw-semibold mb-2">Sosta</label>
-                                <input id="add-viaggi-sosta" name="add-viaggi-sosta" type="number" min="0" class="form-control form-control-solid" placeholder="Sosta"/>
-                            </div>
-
-                            <div class="fv-row mb-7">
                                 <label class="required fs-6 fw-semibold mb-2">Durata</label>
                                 <input id="add-viaggi-durata" name="add-viaggi-durata" type="number" min="0" class="form-control form-control-solid" placeholder="Durata"/>
                             </div>
@@ -3630,11 +3615,6 @@
                                 <select id="edit-viaggi-id_aereoporto_arrivo" name="edit-viaggi-id_aereoporto_arrivo"
                                         class="form-control form-control-solid" placeholder="Aereoporto Arrivo">
                                 </select>
-                            </div>
-
-                            <div class="fv-row mb-7">
-                                <label class="required fs-6 fw-semibold mb-2">Sosta</label>
-                                <input id="edit-viaggi-sosta" name="edit-viaggi-sosta" type="number" min="0" class="form-control form-control-solid" placeholder="Sosta"/>
                             </div>
 
                             <div class="fv-row mb-7">
@@ -4283,7 +4263,6 @@
                                         <th>Data Partenza</th>
                                         <th>Orario Partenza</th>
                                         <th>Durata</th>
-                                        <th>Sosta</th>
                                         <th>Compagnia</th>
                                         <th class="text-end pe-3"></th>
                                         <th class="text-end pe-3"></th>

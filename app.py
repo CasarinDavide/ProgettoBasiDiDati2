@@ -630,8 +630,7 @@ def function_actions():
 
             id_compagnia = getParam('id_compagnia') if is_admin() else current_user.get_id()
 
-            return viaggi_repo.add(sosta = getParam("sosta"),
-                                   durata= getParam("durata"),
+            return viaggi_repo.add(durata= getParam("durata"),
                                    id_aereoporto_partenza= getParam("id_aereoporto_partenza"),
                                    id_aereoporto_arrivo= getParam("id_aereoporto_arrivo"),
                                    sconto_biglietto= getParam("sconto_biglietto"),
@@ -666,7 +665,6 @@ def function_actions():
 
             return viaggi_repo.update(
                 id_viaggio=getParam("id_viaggio"),
-                sosta = getParam("sosta"),
                 durata= getParam("durata"),
                 id_aereoporto_partenza= getParam("id_aereoporto_partenza"),
                 id_aereoporto_arrivo= getParam("id_aereoporto_arrivo"),
