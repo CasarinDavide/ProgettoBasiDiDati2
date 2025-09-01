@@ -52,7 +52,6 @@ MyTriviaggi
             this.partenza = new Date(data.partenza);
             this.durata = parseInt(data.durata) * 6000; //ms
             this.arrivo = new Date(this.partenza.getTime() + this.durata);
-            //TODO capire come gestire sosta e numero di scali
             this.scaduto = data.scaduto ? 'scaduto' : 'valido';
             this.aereoporti = data.partenza_destinazione;
 
