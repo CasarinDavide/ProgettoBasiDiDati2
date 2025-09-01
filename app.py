@@ -310,10 +310,8 @@ def prenota():
         else:
             return function_actions()
     else:
-        # TODO  rimanda al form di login
-        # e poi vai al conferma pagamento
-        flash("Permission denied. You have been logged in.", "danger")
-        return render_template('public_html/prenota.html')
+        flash("Permission denied. You have to log in.", "danger")
+        return redirect(url_for('user_login'))
 
 
 
