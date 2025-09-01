@@ -39,11 +39,6 @@ class PasseggeriClass(BaseUser, Base):
     citta: Mapped[str] = mapped_column(nullable=False)
     paese: Mapped[str] = mapped_column(nullable=False)
 
-    # Biglietti posseduti dal passeggero
-    # la stringa in 'back_populates' corrisponde al nome dell'attributo presente nell'altra classe (non al nome della classe)   
-
-    #alternativa: relationship(NomeClass, backref='passeggeri')
-    #questo metodo permette di togliere l'attributo passeggeri da Biglietti perché lo crea da solo, ma mi pareva più chiaro usare 'back_populates' normale
     biglietti_rel = relationship('BigliettiClass', back_populates='passeggero_rel')
     
     def get_id(self):

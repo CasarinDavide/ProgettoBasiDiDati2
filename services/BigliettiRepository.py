@@ -144,7 +144,6 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
         if biglietto.viaggio_rel is not None:
             return biglietto.prezzo * biglietto.viaggio_rel.sconto
         else:
-            # should not be used, I expect to have viaggio_rel not null
             return biglietto.prezzo
 
     def get_biglietto(self, id_volo, seat,**kwargs):
@@ -212,16 +211,10 @@ class BigliettiRepository(BaseRepository[BigliettiClass]):
         prezzo_snack   = float(kwargs.get('snack_price', 0.0))
         sconto         = float(kwargs.get('sconto', 0.0))
 
-        print(prezzo_internet)
-        print(prezzo_bagaglio)
-        print(prezzo_snack)
-
-
-
         try:
             with Session(engine()) as session:
 
-                prezzi_andata, prezzi_ritorno = prices  # tuple unpacking
+                prezzi_andata, prezzi_ritorno = prices
 
                 with session.begin():  # transaction
                     for i,biglietto in enumerate(data):

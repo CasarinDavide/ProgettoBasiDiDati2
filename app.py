@@ -70,9 +70,6 @@ def auth_error():
 
 # CALLBACK OBBLIGATORIO
 @login_manager.user_loader
-#def load_user(user_id):
-#    passeggeri_repo = PasseggeriRepository()
-#    return passeggeri_repo.get_by_id(user_id)
 def load_user(user_id):
     # user_id stored like "company-123" or "passenger-456"
     role, real_id = user_id.split("-", 1)
@@ -312,8 +309,6 @@ def prenota():
     else:
         flash("Permission denied. You have to log in.", "danger")
         return redirect(url_for('user_login'))
-
-
 
 
 @app.route('/logout')
@@ -747,7 +742,6 @@ def function_actions():
                                                      sequence_identifier_andata=getParam('seq_andata'))
 
             # salvataggio dei prezzi in sessione
-
             session['prices_andata'] = {}
             session['prices_ritorno'] = {}
 
@@ -789,8 +783,6 @@ def function_actions():
     elif "biglietti":
         biglietti_repo = BigliettiRepository()
         if action == 'checkout':
-            # TODO check params too
-
             # check se la sessione è ancora valida
             # altrimenti do errore
 

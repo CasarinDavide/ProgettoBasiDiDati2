@@ -94,9 +94,6 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                                      search_value=search_value,
                                      search_fields=["nome","citta"],joins=[ViaggiClass.partenza_rel,ViaggiClass.arrivo_rel,ViaggiClass.compagnia_rel],id_compagnia=id_compagnia)
 
-    #TODO : COMMENTATO CONTROLLARE SE HA ROTTO QUALCOSA DI RIKY
-    #def get_all(self):
-    #    return super().get_all()
 
     """ Return the List of possible departure """
     def get_list_partenze(self) -> List[str]:
@@ -106,11 +103,7 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                         FROM dev."Viaggi" v 
                             JOIN dev."Aereoporti" a ON v.id_aereoporto_partenza = a.id_aereoporto
                         ''')
-            # Nel merge mi dava un conflitto questo è il codice vecchio, non so bene il perchè
-            # conversione in lista
-            #result = [x[0] for x in session.execute(query).all()]
-            #return
-        
+
         with Session(engine()) as session:
             rows = session.execute(query).fetchall()
             
@@ -174,7 +167,6 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                                               posti_occupati,
                                               (posti_totali - posti_occupati) AS posti_liberi,
                                               ROUND((posti_occupati::decimal / posti_totali) * 100, 2) AS percentuale_occupati,
-                                              ---Placeholder to evaluate cost----
                                               CASE
                                                   WHEN seat_class = 'Economy'::classe THEN ROUND((posti_occupati::decimal / posti_totali) * 50 +100, 2)
                                                   WHEN seat_class = 'Business'::classe THEN ROUND((posti_occupati::decimal / posti_totali) * 100  +120, 2)
