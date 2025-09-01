@@ -499,6 +499,10 @@ Home
                 seq_ritorno = params.get("seq_ritorno");
 
                 voli_data = loadData();
+                voli_data.andata.sort( (a, b) => a.ordine > b.ordine);
+
+                if(voli_data.ritorno)
+                    voli_data.ritorno.sort( (a, b) => a.ordine > b.ordine)
 
                 drawRouteTabs("andata", voli_data.andata);
                 drawRouteTabs("ritorno", voli_data.ritorno);
@@ -600,7 +604,9 @@ Home
                     let nome = $(`.form-nome-${i}`).val();
                     let cognome = $(`.form-cognome-${i}`).val();
                     let internet = $(`.form-internet-${i}`).is(':checked')?1:0;
+                    console.log(internet);
                     let snack = $(`.form-snack-${i}`).is(':checked')?1:0;
+                    console.log(snack)
                     let bagagli = $(`.form-bagagli-${i}`).val();
 
                     if(nome === '' || cognome === '') {

@@ -6,7 +6,6 @@ from datetime import datetime
 """
 CREATE TABLE dev.Viaggi (
                             id_viaggio SERIAL PRIMARY KEY,
-                            sosta INTEGER NOT NULL,
                             durata INTEGER NOT NULL,
                             id_aereoporto_partenza VARCHAR(200) REFERENCES dev.Aereoporti(id_aereoporto) ON DELETE SET NULL,
                             id_aereoporto_arrivo VARHCAR(200) REFERENCES dev.Aereoporti(id_aereoporto) ON DELETE SET NULL,
@@ -20,7 +19,6 @@ class ViaggiClass(Base):
     __table_args__ = { 'schema': 'dev' }
 
     id_viaggio: Mapped[int] = mapped_column(primary_key=True)
-    sosta: Mapped[int] = mapped_column(nullable=False)
     durata: Mapped[int] = mapped_column(nullable=False)
     sconto_biglietto: Mapped[float] = mapped_column(nullable=False)
     data_partenza: Mapped[datetime] = mapped_column(nullable=True)

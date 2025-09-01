@@ -32,13 +32,12 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
         super().__init__(ViaggiClass)
         self.pk_field = "id_viaggio"
 
-    def add(self,sosta: str, durata: str, id_aereoporto_partenza: str, id_aereoporto_arrivo: str,
+    def add(self, durata: str, id_aereoporto_partenza: str, id_aereoporto_arrivo: str,
             sconto_biglietto: str,data_partenza: str,orario_partenza:str,id_compagnia:str ) -> Response:
 
         """Create a new Compagnie record (custom wrapper)."""
 
         rec = super().add(
-            sosta = sosta,
             durata = durata,
             id_aereoporto_partenza = id_aereoporto_partenza,
             id_aereoporto_arrivo = id_aereoporto_arrivo,
@@ -62,7 +61,7 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
         return jsonify(model_to_dict(super().get_by_id(id_viaggio, pk_field=self.pk_field,joins=[ViaggiClass.partenza_rel,ViaggiClass.arrivo_rel]),backrefs = True))
 
 
-    def update(self,id_viaggio:str,sosta: str, durata: str, id_aereoporto_partenza: str, id_aereoporto_arrivo: str,
+    def update(self,id_viaggio:str, durata: str, id_aereoporto_partenza: str, id_aereoporto_arrivo: str,
                sconto_biglietto: str,data_partenza: str,orario_partenza:str,id_compagnia:str) -> Response:
         """
         Update a Aereoporti.
@@ -70,7 +69,6 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
         """
         res = super().update(id_viaggio,
                              self.pk_field,
-                             sosta = sosta,
                              durata = durata,
                              id_aereoporto_partenza = id_aereoporto_partenza,
                              id_aereoporto_arrivo = id_aereoporto_arrivo,
@@ -468,7 +466,6 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                 v.data_partenza AS data_partenza,
                 v.orario_partenza AS orario_partenza,
                 v.durata AS durata,
-                v.sosta AS sosta,
                 ap1.nome AS aereoporto_partenza,
                 ap2.nome AS aereoporto_arrivo,
                 CASE 
@@ -525,7 +522,6 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                     'id_viaggio': row.id_viaggio,
                     'partenza': f"{row.data_partenza} {row.orario_partenza}",
                     'durata': row.durata,
-                    'sosta': row.sosta,
                     'partenza_destinazione': f"{row.aereoporto_partenza} - {row.aereoporto_arrivo}",
                     'scaduto': row.scaduto
                 })
@@ -546,9 +542,9 @@ class ViaggiRepository(BaseRepository[ViaggiClass]):
                     'posto': row.posto,
                     'prezzo': row.prezzo - (row.sconto * row.prezzo),
                     'nominativo': f"{row.nome} {row.cognome}",
-                    'internet': row.internet == '1',
+                    'internet': row.internet == 1,
                     'bagagli': row.bagagli,
-                    'pasto': row.pasto == '1'
+                    'pasto': row.pasto == 1
                 }
 
                 viaggi_dict[viaggio_key]['voli'][volo_key]['biglietti'].append(biglietto)

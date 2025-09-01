@@ -71,6 +71,9 @@ Home
 
         let createFlightSection = function(details, tipo) {
             const {partenza, arrivo, durata, scali, scaliList, aereoportoPartenza, aereoportoDestinazione, prezzo, compagnia, id_viaggio} = details;
+            let rotation = '';
+            if(tipo === "Ritorno")
+                rotation = 'fa-rotate-180';
 
             return `
             <div class="d-flex justify-content-between">
@@ -79,7 +82,7 @@ Home
                     <small>${aereoportoPartenza}</small>
                 </div>
                 <div class="text-center">
-                    <i class="fas fa-plane text-primary"></i>
+                    <i class="fas fa-plane text-primary ${rotation}"></i>
                     <div class="text-muted small">${durata.getUTCHours()}h ${durata.getUTCMinutes()}min</div>
                     <div class="small">${scali === 0 ? "Diretto" : "Scali: " + scaliList.toString() }</div>
                 </div>
